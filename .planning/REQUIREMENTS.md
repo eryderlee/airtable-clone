@@ -164,10 +164,10 @@
 | UI-05 | Phase 3 | Pending |
 
 **Coverage:**
-- v1 requirements: 43 total
-- Mapped to phases: 43
-- Unmapped: 0 ✓
+- v1 requirements: 45 total
+- Mapped to phases: 45
+- Unmapped: 0 (Phase 2 is infrastructure — no direct req IDs, enables all subsequent phases)
 
 ---
 *Requirements defined: 2026-03-17*
-*Last updated: 2026-03-17 after initial definition*
+*Last updated: 2026-03-17 after roadmap creation*
