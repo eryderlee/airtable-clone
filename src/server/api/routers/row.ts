@@ -427,6 +427,45 @@ export const rowRouter = createTRPCRouter({
     }),
 
   // -------------------------------------------------------------------------
+  // getByOffset: offset-based row fetch for random-access virtual scrolling
+  // -------------------------------------------------------------------------
+  getByOffset: protectedProcedure
+    .input(
+      z.object({
+        tableId: z.string().uuid(),
+        offset: z.number().int().min(0),
+        limit: z.number().int().min(1).max(500).default(100),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const ownership = await ctx.db
+        .select({ tableId: tables.id })
+        .from(tables)
+        .innerJoin(bases, eq(tables.baseId, bases.id))
+        .where(
+          and(
+            eq(tables.id, input.tableId),
+            eq(bases.userId, ctx.session.user.id),
+          ),
+        )
+        .limit(1);
+
+      if (ownership.length === 0) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
+      const items = await ctx.db
+        .select()
+        .from(rows)
+        .where(eq(rows.tableId, input.tableId))
+        .orderBy(asc(rows.rowOrder), asc(rows.id))
+        .limit(input.limit)
+        .offset(input.offset);
+
+      return { items };
+    }),
+
+  // -------------------------------------------------------------------------
   // count: fast indexed COUNT(*) for a table — used for live insert progress
   // -------------------------------------------------------------------------
   count: protectedProcedure

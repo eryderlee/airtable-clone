@@ -3,7 +3,6 @@
 import {
   useReactTable,
   getCoreRowModel,
-  flexRender,
   type ColumnDef,
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -16,35 +15,41 @@ export type RowData = {
   cells: Record<string, string | number | null>;
 };
 
-const SKELETON_COUNT = 20;
+// Stable empty array so useReactTable doesn't see a new reference each render
+const EMPTY_ROWS: RowData[] = [];
 
 interface GridTableProps {
-  rows: RowData[];
+  totalCount: number;
+  getRow: (index: number) => RowData | undefined;
+  columnIds: string[];
   columns: ColumnDef<RowData>[];
   onScroll: (e: React.UIEvent<HTMLDivElement>) => void;
-  isFetchingNextPage: boolean;
   isBulkCreating: boolean;
   onRenameColumn: (columnId: string, name: string) => void;
+  onUpdateColumn: (columnId: string, name: string, type: "text" | "number") => void;
   onDeleteColumn: (columnId: string) => void;
   onAddColumn: (type: "text" | "number") => void;
-  totalRowCount: number;
+  displayCount: number;
 }
 
 export const GridTable = React.memo(function GridTable({
-  rows,
+  totalCount,
+  getRow,
+  columnIds,
   columns,
   onScroll,
-  isFetchingNextPage,
   isBulkCreating,
   onRenameColumn,
+  onUpdateColumn,
   onDeleteColumn,
   onAddColumn,
-  totalRowCount,
+  displayCount,
 }: GridTableProps) {
   const parentRef = useRef<HTMLDivElement>(null);
 
+  // Table is used only for column header management — row data bypasses it
   const table = useReactTable({
-    data: rows,
+    data: EMPTY_ROWS,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getRowId: (row) => row.id,
@@ -53,17 +58,13 @@ export const GridTable = React.memo(function GridTable({
     manualPagination: true,
   });
 
-  const realRowCount = table.getRowModel().rows.length;
-  const totalVirtualCount = realRowCount + (isFetchingNextPage ? SKELETON_COUNT : 0);
-
   const rowVirtualizer = useVirtualizer({
-    count: totalVirtualCount,
+    count: totalCount,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 32,
     overscan: 20,
     measureElement:
-      typeof window !== "undefined" &&
-      !navigator.userAgent.includes("Firefox")
+      typeof window !== "undefined" && !navigator.userAgent.includes("Firefox")
         ? (element) => element.getBoundingClientRect().height
         : undefined,
   });
@@ -80,6 +81,7 @@ export const GridTable = React.memo(function GridTable({
           <GridHeader
             headers={table.getHeaderGroups()[0]?.headers ?? []}
             onRenameColumn={onRenameColumn}
+            onUpdateColumn={onUpdateColumn}
             onDeleteColumn={onDeleteColumn}
             onAddColumn={onAddColumn}
           />
@@ -92,9 +94,10 @@ export const GridTable = React.memo(function GridTable({
             }}
           >
             {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-              const isSkeletonRow = virtualRow.index >= realRowCount;
+              const rowData = getRow(virtualRow.index);
 
-              if (isSkeletonRow) {
+              // Skeleton row — data not yet loaded for this page
+              if (!rowData) {
                 return (
                   <tr
                     key={`skeleton-${virtualRow.index}`}
@@ -103,6 +106,7 @@ export const GridTable = React.memo(function GridTable({
                       position: "absolute",
                       transform: `translateY(${virtualRow.start}px)`,
                       width: "100%",
+                      height: 32,
                     }}
                     className="border-b border-[#e2e0ea]"
                   >
@@ -112,9 +116,9 @@ export const GridTable = React.memo(function GridTable({
                     >
                       <div className="h-3 w-8 animate-pulse rounded bg-[#ece9f5]" />
                     </td>
-                    {table.getVisibleLeafColumns().map((col, colIdx) => (
+                    {columnIds.map((colId, colIdx) => (
                       <td
-                        key={col.id}
+                        key={colId}
                         style={{ display: "flex", width: 180, minWidth: 180 }}
                         className="items-center border-r border-[#e2e0ea] px-2 py-0"
                       >
@@ -131,13 +135,11 @@ export const GridTable = React.memo(function GridTable({
                 );
               }
 
-              const row = table.getRowModel().rows[virtualRow.index];
-              if (!row) return null;
+              // Real row
               return (
                 <tr
-                  key={row.id}
+                  key={rowData.id}
                   data-index={virtualRow.index}
-                  ref={(node) => rowVirtualizer.measureElement(node)}
                   style={{
                     display: "flex",
                     position: "absolute",
@@ -158,7 +160,6 @@ export const GridTable = React.memo(function GridTable({
                     <span className="text-xs text-[#aaa]">
                       {virtualRow.index + 1}
                     </span>
-                    {/* Row expand icon */}
                     <button
                       className="ml-auto hidden items-center justify-center rounded text-[#888] hover:bg-[#e8e4f5] group-hover:flex"
                       title="Expand row"
@@ -172,15 +173,18 @@ export const GridTable = React.memo(function GridTable({
                     </button>
                   </td>
 
-                  {row.getVisibleCells().map((cell) => (
-                    <td
-                      key={cell.id}
-                      style={{ display: "flex", width: 180, minWidth: 180 }}
-                      className="items-center truncate border-r border-[#e2e0ea] px-2 py-0 text-[13px] text-[#1f2328]"
-                    >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
-                  ))}
+                  {columnIds.map((colId) => {
+                    const value = rowData.cells[colId];
+                    return (
+                      <td
+                        key={colId}
+                        style={{ display: "flex", width: 180, minWidth: 180 }}
+                        className="items-center truncate border-r border-[#e2e0ea] px-2 py-0 text-[13px] text-[#1f2328]"
+                      >
+                        {value !== null && value !== undefined ? String(value) : ""}
+                      </td>
+                    );
+                  })}
 
                   {/* Trailing empty cell */}
                   <td style={{ display: "flex", flex: 1 }} className="border-r-0" />
@@ -207,14 +211,13 @@ export const GridTable = React.memo(function GridTable({
           </div>
           <div className="flex-1" />
         </div>
-
       </div>
 
       {/* Footer: record count */}
       <div className="flex h-[36px] flex-shrink-0 items-center border-t border-[#e2e0ea] bg-white px-3">
         <span className="text-[12px] text-[#888]">
           {isBulkCreating ? "Inserting… " : ""}
-          {totalRowCount.toLocaleString()} {totalRowCount === 1 ? "record" : "records"}
+          {displayCount.toLocaleString()} {displayCount === 1 ? "record" : "records"}
         </span>
       </div>
     </div>
