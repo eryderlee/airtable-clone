@@ -98,6 +98,15 @@ Plans:
 - [ ] 04-02: Column management UI (add Text/Number, rename via double-click, delete); 100k row bulk insert button with loading state
 - [ ] 04-03: Performance validation against 1M-row seed — scroll smoothness, initial load time, fetchNextPage trigger at viewport edge
 
+## Technical Constraints
+
+### rowOrder seek assumption (Phase 4)
+`row.getByOffset` uses `WHERE row_order >= offset` instead of SQL `OFFSET` for O(log n) random-access seeks. This relies on `rowOrder` being **dense** — no gaps from deletions. When row deletion is implemented (Phase 5 or 6), this breaks: after deleting row 500, seeking to "page 5" via `row_order >= 500` returns the wrong rows.
+
+**Fix required when row deletion lands:** Either (a) recompact `rowOrder` on delete (expensive for large tables), or (b) switch `getByOffset` back to SQL `OFFSET` with a keyset optimization, or (c) maintain a separate dense `position` column via a trigger.
+
+---
+
 ### Phase 5: Cell Editing
 **Goal**: Users can edit any cell inline using the full spreadsheet keyboard navigation model — arrow keys, Tab, Enter, Escape — with changes persisted to the database.
 **Depends on**: Phase 4
