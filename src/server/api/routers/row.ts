@@ -1,4 +1,4 @@
-import { and, asc, eq, max, sql } from "drizzle-orm";
+import { and, asc, count, eq, max, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
@@ -424,5 +424,35 @@ export const rowRouter = createTRPCRouter({
       }
 
       return { count: input.count };
+    }),
+
+  // -------------------------------------------------------------------------
+  // count: fast indexed COUNT(*) for a table — used for live insert progress
+  // -------------------------------------------------------------------------
+  count: protectedProcedure
+    .input(z.object({ tableId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const ownership = await ctx.db
+        .select({ tableId: tables.id })
+        .from(tables)
+        .innerJoin(bases, eq(tables.baseId, bases.id))
+        .where(
+          and(
+            eq(tables.id, input.tableId),
+            eq(bases.userId, ctx.session.user.id),
+          ),
+        )
+        .limit(1);
+
+      if (ownership.length === 0) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
+      const [result] = await ctx.db
+        .select({ count: count() })
+        .from(rows)
+        .where(eq(rows.tableId, input.tableId));
+
+      return { count: Number(result?.count ?? 0) };
     }),
 });

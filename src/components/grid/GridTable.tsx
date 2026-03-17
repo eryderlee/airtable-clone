@@ -16,14 +16,18 @@ export type RowData = {
   cells: Record<string, string | number | null>;
 };
 
+const SKELETON_COUNT = 20;
+
 interface GridTableProps {
   rows: RowData[];
   columns: ColumnDef<RowData>[];
   onScroll: (e: React.UIEvent<HTMLDivElement>) => void;
   isFetchingNextPage: boolean;
+  isBulkCreating: boolean;
   onRenameColumn: (columnId: string, name: string) => void;
   onDeleteColumn: (columnId: string) => void;
   onAddColumn: (type: "text" | "number") => void;
+  totalRowCount: number;
 }
 
 export const GridTable = React.memo(function GridTable({
@@ -31,9 +35,11 @@ export const GridTable = React.memo(function GridTable({
   columns,
   onScroll,
   isFetchingNextPage,
+  isBulkCreating,
   onRenameColumn,
   onDeleteColumn,
   onAddColumn,
+  totalRowCount,
 }: GridTableProps) {
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -47,8 +53,11 @@ export const GridTable = React.memo(function GridTable({
     manualPagination: true,
   });
 
+  const realRowCount = table.getRowModel().rows.length;
+  const totalVirtualCount = realRowCount + (isFetchingNextPage ? SKELETON_COUNT : 0);
+
   const rowVirtualizer = useVirtualizer({
-    count: table.getRowModel().rows.length,
+    count: totalVirtualCount,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 32,
     overscan: 20,
@@ -60,73 +69,154 @@ export const GridTable = React.memo(function GridTable({
   });
 
   return (
-    <div
-      ref={parentRef}
-      onScroll={onScroll}
-      className="flex-1 overflow-auto"
-      style={{ contain: "strict" }}
-    >
-      <table style={{ display: "grid" }}>
-        <GridHeader
-          headers={table.getHeaderGroups()[0]?.headers ?? []}
-          onRenameColumn={onRenameColumn}
-          onDeleteColumn={onDeleteColumn}
-          onAddColumn={onAddColumn}
-        />
+    <div className="flex flex-1 flex-col overflow-hidden">
+      <div
+        ref={parentRef}
+        onScroll={onScroll}
+        className="flex-1 overflow-auto"
+        style={{ contain: "strict" }}
+      >
+        <table style={{ display: "grid" }}>
+          <GridHeader
+            headers={table.getHeaderGroups()[0]?.headers ?? []}
+            onRenameColumn={onRenameColumn}
+            onDeleteColumn={onDeleteColumn}
+            onAddColumn={onAddColumn}
+          />
 
-        <tbody
-          style={{
-            display: "grid",
-            height: `${rowVirtualizer.getTotalSize()}px`,
-            position: "relative",
-          }}
-        >
-          {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-            const row = table.getRowModel().rows[virtualRow.index];
-            if (!row) return null;
-            return (
-              <tr
-                key={row.id}
-                data-index={virtualRow.index}
-                ref={(node) => rowVirtualizer.measureElement(node)}
-                style={{
-                  display: "flex",
-                  position: "absolute",
-                  transform: `translateY(${virtualRow.start}px)`,
-                  width: "100%",
-                }}
-                className="border-b border-gray-100"
-              >
-                {/* Row number */}
-                <td
-                  style={{ display: "flex", width: 66, minWidth: 66 }}
-                  className="items-center border-r border-gray-100 px-2 py-1 text-xs text-gray-400"
-                >
-                  {virtualRow.index + 1}
-                </td>
-                {row.getVisibleCells().map((cell) => (
-                  <td
-                    key={cell.id}
-                    style={{ display: "flex", width: 180, minWidth: 180 }}
-                    className="items-center truncate border-r border-gray-100 px-2 py-1 text-sm"
+          <tbody
+            style={{
+              display: "grid",
+              height: `${rowVirtualizer.getTotalSize()}px`,
+              position: "relative",
+            }}
+          >
+            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+              const isSkeletonRow = virtualRow.index >= realRowCount;
+
+              if (isSkeletonRow) {
+                return (
+                  <tr
+                    key={`skeleton-${virtualRow.index}`}
+                    style={{
+                      display: "flex",
+                      position: "absolute",
+                      transform: `translateY(${virtualRow.start}px)`,
+                      width: "100%",
+                    }}
+                    className="border-b border-[#e2e0ea]"
                   >
-                    {flexRender(
-                      cell.column.columnDef.cell,
-                      cell.getContext(),
-                    )}
-                  </td>
-                ))}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+                    <td
+                      style={{ display: "flex", width: 66, minWidth: 66 }}
+                      className="items-center border-r border-[#e2e0ea] px-2 py-0"
+                    >
+                      <div className="h-3 w-8 animate-pulse rounded bg-[#ece9f5]" />
+                    </td>
+                    {table.getVisibleLeafColumns().map((col, colIdx) => (
+                      <td
+                        key={col.id}
+                        style={{ display: "flex", width: 180, minWidth: 180 }}
+                        className="items-center border-r border-[#e2e0ea] px-2 py-0"
+                      >
+                        <div
+                          className="h-3 animate-pulse rounded bg-[#f0edf8]"
+                          style={{
+                            width: `${40 + ((virtualRow.index * 17 + colIdx * 11) % 45)}%`,
+                          }}
+                        />
+                      </td>
+                    ))}
+                    <td style={{ display: "flex", flex: 1 }} />
+                  </tr>
+                );
+              }
 
-      {isFetchingNextPage && (
-        <div className="flex justify-center py-2 text-xs text-gray-400">
-          Loading more rows...
+              const row = table.getRowModel().rows[virtualRow.index];
+              if (!row) return null;
+              return (
+                <tr
+                  key={row.id}
+                  data-index={virtualRow.index}
+                  ref={(node) => rowVirtualizer.measureElement(node)}
+                  style={{
+                    display: "flex",
+                    position: "absolute",
+                    transform: `translateY(${virtualRow.start}px)`,
+                    width: "100%",
+                  }}
+                  className="group border-b border-[#e2e0ea] hover:bg-[#f5f7fa]"
+                >
+                  {/* Checkbox + row number */}
+                  <td
+                    style={{ display: "flex", width: 66, minWidth: 66 }}
+                    className="items-center gap-1.5 border-r border-[#e2e0ea] px-2 py-0"
+                  >
+                    <input
+                      type="checkbox"
+                      className="h-3.5 w-3.5 flex-shrink-0 cursor-pointer rounded border-[#ccc] accent-[#2563eb] opacity-0 group-hover:opacity-100"
+                    />
+                    <span className="text-xs text-[#aaa]">
+                      {virtualRow.index + 1}
+                    </span>
+                    {/* Row expand icon */}
+                    <button
+                      className="ml-auto hidden items-center justify-center rounded text-[#888] hover:bg-[#e8e4f5] group-hover:flex"
+                      title="Expand row"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <path d="M2 2h3M2 2v3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                        <path d="M10 2H7M10 2v3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                        <path d="M2 10h3M2 10V7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                        <path d="M10 10H7M10 10V7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                      </svg>
+                    </button>
+                  </td>
+
+                  {row.getVisibleCells().map((cell) => (
+                    <td
+                      key={cell.id}
+                      style={{ display: "flex", width: 180, minWidth: 180 }}
+                      className="items-center truncate border-r border-[#e2e0ea] px-2 py-0 text-[13px] text-[#1f2328]"
+                    >
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  ))}
+
+                  {/* Trailing empty cell */}
+                  <td style={{ display: "flex", flex: 1 }} className="border-r-0" />
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+
+        {/* Add row button */}
+        <div
+          className="flex items-center border-b border-[#e2e0ea] bg-white hover:bg-[#f5f7fa]"
+          style={{ width: "100%" }}
+        >
+          <div style={{ width: 66, minWidth: 66 }} className="flex items-center justify-center border-r border-[#e2e0ea] py-2">
+            <button
+              className="flex h-5 w-5 items-center justify-center rounded text-[#888] hover:bg-[#e2e0ea]"
+              title="Add row"
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M6 2v8M2 6h8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
+          <div className="flex-1" />
         </div>
-      )}
+
+      </div>
+
+      {/* Footer: record count */}
+      <div className="flex h-[36px] flex-shrink-0 items-center border-t border-[#e2e0ea] bg-white px-3">
+        <span className="text-[12px] text-[#888]">
+          {isBulkCreating ? "Inserting… " : ""}
+          {totalRowCount.toLocaleString()} {totalRowCount === 1 ? "record" : "records"}
+        </span>
+      </div>
     </div>
   );
 });

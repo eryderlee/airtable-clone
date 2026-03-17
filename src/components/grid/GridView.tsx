@@ -2,7 +2,7 @@
 
 import { keepPreviousData } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useRef } from "react";
 
 import { api } from "~/trpc/react";
 import { GridTable, type RowData } from "./GridTable";
@@ -76,6 +76,21 @@ export function GridView({ tableId, viewId }: GridViewProps) {
     },
   });
 
+  // Poll live row count while bulk insert is running
+  const liveCountRef = useRef<number | null>(null);
+  const { data: countData } = api.row.count.useQuery(
+    { tableId },
+    {
+      enabled: bulkCreate.isPending,
+      refetchInterval: bulkCreate.isPending ? 800 : false,
+    },
+  );
+  if (bulkCreate.isPending && countData) {
+    liveCountRef.current = countData.count;
+  } else if (!bulkCreate.isPending) {
+    liveCountRef.current = null;
+  }
+
   // Callback handlers
   const handleAddColumn = useCallback(
     (type: "text" | "number") => {
@@ -120,6 +135,8 @@ export function GridView({ tableId, viewId }: GridViewProps) {
     [fetchNextPage, hasNextPage, isFetchingNextPage],
   );
 
+  const totalRowCount = liveCountRef.current ?? flatRows.length;
+
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       <GridToolbar
@@ -129,7 +146,7 @@ export function GridView({ tableId, viewId }: GridViewProps) {
       />
       {isLoading ? (
         <div className="flex flex-1 items-center justify-center">
-          <p className="text-sm text-gray-400">Loading...</p>
+          <p className="text-sm text-[#aaa]">Loading...</p>
         </div>
       ) : (
         <GridTable
@@ -137,9 +154,11 @@ export function GridView({ tableId, viewId }: GridViewProps) {
           columns={columnDefs}
           onScroll={handleScroll}
           isFetchingNextPage={isFetchingNextPage}
+          isBulkCreating={bulkCreate.isPending}
           onRenameColumn={handleRenameColumn}
           onDeleteColumn={handleDeleteColumn}
           onAddColumn={handleAddColumn}
+          totalRowCount={totalRowCount}
         />
       )}
     </div>
