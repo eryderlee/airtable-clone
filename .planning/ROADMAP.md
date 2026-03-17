@@ -108,11 +108,11 @@ Plans:
   3. Tab moves to the next cell right (committing the edit); Shift+Tab moves left
   4. Escape exits edit mode and reverts any uncommitted change
   5. Cell edits are saved to the database on blur or Enter, and the new value survives a page reload
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 05-01: GridCell component with display/edit state per column type; logical cursor state in ref; focus management with scrollToIndex + requestAnimationFrame restoration
-- [ ] 05-02: Full keyboard navigation model (arrow keys, Enter, Escape, Tab, Shift+Tab); optimistic updates via tRPC mutation with AbortController cancellation
+- [ ] 05-01-PLAN.md — GridCell component with display/edit modes, cursor state in GridView, double-rAF focus management
+- [ ] 05-02-PLAN.md — Full keyboard navigation model (arrows, Enter, Escape, Tab, Shift+Tab) + optimistic tRPC mutation with rollback
 
 ### Phase 6: Toolbar
 **Goal**: Users can search, filter, sort, and hide columns from the toolbar — all operations execute at the database level and apply immediately to the visible grid.
