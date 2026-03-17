@@ -1,0 +1,62 @@
+import { and, eq } from "drizzle-orm";
+import { z } from "zod";
+import { TRPCError } from "@trpc/server";
+
+import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { bases } from "~/server/db/schema";
+
+export const baseRouter = createTRPCRouter({
+  getAll: protectedProcedure.query(async ({ ctx }) => {
+    return ctx.db
+      .select()
+      .from(bases)
+      .where(eq(bases.userId, ctx.session.user.id));
+  }),
+
+  create: protectedProcedure
+    .input(z.object({ name: z.string().min(1).max(255) }))
+    .mutation(async ({ ctx, input }) => {
+      const [created] = await ctx.db
+        .insert(bases)
+        .values({ name: input.name, userId: ctx.session.user.id })
+        .returning();
+
+      if (!created) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      }
+      return created;
+    }),
+
+  update: protectedProcedure
+    .input(z.object({ id: z.string().uuid(), name: z.string().min(1).max(255) }))
+    .mutation(async ({ ctx, input }) => {
+      const [updated] = await ctx.db
+        .update(bases)
+        .set({ name: input.name, updatedAt: new Date() })
+        .where(
+          and(eq(bases.id, input.id), eq(bases.userId, ctx.session.user.id)),
+        )
+        .returning();
+
+      if (!updated) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      return updated;
+    }),
+
+  delete: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const [deleted] = await ctx.db
+        .delete(bases)
+        .where(
+          and(eq(bases.id, input.id), eq(bases.userId, ctx.session.user.id)),
+        )
+        .returning();
+
+      if (!deleted) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      return deleted;
+    }),
+});
