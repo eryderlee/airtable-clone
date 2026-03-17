@@ -5,9 +5,11 @@
   "type": "module",
   "scripts": {
     "build": "next build",
+    "db:benchmark": "tsx scripts/benchmark.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
+    "db:seed": "tsx scripts/seed.ts",
     "db:studio": "drizzle-kit studio",
     "dev": "next dev --turbo",
     "lint": "next lint",
