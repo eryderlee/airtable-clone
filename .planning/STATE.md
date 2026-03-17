@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 
 ## Current Position
 
-Phase: 1 of 8 (Foundation)
-Plan: 2 of 3 complete in this phase (01-01 complete, 01-02 complete, 01-03 next)
-Status: In progress
-Last activity: 2026-03-17 — Completed 01-02-PLAN.md (Drizzle schema + Auth.js Google OAuth)
+Phase: 1 of 8 (Foundation) — COMPLETE
+Plan: 3 of 3 complete in this phase (01-01 complete, 01-02 complete, 01-03 complete)
+Status: Phase 1 complete — ready for Phase 2 (tRPC CRUD routers)
+Last activity: 2026-03-17 — Completed 01-03-PLAN.md (1M-row seed + cursor pagination benchmark)
 
-Progress: [██░░░░░░░░] ~17% (2 of 3 plans in phase 1 complete; ~2/24 total plans)
+Progress: [███░░░░░░░] ~12% (3 of 3 plans in phase 1 complete; ~3/24 total plans)
 
 ## Performance Metrics
 
@@ -27,11 +27,11 @@ Progress: [██░░░░░░░░] ~17% (2 of 3 plans in phase 1 complet
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-foundation | 2/3 complete | ~70 min | ~35 min |
+| 01-foundation | 3/3 complete | ~78 min | ~26 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (60 min), 01-02 (~10 min)
-- Trend: Improving (01-02 was fast; schema + auth well-specified)
+- Last 5 plans: 01-01 (60 min), 01-02 (~10 min), 01-03 (~8 min)
+- Trend: Improving (01-02 and 01-03 both fast; well-specified plans execute quickly)
 
 *Updated after each plan completion*
 
@@ -57,11 +57,14 @@ Recent decisions affecting current work:
 - 01-02: Supabase direct host is IPv6-only; Vercel build nodes lack IPv6 egress — Drizzle migrations must be applied via local `npx drizzle-kit push` or Supabase SQL Editor (not Vercel build step)
 - 01-02: JWT strategy + DrizzleAdapter: adapter persists OAuth account links, JWT carries session — no session table lookups per request
 - 01-02: rows.cells is JSONB Record<string, string|number|null> with default {} — JSONB hybrid schema confirmed for v1
+- 01-03: ROW tuple comparison required for cursor pagination — OR-expanded cursor pattern causes O(n) filter scan; `(row_order, id) > (cursorOrder, cursorId)` uses composite index as tight range, executes in 2ms on 1M rows
+- 01-03: Benchmark baseline — first page 176ms client-side (5ms DB), large page 178ms client-side; cursor queries with correct ROW pattern are 2ms DB-side (network latency dominates)
+- 01-03: 1M rows seeded via transaction pooler (DATABASE_URL port 6543); DIRECT_URL unavailable (IPv6-only) but not needed for 1000-row chunks
 
 ### Pending Todos
 
 - Add https://airtable-clone-flame.vercel.app/api/auth/callback/google to Google Console OAuth authorized redirect URIs
-- Run 01-03: base and table CRUD tRPC routers
+- Phase 2: tRPC CRUD routers — MUST use ROW tuple comparison for cursor pagination: `(row_order, id) > (cursorOrder, cursorId)`, NOT the OR-expanded form
 
 ### Blockers/Concerns
 
@@ -71,6 +74,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-03-17T13:10:00Z
-Stopped at: Completed 01-02-PLAN.md (schema + auth done; migration applied via Supabase SQL Editor)
-Resume file: .planning/phases/01-foundation/01-03-PLAN.md
+Last session: 2026-03-17T03:10:25Z
+Stopped at: Completed 01-03-PLAN.md (Phase 1 complete — seed + benchmark done)
+Resume file: .planning/phases/02-trpc-crud/02-01-PLAN.md (Phase 2 begins)
