@@ -53,16 +53,16 @@ Plans:
 **Goal**: All five tRPC routers expose type-safe procedures that the UI can call — cursor pagination, dynamic filter/sort, and view config merge are defined in the contract before any UI is built.
 **Depends on**: Phase 1
 **Requirements**: (Infrastructure phase — no direct requirement IDs; enables all subsequent phases)
+**Plans**: 2 plans
 **Success Criteria** (what must be TRUE):
   1. `row.getRows` infinite query returns the first page of 1M-row table in under 200ms with correct cursor shape
   2. A filter condition (e.g., Text contains "foo") applied to `row.getRows` executes entirely in PostgreSQL and returns only matching rows
   3. A sort applied to `row.getRows` returns rows in correct order without any client-side re-sorting
   4. All procedures reject unauthenticated requests with a 401 — no data is accessible without a valid session
-**Plans**: TBD
 
 Plans:
-- [ ] 02-01: Base, table, column, and view routers with full CRUD procedures (protectedProcedure throughout)
-- [ ] 02-02: Row router — row.getRows with cursor pagination, .$dynamic() filter builder, sort builder, view config merge; Zod filter/sort input schemas
+- [ ] 02-01-PLAN.md — Base, table, column, and view routers with full CRUD procedures (protectedProcedure throughout)
+- [ ] 02-02-PLAN.md — Row router with cursor pagination, filter/sort builders, search, view config merge, bulk create
 
 ### Phase 3: Navigation Shell
 **Goal**: Users can navigate between their bases, tables, and views using an Airtable-accurate layout shell — sidebar, tab bar, and views panel are in place before any grid content is rendered.
@@ -161,7 +161,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
