@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 ## Current Position
 
 Phase: 1 of 8 (Foundation)
-Plan: 1 of 3 complete in this phase (01-01 complete, 01-02 next)
+Plan: 2 of 3 complete in this phase (01-01 complete, 01-02 complete, 01-03 next)
 Status: In progress
-Last activity: 2026-03-17 — Completed 01-01-PLAN.md (T3 scaffold + Vercel deploy)
+Last activity: 2026-03-17 — Completed 01-02-PLAN.md (Drizzle schema + Auth.js Google OAuth)
 
-Progress: [█░░░░░░░░░] ~8% (1 of 3 plans in phase 1 complete; ~1/24 total plans)
+Progress: [██░░░░░░░░] ~17% (2 of 3 plans in phase 1 complete; ~2/24 total plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: ~60 min
-- Total execution time: ~60 min
+- Total plans completed: 2
+- Average duration: ~35 min
+- Total execution time: ~70 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-foundation | 1/3 complete | ~60 min | ~60 min |
+| 01-foundation | 2/3 complete | ~70 min | ~35 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (60 min)
-- Trend: —
+- Last 5 plans: 01-01 (60 min), 01-02 (~10 min)
+- Trend: Improving (01-02 was fast; schema + auth well-specified)
 
 *Updated after each plan completion*
 
@@ -54,11 +54,14 @@ Recent decisions affecting current work:
 - 01-01: Vercel project name = airtable-clone under eryderlee-7779s-projects scope
 - 01-01: Production URL = https://airtable-clone-flame.vercel.app (HTTP 200 confirmed)
 - 01-01: Google OAuth production redirect URI (https://airtable-clone-flame.vercel.app/api/auth/callback/google) must be added to Google Console before testing auth in production
+- 01-02: Supabase direct host is IPv6-only; Vercel build nodes lack IPv6 egress — Drizzle migrations must be applied via local `npx drizzle-kit push` or Supabase SQL Editor (not Vercel build step)
+- 01-02: JWT strategy + DrizzleAdapter: adapter persists OAuth account links, JWT carries session — no session table lookups per request
+- 01-02: rows.cells is JSONB Record<string, string|number|null> with default {} — JSONB hybrid schema confirmed for v1
 
 ### Pending Todos
 
 - Add https://airtable-clone-flame.vercel.app/api/auth/callback/google to Google Console OAuth authorized redirect URIs
-- Run 01-02: Drizzle schema definition and migrations against Supabase
+- Run 01-03: base and table CRUD tRPC routers
 
 ### Blockers/Concerns
 
@@ -68,6 +71,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-03-17T07:16:00Z
-Stopped at: Completed 01-01-PLAN.md (all 3 tasks done — scaffold, env vars, Vercel deploy)
-Resume file: .planning/phases/01-foundation/01-02-PLAN.md
+Last session: 2026-03-17T13:10:00Z
+Stopped at: Completed 01-02-PLAN.md (schema + auth done; migration applied via Supabase SQL Editor)
+Resume file: .planning/phases/01-foundation/01-03-PLAN.md
