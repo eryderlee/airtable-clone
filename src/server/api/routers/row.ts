@@ -435,6 +435,9 @@ export const rowRouter = createTRPCRouter({
         tableId: z.string().uuid(),
         offset: z.number().int().min(0),
         limit: z.number().int().min(1).max(500).default(100),
+        filters: z.array(filterConditionSchema).default([]),
+        sorts: z.array(sortConditionSchema).default([]),
+        searchQuery: z.string().default(""),
       }),
     )
     .query(async ({ ctx, input }) => {
@@ -454,28 +457,72 @@ export const rowRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
-      // Seek via rowOrder >= offset instead of SQL OFFSET — uses the composite
-      // index (tableId, rowOrder, id) for O(log n) seek regardless of position.
-      // Assumes rowOrder is dense (no gaps from deletions). Valid for this phase.
+      const isFastPath =
+        input.sorts.length === 0 &&
+        input.filters.length === 0 &&
+        !input.searchQuery.trim();
+
+      if (isFastPath) {
+        // Fast path: rowOrder >= offset seek — O(log n) via composite index.
+        // Assumes dense rowOrder (no gaps from deletions). Valid for this phase.
+        const items = await ctx.db
+          .select()
+          .from(rows)
+          .where(
+            and(
+              eq(rows.tableId, input.tableId),
+              sql`${rows.rowOrder} >= ${input.offset}`,
+            ),
+          )
+          .orderBy(asc(rows.rowOrder), asc(rows.id))
+          .limit(input.limit);
+
+        return { items };
+      }
+
+      // General path: filter/sort/search active — must use true SQL OFFSET
+      // because sort order may not match rowOrder order.
+
+      // Build WHERE conditions
+      const conditions: SQL[] = [eq(rows.tableId, input.tableId)];
+
+      const filterClauses = buildFilterConditions(input.filters);
+      conditions.push(...filterClauses);
+
+      if (input.searchQuery.trim()) {
+        conditions.push(
+          sql`${rows.cells}::text ilike ${"%" + input.searchQuery + "%"}`,
+        );
+      }
+
+      // Fetch column types for sort (only if sorts present)
+      let columnTypeMap: Record<string, string> = {};
+      if (input.sorts.length > 0) {
+        const cols = await ctx.db
+          .select({ id: columns.id, type: columns.type })
+          .from(columns)
+          .where(eq(columns.tableId, input.tableId));
+        columnTypeMap = Object.fromEntries(cols.map((c) => [c.id, c.type]));
+      }
+
+      const orderClauses = buildSortOrder(input.sorts, columnTypeMap);
+
       const items = await ctx.db
         .select()
         .from(rows)
-        .where(
-          and(
-            eq(rows.tableId, input.tableId),
-            sql`${rows.rowOrder} >= ${input.offset}`,
-          ),
-        )
-        .orderBy(asc(rows.rowOrder), asc(rows.id))
-        .limit(input.limit);
+        .$dynamic()
+        .where(and(...conditions))
+        .orderBy(...orderClauses)
+        .limit(input.limit)
+        .offset(input.offset);
 
       return { items };
     }),
 
   // -------------------------------------------------------------------------
-  // count: fast indexed COUNT(*) for a table — used for live insert progress
+  // getAllIds: return all row IDs for a table — used for select-all
   // -------------------------------------------------------------------------
-  count: protectedProcedure
+  getAllIds: protectedProcedure
     .input(z.object({ tableId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const ownership = await ctx.db
@@ -494,10 +541,59 @@ export const rowRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
+      const result = await ctx.db
+        .select({ id: rows.id })
+        .from(rows)
+        .where(eq(rows.tableId, input.tableId))
+        .orderBy(asc(rows.rowOrder), asc(rows.id));
+
+      return result.map((r) => r.id);
+    }),
+
+  // -------------------------------------------------------------------------
+  // count: COUNT(*) for a table with optional filter/search — drives virtualizer height
+  // -------------------------------------------------------------------------
+  count: protectedProcedure
+    .input(
+      z.object({
+        tableId: z.string().uuid(),
+        filters: z.array(filterConditionSchema).default([]),
+        searchQuery: z.string().default(""),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const ownership = await ctx.db
+        .select({ tableId: tables.id })
+        .from(tables)
+        .innerJoin(bases, eq(tables.baseId, bases.id))
+        .where(
+          and(
+            eq(tables.id, input.tableId),
+            eq(bases.userId, ctx.session.user.id),
+          ),
+        )
+        .limit(1);
+
+      if (ownership.length === 0) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
+      const conditions: SQL[] = [eq(rows.tableId, input.tableId)];
+
+      const filterClauses = buildFilterConditions(input.filters);
+      conditions.push(...filterClauses);
+
+      if (input.searchQuery.trim()) {
+        conditions.push(
+          sql`${rows.cells}::text ilike ${"%" + input.searchQuery + "%"}`,
+        );
+      }
+
       const [result] = await ctx.db
         .select({ count: count() })
         .from(rows)
-        .where(eq(rows.tableId, input.tableId));
+        .$dynamic()
+        .where(and(...conditions));
 
       return { count: Number(result?.count ?? 0) };
     }),
