@@ -14,7 +14,8 @@ provides:
   - Zod pinned to v3
   - .env.example with Supabase URL format
   - Build verified (SKIP_ENV_VALIDATION=1 npx next build passes)
-  - Vercel deployment (pending - awaiting env var configuration at checkpoint)
+  - Vercel project linked (eryderlee-7779s-projects/airtable-clone)
+  - Production deployed at https://airtable-clone-flame.vercel.app
 affects: [02-schema, 03-api, 04-table-ui, 05-editing, 06-search, 07-sharing, 08-polish]
 
 # Tech tracking
@@ -39,6 +40,7 @@ tech-stack:
     - "Drizzle prepare: false for Supabase transaction pooler (port 6543)"
     - "tRPC v11 with superjson transformer and RSC hydration helpers"
     - "SKIP_ENV_VALIDATION=1 for build-time env bypass"
+    - "Vercel env vars set via CLI (vercel env add) for all 5 production secrets"
 
 key-files:
   created:
@@ -68,6 +70,7 @@ key-files:
     - .eslintrc.cjs
     - .gitignore
     - .env.example
+    - .env
   modified: []
 
 key-decisions:
@@ -76,41 +79,47 @@ key-decisions:
   - "Drizzle prepare: false required for Supabase Supavisor transaction pooler"
   - "drizzle.config.ts uses DIRECT_URL with DATABASE_URL fallback for migrations"
   - "Manual T3 scaffold (create-t3-app TTY error in non-interactive env)"
+  - "Vercel production URL: https://airtable-clone-flame.vercel.app"
 
 patterns-established:
   - "Auth.js v5 two-file split: config.ts (Node.js/DB) + index.ts (exports) + proxy.ts (edge)"
   - "~ path alias maps to ./src/* for all imports"
   - "SKIP_ENV_VALIDATION=1 environment variable for CI/Docker builds"
+  - "All Vercel env vars added via CLI (not dashboard) for repeatability"
 
 # Metrics
-duration: ~30min
+duration: ~60min (including checkpoint wait)
 completed: 2026-03-17
 ---
 
-# Phase 1 Plan 01: Foundation — T3 Stack Scaffold Summary
+# Phase 1 Plan 01: Foundation — T3 Stack Scaffold and Vercel Deploy Summary
 
-**Next.js 15 App Router with tRPC v11, Drizzle ORM (prepare: false), Auth.js v5 beta (Google OAuth), and Tailwind CSS — build verified, awaiting Supabase env vars for deployment**
+**Next.js 15 App Router with tRPC v11, Drizzle ORM (prepare:false), Auth.js v5 beta (Google OAuth), Tailwind CSS — build verified and deployed live at https://airtable-clone-flame.vercel.app**
 
 ## Performance
 
-- **Duration:** ~30 min
+- **Duration:** ~60 min (including checkpoint pauses for env var setup)
 - **Started:** 2026-03-17T01:06:51Z
-- **Completed:** 2026-03-17T01:36:00Z (partial — paused at checkpoint)
-- **Tasks:** 1/3 complete (paused at Task 2: env var checkpoint)
-- **Files modified:** 27 created
+- **Completed:** 2026-03-17T07:16:00Z
+- **Tasks:** 3/3 complete
+- **Files modified:** 27 created, .gitignore modified
 
 ## Accomplishments
 - Full T3 stack scaffolded manually (create-t3-app TTY error bypassed by manual file creation)
 - Drizzle client configured with `prepare: false` for Supabase Supavisor compatibility
 - Auth.js v5 beta with Google provider, DrizzleAdapter, and CVE-2025-29927 edge split pattern
-- `SKIP_ENV_VALIDATION=1 npx next build` passes successfully
-- Zod pinned to v3.25.76 (not v4)
+- Environment variables configured on Vercel production (DATABASE_URL, DIRECT_URL, AUTH_SECRET, AUTH_GOOGLE_ID, AUTH_GOOGLE_SECRET)
+- App deployed to production at https://airtable-clone-flame.vercel.app — HTTP 200 confirmed
 
 ## Task Commits
 
-1. **Task 1: Scaffold T3 stack and configure Supabase connection** - `4dceeb4` (feat)
+Each task was committed atomically:
 
-_Tasks 2 (checkpoint) and 3 (Vercel deploy) pending._
+1. **Task 1: Scaffold T3 stack and configure Supabase connection** - `4dceeb4` (feat)
+2. **Task 2: Configure environment variables (checkpoint)** - `eb52f9e` (docs)
+3. **Task 3: Deploy to Vercel and confirm public URL** - `67ae18e` (chore)
+
+**Plan metadata:** (this commit) (docs: complete scaffold and deploy plan)
 
 ## Files Created/Modified
 - `package.json` - All T3 dependencies at correct versions
@@ -124,14 +133,16 @@ _Tasks 2 (checkpoint) and 3 (Vercel deploy) pending._
 - `src/trpc/server.ts` - RSC hydration helpers
 - `src/trpc/react.tsx` - Client-side tRPC provider
 - `.env.example` - Template with Supabase URL format (no secrets)
-- `.env` - Placeholder values (user must fill in real values)
+- `.env` - Real credentials (gitignored)
+- `.gitignore` - Updated with .vercel entry (by vercel link)
 
 ## Decisions Made
 - **Manual scaffold**: create-t3-app fails with `ERR_TTY_INIT_FAILED` in non-interactive terminal. Scaffolded manually — equivalent output.
 - **Auth.js v5 beta.25**: Per project decision, using v5 not v4. Two-file edge split implemented from day one.
 - **Zod v3**: Pinned per project decision (v4 + tRPC v11 compatibility unconfirmed).
 - **prepare: false**: Required for Supabase transaction pooler (port 6543) — Supavisor does not support prepared statements.
-- **Placeholder .env format**: Using URL-parseable placeholders so postgres client doesn't crash during build; final values filled at checkpoint.
+- **Vercel project name**: `airtable-clone` under `eryderlee-7779s-projects` scope.
+- **Production URL**: https://airtable-clone-flame.vercel.app (canonical production alias assigned by Vercel).
 
 ## Deviations from Plan
 
@@ -161,51 +172,36 @@ _Tasks 2 (checkpoint) and 3 (Vercel deploy) pending._
 - **Verification:** Build passes, all dependencies correct
 - **Committed in:** 4dceeb4 (Task 1 commit)
 
+**4. [Rule 3 - Blocking] vercel link required explicit --project flag**
+- **Found during:** Task 3 (Vercel link step)
+- **Issue:** `vercel link --yes` failed with "Project names can be up to 100 characters long and must be lowercase" — working directory path contained uppercase letters that Vercel tried to use as project name
+- **Fix:** Used `vercel link --project airtable-clone --yes` to specify an explicit valid name
+- **Files modified:** .gitignore (vercel added .vercel entry), .vercel/ (gitignored)
+- **Verification:** Project linked successfully as `eryderlee-7779s-projects/airtable-clone`
+- **Committed in:** 67ae18e (Task 3 commit)
+
 ---
 
-**Total deviations:** 3 auto-fixed (3 blocking)
+**Total deviations:** 4 auto-fixed (4 blocking)
 **Impact on plan:** All auto-fixes necessary to unblock execution. No scope creep.
 
-## User Setup Required
+## Authentication Gates
 
-**External services require manual configuration before Task 3 (Vercel deployment) can proceed.**
+During execution, one authentication requirement was handled:
 
-### Supabase
-1. Create a Supabase project at https://supabase.com/dashboard
-2. Get **DATABASE_URL** (Transaction pooler, port 6543):
-   - Dashboard → Project Settings → Database → Connection string → Transaction (pooler)
-3. Get **DIRECT_URL** (Direct connection, port 5432):
-   - Dashboard → Project Settings → Database → Connection string → Direct
-
-### Google OAuth
-1. Go to https://console.cloud.google.com → APIs & Services → Credentials
-2. Create OAuth 2.0 Client ID (Web application type)
-3. Add authorized redirect URIs:
-   - `http://localhost:3000/api/auth/callback/google`
-   - `https://YOUR-VERCEL-DOMAIN/api/auth/callback/google` (add after first deploy)
-4. Copy **AUTH_GOOGLE_ID** and **AUTH_GOOGLE_SECRET**
-
-### AUTH_SECRET
-Generate: `openssl rand -base64 32`
-
-### .env file
-Fill in `E:/websites/airtable clone/.env`:
-```
-DATABASE_URL=postgresql://postgres.YOURREF:YOURPASSWORD@aws-0-REGION.pooler.supabase.com:6543/postgres
-DIRECT_URL=postgresql://postgres.YOURREF:YOURPASSWORD@aws-0-REGION.supabase.com:5432/postgres
-AUTH_SECRET=<generated secret>
-AUTH_GOOGLE_ID=<from Google Console>
-AUTH_GOOGLE_SECRET=<from Google Console>
-```
-
-Then run `npm run dev` and confirm the app starts at http://localhost:3000.
+1. **Task 3: Vercel CLI required authentication**
+   - Previous agent attempted `vercel --prod --yes`, received auth error
+   - Paused for `npx vercel login` (user authenticated via browser)
+   - Resumed — verified with `npx vercel whoami` returning `eryderlee-7779`
+   - Deployed successfully
 
 ## Next Phase Readiness
 - T3 scaffold complete, build verified
-- Awaiting env var configuration (Supabase + Google OAuth) before dev server can run
-- Awaiting Vercel deployment (Task 3) before phase 01-01 is fully complete
-- Once deployed, Phase 1 Plan 02 (schema + migrations) can begin
+- App live at https://airtable-clone-flame.vercel.app (HTTP 200)
+- All 5 production env vars set on Vercel
+- Ready for Phase 1 Plan 02: schema definition and Drizzle migrations against Supabase
+- Note: Google OAuth redirect URI for production domain (`https://airtable-clone-flame.vercel.app/api/auth/callback/google`) should be added to Google Console OAuth credentials before testing auth in production
 
 ---
 *Phase: 01-foundation*
-*Completed: 2026-03-17 (partial — paused at checkpoint)*
+*Completed: 2026-03-17*

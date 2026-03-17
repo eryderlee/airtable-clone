@@ -10,27 +10,27 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 ## Current Position
 
 Phase: 1 of 8 (Foundation)
-Plan: 01-01 in progress (paused at checkpoint — awaiting env vars)
+Plan: 1 of 3 complete in this phase (01-01 complete, 01-02 next)
 Status: In progress
-Last activity: 2026-03-17 — Task 1 of 01-01 complete (T3 scaffold); paused at env var checkpoint
+Last activity: 2026-03-17 — Completed 01-01-PLAN.md (T3 scaffold + Vercel deploy)
 
-Progress: [░░░░░░░░░░] ~3% (Task 1 of 24 total)
+Progress: [█░░░░░░░░░] ~8% (1 of 3 plans in phase 1 complete; ~1/24 total plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
-- Average duration: —
-- Total execution time: ~30 min
+- Total plans completed: 1
+- Average duration: ~60 min
+- Total execution time: ~60 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-foundation | 0/3 complete (1 in progress) | ~30 min | — |
+| 01-foundation | 1/3 complete | ~60 min | ~60 min |
 
 **Recent Trend:**
-- Last 5 plans: —
+- Last 5 plans: 01-01 (60 min)
 - Trend: —
 
 *Updated after each plan completion*
@@ -51,12 +51,14 @@ Recent decisions affecting current work:
 - 01-01: Auth.js v5 two-file edge split implemented: src/server/auth/config.ts (Node/DB) + src/server/auth/index.ts (exports) + src/proxy.ts (edge)
 - 01-01: Drizzle prepare: false confirmed — required for Supabase Supavisor transaction pooler (port 6543)
 - 01-01: DIRECT_URL configured as optional in src/env.js, used by drizzle.config.ts for direct migrations
+- 01-01: Vercel project name = airtable-clone under eryderlee-7779s-projects scope
+- 01-01: Production URL = https://airtable-clone-flame.vercel.app (HTTP 200 confirmed)
+- 01-01: Google OAuth production redirect URI (https://airtable-clone-flame.vercel.app/api/auth/callback/google) must be added to Google Console before testing auth in production
 
 ### Pending Todos
 
-- Fill in .env with real Supabase + Google OAuth values and AUTH_SECRET
-- Verify npm run dev works at http://localhost:3000
-- Complete Task 3: Vercel deployment
+- Add https://airtable-clone-flame.vercel.app/api/auth/callback/google to Google Console OAuth authorized redirect URIs
+- Run 01-02: Drizzle schema definition and migrations against Supabase
 
 ### Blockers/Concerns
 
@@ -66,6 +68,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-03-17T01:36:00Z
-Stopped at: 01-01-PLAN.md Task 2 (checkpoint — awaiting env vars)
-Resume file: .planning/phases/01-foundation/01-01-SUMMARY.md
+Last session: 2026-03-17T07:16:00Z
+Stopped at: Completed 01-01-PLAN.md (all 3 tasks done — scaffold, env vars, Vercel deploy)
+Resume file: .planning/phases/01-foundation/01-02-PLAN.md
