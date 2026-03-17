@@ -1,29 +1,32 @@
 "use client";
 
 import type { FilterCondition, SortCondition } from "~/server/api/routers/row";
-
-interface ColumnMeta {
-  id: string;
-  name: string;
-  type: string;
-}
+import { SearchBar } from "./toolbar/SearchBar";
+import { FilterPanel } from "./toolbar/FilterPanel";
+import { SortPanel } from "./toolbar/SortPanel";
+import { HideFieldsPanel } from "./toolbar/HideFieldsPanel";
 
 interface GridToolbarProps {
   onBulkCreate: () => void;
   isBulkCreating: boolean;
   rowCount: number;
-  // Toolbar state (managed in GridView)
-  filters: FilterCondition[];
-  sorts: SortCondition[];
-  searchInput: string;
-  hiddenColumns: string[];
+  // Panel state
   openPanel: "search" | "filter" | "sort" | "hideFields" | null;
-  setOpenPanel: (panel: "search" | "filter" | "sort" | "hideFields" | null) => void;
-  setSearchInput: (value: string) => void;
-  setFilters: (filters: FilterCondition[]) => void;
-  setSorts: (sorts: SortCondition[]) => void;
-  setHiddenColumns: (ids: string[]) => void;
-  columnsData: ColumnMeta[];
+  onTogglePanel: (panel: "search" | "filter" | "sort" | "hideFields") => void;
+  // Search
+  searchInput: string;
+  onSearchChange: (value: string) => void;
+  // Filter
+  filters: FilterCondition[];
+  onFiltersChange: (filters: FilterCondition[]) => void;
+  // Sort
+  sorts: SortCondition[];
+  onSortsChange: (sorts: SortCondition[]) => void;
+  // Column data for pickers
+  columnsData: { id: string; name: string; type: string; isPrimary: boolean }[];
+  // Hidden columns
+  hiddenColumns: string[];
+  onHiddenColumnsChange: (hidden: string[]) => void;
 }
 
 export function GridToolbar({
@@ -32,18 +35,18 @@ export function GridToolbar({
   filters,
   sorts,
   hiddenColumns,
+  onHiddenColumnsChange,
   openPanel,
-  setOpenPanel,
-  setSearchInput,
+  onTogglePanel,
+  onSearchChange,
   searchInput,
+  onFiltersChange,
+  onSortsChange,
+  columnsData,
 }: GridToolbarProps) {
-  const togglePanel = (panel: "search" | "filter" | "sort" | "hideFields") => {
-    setOpenPanel(openPanel === panel ? null : panel);
-  };
-
   return (
     <div
-      className="flex h-[44px] flex-shrink-0 items-center border-b border-[#e2e0ea] bg-white px-2"
+      className="relative flex h-[44px] flex-shrink-0 items-center border-b border-[#e2e0ea] bg-white px-2"
       data-testid="grid-toolbar"
     >
       {/* Left: hamburger + Grid view toggle */}
@@ -75,32 +78,6 @@ export function GridToolbar({
       {/* Spacer — pushes all right buttons to the right */}
       <div className="flex-1" />
 
-      {/* Search bar — shown inline when panel is open */}
-      {openPanel === "search" && (
-        <div className="mr-2 flex items-center rounded border border-[#d0cfe8] bg-white px-2">
-          <SearchIcon />
-          <input
-            autoFocus
-            type="text"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Search records..."
-            className="ml-1.5 w-40 bg-transparent py-1 text-[13px] text-[#1f2328] outline-none placeholder:text-[#aaa]"
-          />
-          {searchInput && (
-            <button
-              onClick={() => setSearchInput("")}
-              className="ml-1 text-[#9ca3af] hover:text-[#374151]"
-              title="Clear search"
-            >
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-            </button>
-          )}
-        </div>
-      )}
-
       {/* Right-side toolbar buttons */}
       <div className="flex items-center">
         <ToolbarButton
@@ -108,14 +85,14 @@ export function GridToolbar({
           label="Hide fields"
           badgeCount={hiddenColumns.length}
           isActive={openPanel === "hideFields"}
-          onClick={() => togglePanel("hideFields")}
+          onClick={() => onTogglePanel("hideFields")}
         />
         <ToolbarButton
           icon={<FilterIcon />}
           label="Filter"
           badgeCount={filters.length}
           isActive={openPanel === "filter"}
-          onClick={() => togglePanel("filter")}
+          onClick={() => onTogglePanel("filter")}
         />
         <ToolbarButton icon={<GroupIcon />} label="Group" />
         <ToolbarButton
@@ -123,7 +100,7 @@ export function GridToolbar({
           label="Sort"
           badgeCount={sorts.length}
           isActive={openPanel === "sort"}
-          onClick={() => togglePanel("sort")}
+          onClick={() => onTogglePanel("sort")}
         />
         <ToolbarButton icon={<ColorIcon />} label="Color" />
         <button className="flex flex-shrink-0 items-center justify-center rounded px-2 py-1.5 text-[#4c5667] hover:bg-[#edf0f4]" title="Row height">
@@ -134,7 +111,7 @@ export function GridToolbar({
         <button
           className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded text-[#4c5667] hover:bg-[#edf0f4] ${openPanel === "search" ? "bg-[#edf0f4] text-[#166ee1]" : ""}`}
           title="Search"
-          onClick={() => togglePanel("search")}
+          onClick={() => onTogglePanel("search")}
         >
           <SearchIcon />
         </button>
@@ -149,6 +126,47 @@ export function GridToolbar({
       >
         {isBulkCreating ? "…" : "+100k"}
       </button>
+
+      {/* Dropdown panels — absolutely positioned below toolbar */}
+      {openPanel === "search" && (
+        <div className="absolute right-0 top-full z-50 mt-1" data-toolbar-panel>
+          <SearchBar
+            searchInput={searchInput}
+            onSearchChange={onSearchChange}
+            onClose={() => onTogglePanel("search")}
+          />
+        </div>
+      )}
+      {openPanel === "filter" && (
+        <div className="absolute right-0 top-full z-50 mt-1" data-toolbar-panel>
+          <FilterPanel
+            filters={filters}
+            onFiltersChange={onFiltersChange}
+            columnsData={columnsData}
+            onClose={() => onTogglePanel("filter")}
+          />
+        </div>
+      )}
+      {openPanel === "sort" && (
+        <div className="absolute right-0 top-full z-50 mt-1" data-toolbar-panel>
+          <SortPanel
+            sorts={sorts}
+            onSortsChange={onSortsChange}
+            columnsData={columnsData}
+            onClose={() => onTogglePanel("sort")}
+          />
+        </div>
+      )}
+      {openPanel === "hideFields" && (
+        <div className="absolute right-0 top-full z-50 mt-1" data-toolbar-panel>
+          <HideFieldsPanel
+            columnsData={columnsData}
+            hiddenColumns={hiddenColumns}
+            onHiddenColumnsChange={onHiddenColumnsChange}
+            onClose={() => onTogglePanel("hideFields")}
+          />
+        </div>
+      )}
     </div>
   );
 }

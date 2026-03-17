@@ -324,6 +324,25 @@ export function GridView({ tableId, viewId }: GridViewProps) {
     bulkCreate.mutate({ tableId, count: 100000 });
   }, [tableId, bulkCreate]);
 
+  // Toggle panel — clicking the same button again closes the panel
+  const handleTogglePanel = useCallback((panel: "search" | "filter" | "sort" | "hideFields") => {
+    setOpenPanel((prev) => (prev === panel ? null : panel));
+  }, []);
+
+  // Click-outside-to-close: close panel when clicking outside [data-toolbar-panel]
+  useEffect(() => {
+    if (!openPanel) return;
+    const handleMouseDown = (e: MouseEvent) => {
+      const target = e.target as Element | null;
+      if (!target) return;
+      // If click is inside any element with data-toolbar-panel, keep panel open
+      if (target.closest("[data-toolbar-panel]")) return;
+      setOpenPanel(null);
+    };
+    document.addEventListener("mousedown", handleMouseDown);
+    return () => document.removeEventListener("mousedown", handleMouseDown);
+  }, [openPanel]);
+
   const columnDefs = useMemo<ColumnDef<RowData>[]>(() => {
     if (!columnsData) return [];
     return columnsData.map((col) => ({
@@ -353,6 +372,12 @@ export function GridView({ tableId, viewId }: GridViewProps) {
   // Ordered list of visible column IDs for arrow-key / Tab navigation
   // Uses visibleColumnIds so cursor never lands on a hidden column
   const columnOrder = visibleColumnIds;
+
+  // Simplified columns for toolbar pickers
+  const columnsForToolbar = useMemo(
+    () => (columnsData ?? []).map((c) => ({ id: c.id, name: c.name, type: c.type, isPrimary: c.isPrimary })),
+    [columnsData],
+  );
 
   // Move cursor to a new cell and scroll it into view
   const moveCursor = useCallback((rowIndex: number, columnId: string) => {
@@ -478,17 +503,17 @@ export function GridView({ tableId, viewId }: GridViewProps) {
         onBulkCreate={handleBulkCreate}
         isBulkCreating={bulkCreate.isPending}
         rowCount={totalCount}
-        filters={filters}
-        sorts={sorts}
-        searchInput={searchInput}
-        hiddenColumns={hiddenColumns}
         openPanel={openPanel}
-        setOpenPanel={setOpenPanel}
-        setSearchInput={setSearchInput}
-        setFilters={setFilters}
-        setSorts={setSorts}
-        setHiddenColumns={setHiddenColumns}
-        columnsData={columnsData ?? []}
+        onTogglePanel={handleTogglePanel}
+        searchInput={searchInput}
+        onSearchChange={setSearchInput}
+        filters={filters}
+        onFiltersChange={setFilters}
+        sorts={sorts}
+        onSortsChange={setSorts}
+        hiddenColumns={hiddenColumns}
+        onHiddenColumnsChange={setHiddenColumns}
+        columnsData={columnsForToolbar}
       />
       <div className="flex flex-1 overflow-hidden">
         <ViewsPanel tableId={tableId} activeViewId={viewId} />
