@@ -1,22 +1,24 @@
 /**
  * Edge-compatible Auth.js middleware proxy.
  *
- * This file follows the Auth.js v5 two-file edge split pattern to avoid the
- * CVE-2025-29927 vulnerability. The proxy/middleware only checks the session
- * JWT (no DB adapter calls in edge runtime), while the full auth config in
- * src/server/auth/index.ts handles DB operations in Node.js runtime.
+ * Follows the Auth.js v5 two-file edge split pattern (CVE-2025-29927 defense).
+ * This file imports ONLY auth.config.ts (no DB adapter, no Node.js-only modules),
+ * making it safe to run in the Edge runtime.
+ *
+ * The full auth instance (with DrizzleAdapter) lives in src/server/auth.ts and
+ * is used by server components, tRPC procedures, and API routes in Node.js runtime.
+ *
+ * CRITICAL: Every protectedProcedure independently verifies the session via auth()
+ * — do NOT rely on this middleware having validated the session.
  *
  * @see https://authjs.dev/guides/edge-compatibility
  */
-export { auth as middleware } from "~/server/auth";
+import NextAuth from "next-auth";
+import { authConfig } from "~/server/auth.config";
+
+export const { auth: middleware } = NextAuth(authConfig);
+export default middleware;
 
 export const config = {
-  /**
-   * Match all request paths except for the ones starting with:
-   * - api (API routes)
-   * - _next/static (static files)
-   * - _next/image (image optimization files)
-   * - favicon.ico (favicon file)
-   */
   matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };
