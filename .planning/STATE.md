@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 
 ## Current Position
 
-Phase: 6 of 8 (Toolbar) — In progress
-Plan: 2/3 complete
-Status: 06-02 complete. SearchBar, FilterPanel, SortPanel, HideFieldsPanel panels wired into GridToolbar as dropdowns.
-Last activity: 2026-03-17 — Completed 06-02. All four toolbar panels built; click-outside close; onTogglePanel toggle API; HideFieldsPanel completed early.
+Phase: 6 of 8 (Toolbar) — Complete
+Plan: 3/3 complete
+Status: 06-03 complete. Filter/sort SQL parameterization, client-side search highlight mode, hidden-column header fix, SearchBar navigation, GridCell highlight.
+Last activity: 2026-03-18 — Completed 06-03.
 
-Progress: [█████████████░] ~71% (17 of ~24 total plans)
+Progress: [██████████████░] ~75% (18 of ~24 total plans)
 
 ## Performance Metrics
 
@@ -32,7 +32,7 @@ Progress: [█████████████░] ~71% (17 of ~24 total pla
 | 03-navigation-shell | 3/3 complete | ~10 min | ~3 min |
 | 04-grid-core | 3/3 complete | ~9 min | ~4.5 min |
 | 05-cell-editing | 2/2 complete | ~15 min | ~7.5 min |
-| 06-toolbar | 1/3 in progress | ~8 min | ~8 min |
+| 06-toolbar | 3/3 complete | ~23 min | ~8 min |
 
 **Recent Trend:**
 - Last 5 plans: 04-01 (~4 min), 04-02 (~5 min), 05-01 (~5 min), 05-02 (~10 min), 06-01 (~8 min)
@@ -107,10 +107,14 @@ Recent decisions affecting current work:
 - 06-02: onTogglePanel toggle API in GridToolbar (prev === panel ? null : panel in updater)
 - 06-02: data-toolbar-panel attribute on panel wrappers for click-outside detection via element.closest()
 - 06-02: HideFieldsPanel completed early in 06-02 — Plan 06-03 scope narrowed to view config persistence only
+- 06-03: sql.raw(columnId) in buildFilterConditions/buildSortOrder embeds UUID without quotes — invalid SQL (cells->>UUID). Fixed by using columnId directly in SQL template (parameterized: cells->>$1)
+- 06-03: Search changed to client-side highlight mode — rows are not hidden, matching cells get yellow highlight, navigation via prev/next arrows in search bar. searchQuery removed from row.count and getByOffset calls.
+- 06-03: GridHeader hidden column fix — table.getHeaderGroups()[0]?.headers returns all columns; must filter by columnIds (visibleColumnIds from GridView) before passing to GridHeader
+- 06-03: cacheVersion exposed from useReducer (was [, forceUpdate]) — drives searchMatches useMemo recompute when pages load into pageCacheRef
 
 ### Pending Todos
 
-- None — Phase 6 in progress. Next: 06-03 (view config persistence for filters/sorts/hiddenColumns). HideFieldsPanel already done.
+- None — Phase 6 complete. Phase 7 next.
 
 ### Blockers/Concerns
 
@@ -119,6 +123,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-03-17
-Stopped at: Completed 06-02 — SearchBar/FilterPanel/SortPanel/HideFieldsPanel panels wired; click-outside close; onTogglePanel API.
+Last session: 2026-03-18
+Stopped at: Completed 06-03 — filter/sort SQL parameterization, client-side search highlight, header visibility fix, SearchBar navigation, GridCell highlighting.
 Resume file: None
