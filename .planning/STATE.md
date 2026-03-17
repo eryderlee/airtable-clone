@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 
 ## Current Position
 
-Phase: 4 of 8 (Grid Core) — Complete ✓
-Plan: 3/3 complete
-Status: Phase 4 verified 5/5. Ready for Phase 5.
-Last activity: 2026-03-17 — Completed 04-03. Random-access virtual scroll, skeleton rows, live bulk insert count, rowOrder seek optimization. User verified in browser.
+Phase: 5 of 8 (Cell Editing) — In progress
+Plan: 1/3 complete
+Status: 05-01 complete. GridCell created, cursor state wired, build passing.
+Last activity: 2026-03-17 — Completed 05-01. GridCell component, cursor/editingCell useState in GridView, double-rAF scrollToCell, GridTable renders GridCell per cell.
 
-Progress: [██████████] ~55% (12 of ~20 total plans)
+Progress: [███████████] ~58% (13 of ~22 total plans)
 
 ## Performance Metrics
 
@@ -31,9 +31,10 @@ Progress: [██████████] ~55% (12 of ~20 total plans)
 | 02-data-layer | 2/2 complete | ~47 min | ~24 min |
 | 03-navigation-shell | 3/3 complete | ~10 min | ~3 min |
 | 04-grid-core | 3/3 complete | ~9 min | ~4.5 min |
+| 05-cell-editing | 1/3 complete | ~5 min | ~5 min |
 
 **Recent Trend:**
-- Last 5 plans: 03-01 (~5 min), 03-02 (~5 min), 03-03 (~unknown), 04-01 (~4 min), 04-02 (~5 min)
+- Last 5 plans: 03-02 (~5 min), 03-03 (~unknown), 04-01 (~4 min), 04-02 (~5 min), 05-01 (~5 min)
 - Trend: Well-specified UI plans with clear component specs execute very quickly
 
 *Updated after each plan completion*
@@ -89,18 +90,22 @@ Recent decisions affecting current work:
 - 04-03: useInfiniteQuery replaced with ref-based page cache — virtualizer sized to totalCount from row.count; fetchPage() uses utils.row.getByOffset.fetch() imperatively; forceUpdate() controls re-renders
 - 04-03: getByOffset uses rowOrder >= offset seek (O(log n)) not SQL OFFSET (O(n)) — assumes dense rowOrder; breaks on row deletion (documented in ROADMAP Technical Constraints)
 - 04-03: TanStack Table kept only for column header management — row rendering bypasses it entirely; cell values rendered directly from rowData.cells[colId]
+- 05-01: Cursor state as two separate useState (cursor + editingCell) in GridView, NOT context — co-located with handlers
+- 05-01: Double-rAF pattern confirmed for virtualized grids: first rAF scrolls virtualizer, second rAF queries newly rendered DOM cell
+- 05-01: handleCommit defers mutation to 05-02 — interaction model established in 05-01, persistence in 05-02
+- 05-01: isNaN() check restructured to avoid ESLint non-nullable-type-assertion-style — no type assertions needed
 
 ### Pending Todos
 
-- None — Phase 4 complete. Phase 5 (Cell Editing) is next.
+- None — 05-01 complete. 05-02 (keyboard navigation + cell mutation) is next.
 
 ### Blockers/Concerns
 
-- Phase 5: Focus management in virtualized grids is under-documented — validate scrollToIndex + requestAnimationFrame focus restoration pattern before implementing
+- Phase 5: Focus management in virtualized grids is under-documented — RESOLVED in 05-01: double-rAF pattern (scrollToIndex then DOM querySelector focus) works correctly
 - Phase 7: If v1 regularly exceeds 30 columns, bi-directional virtualizer scroll performance issue (GitHub #685) needs mitigation strategy before implementation
 
 ## Session Continuity
 
 Last session: 2026-03-17
-Stopped at: Phase 4 complete — all 3 plans done, verified 5/5. Ready for Phase 5.
-Resume file: /gsd:plan-phase 05
+Stopped at: Completed 05-01 — GridCell, cursor state, double-rAF scrollToCell, GridTable wired.
+Resume file: None
