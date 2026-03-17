@@ -68,18 +68,18 @@ Plans:
 **Goal**: Users can navigate between their bases, tables, and views using an Airtable-accurate layout shell — sidebar, tab bar, and views panel are in place before any grid content is rendered.
 **Depends on**: Phase 2
 **Requirements**: BASE-01, BASE-02, BASE-03, TBL-01, TBL-02, TBL-03, TBL-04, UI-01, UI-02, UI-03, UI-05
+**Plans**: 3 plans
 **Success Criteria** (what must be TRUE):
   1. User can create, rename, and delete a base from the left sidebar and the change is immediately reflected
   2. User can create, rename, and delete a table within a base using the top tab bar
   3. New tables are pre-populated with realistic faker.js data (columns and rows visible immediately)
   4. User can switch between tables by clicking tabs — URL updates and content changes without a full page reload
   5. The overall layout matches Airtable 1:1: left sidebar (bases), top tab bar (tables), views panel, content area
-**Plans**: TBD
 
 Plans:
-- [ ] 03-01: App Router nested layouts — (app)/base/[baseId]/[tableId]/view/[viewId] route hierarchy with sidebar and tab bar layouts
-- [ ] 03-02: Base CRUD UI (sidebar), table CRUD UI (tab bar), views panel (list/switch/create views), faker.js seeding on table creation
-- [ ] 03-03: Pixel-accurate Airtable layout pass — spacing, typography, colors matched via Playwright reference scrape
+- [ ] 03-01-PLAN.md — Route hierarchy with (app) route group, nested layouts, server-side redirects, InlineEdit component
+- [ ] 03-02-PLAN.md — AppSidebar (base CRUD), TableTabBar (table CRUD + seed), ViewsPanel (view list/switch)
+- [ ] 03-03-PLAN.md — Pixel-accurate Airtable layout pass with Playwright reference scrape + human verification
 
 ### Phase 4: Grid Core
 **Goal**: The virtualized grid renders live data from the database, handles 100k+ rows without lag, manages columns, and is ready for cell editing to be layered on top.
