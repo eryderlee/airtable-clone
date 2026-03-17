@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 
 ## Current Position
 
-Phase: 5 of 8 (Cell Editing) — In progress
-Plan: 1/3 complete
-Status: 05-01 complete. GridCell created, cursor state wired, build passing.
-Last activity: 2026-03-17 — Completed 05-01. GridCell component, cursor/editingCell useState in GridView, double-rAF scrollToCell, GridTable renders GridCell per cell.
+Phase: 5 of 8 (Cell Editing) — Phase complete
+Plan: 2/2 complete
+Status: 05-02 complete. Full keyboard navigation + optimistic cell mutation. Phase 5 done.
+Last activity: 2026-03-17 — Completed 05-02. handleKeyDown container handler, updateCell optimistic mutation, initialDraft for printable-char entry. Human verified all 7 points.
 
-Progress: [███████████] ~58% (13 of ~22 total plans)
+Progress: [████████████] ~63% (15 of ~24 total plans)
 
 ## Performance Metrics
 
@@ -31,7 +31,7 @@ Progress: [███████████] ~58% (13 of ~22 total plans)
 | 02-data-layer | 2/2 complete | ~47 min | ~24 min |
 | 03-navigation-shell | 3/3 complete | ~10 min | ~3 min |
 | 04-grid-core | 3/3 complete | ~9 min | ~4.5 min |
-| 05-cell-editing | 1/3 complete | ~5 min | ~5 min |
+| 05-cell-editing | 2/2 complete | ~15 min | ~7.5 min |
 
 **Recent Trend:**
 - Last 5 plans: 03-02 (~5 min), 03-03 (~unknown), 04-01 (~4 min), 04-02 (~5 min), 05-01 (~5 min)
@@ -94,10 +94,14 @@ Recent decisions affecting current work:
 - 05-01: Double-rAF pattern confirmed for virtualized grids: first rAF scrolls virtualizer, second rAF queries newly rendered DOM cell
 - 05-01: handleCommit defers mutation to 05-02 — interaction model established in 05-01, persistence in 05-02
 - 05-01: isNaN() check restructured to avoid ESLint non-nullable-type-assertion-style — no type assertions needed
+- 05-02: Optimistic mutation targets pageCacheRef directly (not React Query cache) — Phase 04-03 replaced useInfiniteQuery; utils.row.getRows does not exist
+- 05-02: Tab intercepted at container level even in edit mode; Enter/Escape handled by GridCell input onKeyDown with stopPropagation
+- 05-02: Printable-char detection: e.key.length === 1 && !ctrlKey && !metaKey && !altKey — catches all typeable chars, excludes modifier combos
+- 05-02: Arrow keys stop at grid boundaries (no wrap); Tab wraps end-of-row to start-of-next-row
 
 ### Pending Todos
 
-- None — 05-01 complete. 05-02 (keyboard navigation + cell mutation) is next.
+- None — Phase 5 complete. Phase 6 (search/filter) is next.
 
 ### Blockers/Concerns
 
@@ -107,5 +111,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-03-17
-Stopped at: Completed 05-01 — GridCell, cursor state, double-rAF scrollToCell, GridTable wired.
+Stopped at: Completed 05-02 — keyboard navigation, optimistic cell mutation, human-verified.
 Resume file: None
