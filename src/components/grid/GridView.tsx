@@ -8,6 +8,7 @@ import { api } from "~/trpc/react";
 import { GridTable, type RowData } from "./GridTable";
 import { GridToolbar } from "./GridToolbar";
 import { ViewsPanel } from "~/components/nav/ViewsPanel";
+import type { FilterCondition, SortCondition } from "~/server/api/routers/row";
 
 const PAGE_SIZE = 100;
 const ROW_HEIGHT = 32;
@@ -23,19 +24,42 @@ export function GridView({ tableId, viewId }: GridViewProps) {
   // Column definitions
   const { data: columnsData } = api.column.getByTableId.useQuery({ tableId });
 
-  // Total row count — always on; drives virtualizer size
-  const { data: countData, refetch: refetchCount } = api.row.count.useQuery(
-    { tableId },
-    { staleTime: 30_000 },
-  );
-  const totalCount = countData?.count ?? 0;
-
   // Page cache — refs so reads/writes don't trigger re-renders
   const pageCacheRef = useRef<Record<number, RowData[]>>({});
   const loadingPagesRef = useRef<Set<number>>(new Set());
 
   // Single dispatch to force a re-render after cache updates
   const [, forceUpdate] = useReducer((x: number) => x + 1, 0);
+
+  // Cursor state — not in context, plain useState
+  const [cursor, setCursor] = useState<{ rowIndex: number; columnId: string } | null>(null);
+  const [editingCell, setEditingCell] = useState<{ rowIndex: number; columnId: string } | null>(null);
+  // Set when a printable character triggers edit mode — passed to GridCell as initialDraft
+  const [initialDraft, setInitialDraft] = useState<string | undefined>(undefined);
+
+  // Row selection
+  const [selectedRowIds, setSelectedRowIds] = useState<Set<string>>(new Set());
+
+  // Toolbar state — declared before useQuery so count query can close over them
+  const [filters, setFilters] = useState<FilterCondition[]>([]);
+  const [sorts, setSorts] = useState<SortCondition[]>([]);
+  const [searchInput, setSearchInput] = useState(""); // immediate UI value
+  const [searchQuery, setSearchQuery] = useState(""); // debounced, sent to DB
+  const [hiddenColumns, setHiddenColumns] = useState<string[]>([]);
+  const [openPanel, setOpenPanel] = useState<"search" | "filter" | "sort" | "hideFields" | null>(null);
+
+  // 300ms debounce: searchInput -> searchQuery
+  useEffect(() => {
+    const timer = setTimeout(() => setSearchQuery(searchInput), 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  // Total row count — drives virtualizer size; reflects filtered count when filters/search active
+  const { data: countData, refetch: refetchCount } = api.row.count.useQuery(
+    { tableId, filters, searchQuery },
+    { staleTime: 30_000 },
+  );
+  const totalCount = countData?.count ?? 0;
 
   // Optimistic cell update mutation — directly mutates pageCacheRef for instant feedback
   const updateCell = api.row.update.useMutation({
@@ -68,15 +92,6 @@ export function GridView({ tableId, viewId }: GridViewProps) {
     },
   });
 
-  // Cursor state — not in context, plain useState
-  const [cursor, setCursor] = useState<{ rowIndex: number; columnId: string } | null>(null);
-  const [editingCell, setEditingCell] = useState<{ rowIndex: number; columnId: string } | null>(null);
-  // Set when a printable character triggers edit mode — passed to GridCell as initialDraft
-  const [initialDraft, setInitialDraft] = useState<string | undefined>(undefined);
-
-  // Row selection
-  const [selectedRowIds, setSelectedRowIds] = useState<Set<string>>(new Set());
-
   const handleToggleRow = useCallback((rowId: string) => {
     setSelectedRowIds((prev) => {
       const next = new Set(prev);
@@ -86,13 +101,16 @@ export function GridView({ tableId, viewId }: GridViewProps) {
     });
   }, []);
 
-  const handleSelectAll = useCallback(() => {
-    // Collect all loaded row ids from the page cache
-    const allIds = Object.values(pageCacheRef.current).flatMap((page) => page.map((r) => r.id));
-    setSelectedRowIds((prev) =>
-      prev.size === allIds.length ? new Set() : new Set(allIds),
-    );
-  }, []);
+  const handleSelectAll = useCallback(async () => {
+    const loadedIds = Object.values(pageCacheRef.current).flatMap((p) => p.map((r) => r.id));
+    const allSelected = loadedIds.length > 0 && loadedIds.every((id) => selectedRowIds.has(id));
+    if (allSelected) {
+      setSelectedRowIds(new Set());
+    } else {
+      const allIds = await utils.row.getAllIds.fetch({ tableId });
+      setSelectedRowIds(new Set(allIds));
+    }
+  }, [tableId, utils.row.getAllIds, selectedRowIds]);
 
   const handleClearSelection = useCallback(() => {
     setSelectedRowIds(new Set());
@@ -154,6 +172,9 @@ export function GridView({ tableId, viewId }: GridViewProps) {
           tableId,
           offset: pageIndex * PAGE_SIZE,
           limit: PAGE_SIZE,
+          filters,
+          sorts,
+          searchQuery,
         });
         pageCacheRef.current[pageIndex] = data.items.map((r) => ({
           id: r.id,
@@ -164,8 +185,29 @@ export function GridView({ tableId, viewId }: GridViewProps) {
         forceUpdate(); // re-render to show real data
       }
     },
-    [tableId, utils.row.getByOffset],
+    [tableId, utils.row.getByOffset, filters, sorts, searchQuery],
   );
+
+  // Reset page cache — clears all cached pages and loading state
+  const resetCache = useCallback(() => {
+    pageCacheRef.current = {};
+    loadingPagesRef.current = new Set();
+    forceUpdate();
+  }, []);
+
+  // Track first render to skip cache reset on mount
+  const isFirstRender = useRef(true);
+
+  // Reset cache and reload when filter/sort/search changes
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    resetCache();
+    void refetchCount();
+    // fetchPage(0) will be triggered by the existing totalCount effect
+  }, [filters, sorts, searchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load page 0 on mount / when count first resolves
   useEffect(() => {
@@ -302,11 +344,15 @@ export function GridView({ tableId, viewId }: GridViewProps) {
     [columnsData],
   );
 
-  // Ordered list of column IDs for arrow-key / Tab navigation
-  const columnOrder = useMemo(() => {
-    if (!columnsData) return [];
-    return columnsData.map((col) => col.id);
-  }, [columnsData]);
+  // Visible column IDs — excludes hidden columns; used for rendering and keyboard nav
+  const visibleColumnIds = useMemo(
+    () => columnIds.filter((id) => !hiddenColumns.includes(id)),
+    [columnIds, hiddenColumns],
+  );
+
+  // Ordered list of visible column IDs for arrow-key / Tab navigation
+  // Uses visibleColumnIds so cursor never lands on a hidden column
+  const columnOrder = visibleColumnIds;
 
   // Move cursor to a new cell and scroll it into view
   const moveCursor = useCallback((rowIndex: number, columnId: string) => {
@@ -432,6 +478,17 @@ export function GridView({ tableId, viewId }: GridViewProps) {
         onBulkCreate={handleBulkCreate}
         isBulkCreating={bulkCreate.isPending}
         rowCount={totalCount}
+        filters={filters}
+        sorts={sorts}
+        searchInput={searchInput}
+        hiddenColumns={hiddenColumns}
+        openPanel={openPanel}
+        setOpenPanel={setOpenPanel}
+        setSearchInput={setSearchInput}
+        setFilters={setFilters}
+        setSorts={setSorts}
+        setHiddenColumns={setHiddenColumns}
+        columnsData={columnsData ?? []}
       />
       <div className="flex flex-1 overflow-hidden">
         <ViewsPanel tableId={tableId} activeViewId={viewId} />
@@ -443,7 +500,7 @@ export function GridView({ tableId, viewId }: GridViewProps) {
         <GridTable
           totalCount={totalCount}
           getRow={getRow}
-          columnIds={columnIds}
+          columnIds={visibleColumnIds}
           columnWidths={columnWidths}
           columns={columnDefs}
           onScroll={handleScroll}
@@ -466,6 +523,7 @@ export function GridView({ tableId, viewId }: GridViewProps) {
           onToggleRow={handleToggleRow}
           onSelectAll={handleSelectAll}
           onClearSelection={handleClearSelection}
+          allSelected={totalCount > 0 && selectedRowIds.size === totalCount}
         />
       )}
       </div>
