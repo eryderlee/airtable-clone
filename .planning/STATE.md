@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 
 ## Current Position
 
-Phase: 2 of 8 (Data Layer) — COMPLETE
-Plan: 2 of 2 complete in this phase (02-01 complete, 02-02 complete)
-Status: Phase 2 complete — ready for Phase 3 (Navigation Shell)
-Last activity: 2026-03-17 — Phase 2 complete. All 5 tRPC routers verified: cursor pagination, JSONB filter/sort builders, view config merge, build passing.
+Phase: 3 of 8 (Navigation Shell) — In progress
+Plan: 1 of 2 complete in this phase (03-01 complete)
+Status: In progress — 03-01 complete, 03-02 next
+Last activity: 2026-03-17 — Completed 03-01-PLAN.md. Route hierarchy created, InlineEdit component ready, build passing.
 
-Progress: [████░░░░░░] ~25% (5 of ~20 total plans)
+Progress: [█████░░░░░] ~30% (6 of ~20 total plans)
 
 ## Performance Metrics
 
@@ -69,10 +69,13 @@ Recent decisions affecting current work:
 - 02-02: ROW tuple cursor confirmed: (row_order, id) > (cursor_order, cursor_id) — tight composite index range, ~2ms at 1M rows
 - 02-02: View config merge: call-time params override stored config; empty array/string counts as "not provided"
 - 02-02: bulkCreate returns { count } not items — returning 100k rows would saturate tRPC response
+- 03-01: src/app/page.tsx deleted — Next.js App Router disallows app/page.tsx and app/(group)/page.tsx coexisting for same route
+- 03-01: Next.js 15 layout params unused — use `await params` without destructuring to satisfy Next.js 15 requirement without triggering no-unused-vars lint
+- 03-01: Non-null array assertions (!) flagged by ESLint — use optional chaining (?.) instead of non-null assertion on array[0] accesses
 
 ### Pending Todos
 
-- None — Phase 2 complete. All 5 tRPC routers verified.
+- None — 03-01 complete. 03-02 (client components: AppSidebar, TableTabBar, ViewsPanel) is next.
 
 ### Blockers/Concerns
 
@@ -83,5 +86,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-03-17
-Stopped at: Phase 2 complete — all 5 tRPC routers verified (02-01 + 02-02)
-Resume file: .planning/phases/03-navigation-shell/ (Phase 3 begins)
+Stopped at: Completed 03-01-PLAN.md — route hierarchy + InlineEdit component
+Resume file: .planning/phases/03-navigation-shell/03-02-PLAN.md
