@@ -454,13 +454,20 @@ export const rowRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
+      // Seek via rowOrder >= offset instead of SQL OFFSET — uses the composite
+      // index (tableId, rowOrder, id) for O(log n) seek regardless of position.
+      // Assumes rowOrder is dense (no gaps from deletions). Valid for this phase.
       const items = await ctx.db
         .select()
         .from(rows)
-        .where(eq(rows.tableId, input.tableId))
+        .where(
+          and(
+            eq(rows.tableId, input.tableId),
+            sql`${rows.rowOrder} >= ${input.offset}`,
+          ),
+        )
         .orderBy(asc(rows.rowOrder), asc(rows.id))
-        .limit(input.limit)
-        .offset(input.offset);
+        .limit(input.limit);
 
       return { items };
     }),
