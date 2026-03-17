@@ -6,7 +6,7 @@ import {
   type ColumnDef,
 } from "@tanstack/react-table";
 import { useVirtualizer, type Virtualizer } from "@tanstack/react-virtual";
-import React, { useRef } from "react";
+import React, { useRef, useState, useEffect } from "react";
 
 import { GridCell } from "./GridCell";
 import { GridHeader } from "./GridHeader";
@@ -38,7 +38,13 @@ interface GridTableProps {
   onStartEditing: (rowIndex: number, columnId: string) => void;
   onCommit: (rowId: string, columnId: string, value: string | number | null) => void;
   onRevert: () => void;
+  onKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void;
+  initialDraft?: string;
   rowVirtualizerRef: React.MutableRefObject<Virtualizer<HTMLDivElement, Element> | null>;
+  selectedRowIds: Set<string>;
+  onToggleRow: (rowId: string) => void;
+  onSelectAll: () => void;
+  onClearSelection: () => void;
 }
 
 export const GridTable = React.memo(function GridTable({
@@ -60,9 +66,28 @@ export const GridTable = React.memo(function GridTable({
   onStartEditing,
   onCommit,
   onRevert,
+  onKeyDown,
+  initialDraft,
   rowVirtualizerRef,
+  selectedRowIds,
+  onToggleRow,
+  onSelectAll,
+  onClearSelection,
 }: GridTableProps) {
   const parentRef = useRef<HTMLDivElement>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!contextMenu) return;
+    function handleClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setContextMenu(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [contextMenu]);
 
   // Table is used only for column header management — row data bypasses it
   const table = useReactTable({
@@ -92,6 +117,7 @@ export const GridTable = React.memo(function GridTable({
       <div
         ref={parentRef}
         onScroll={onScroll}
+        onKeyDown={onKeyDown}
         tabIndex={0}
         className="flex-1 overflow-auto bg-[#f4f5f7] outline-none"
         style={{ contain: "strict" }}
@@ -122,6 +148,8 @@ export const GridTable = React.memo(function GridTable({
             onUpdateColumn={onUpdateColumn}
             onDeleteColumn={onDeleteColumn}
             onAddColumn={onAddColumn}
+            allSelected={totalCount > 0 && selectedRowIds.size === totalCount}
+            onSelectAll={onSelectAll}
           />
 
           <tbody
@@ -187,6 +215,11 @@ export const GridTable = React.memo(function GridTable({
                     height: 32,
                   }}
                   className="group border-b border-[#e2e0ea] bg-white hover:bg-[#f5f7fa]"
+                  onContextMenu={(e) => {
+                    if (selectedRowIds.size === 0) return;
+                    e.preventDefault();
+                    setContextMenu({ x: e.clientX, y: e.clientY });
+                  }}
                 >
                   {/* Checkbox + row number */}
                   <td
@@ -195,9 +228,12 @@ export const GridTable = React.memo(function GridTable({
                   >
                     <input
                       type="checkbox"
+                      checked={selectedRowIds.has(rowData.id)}
+                      onChange={() => onToggleRow(rowData.id)}
                       className="absolute left-2 h-3.5 w-3.5 cursor-pointer rounded border-[#ccc] accent-[#2563eb] opacity-0 group-hover:opacity-100"
+                      style={{ opacity: selectedRowIds.has(rowData.id) ? 1 : undefined }}
                     />
-                    <span className="flex-1 text-center text-xs text-[#aaa] group-hover:invisible">
+                    <span className={`flex-1 text-center text-xs text-[#aaa] group-hover:invisible ${selectedRowIds.has(rowData.id) ? "invisible" : ""}`}>
                       {virtualRow.index + 1}
                     </span>
                     <button
@@ -237,6 +273,7 @@ export const GridTable = React.memo(function GridTable({
                           value={cellValue}
                           isFocused={isFocused}
                           isEditing={isEditing}
+                          initialDraft={isEditing ? initialDraft : undefined}
                           onCommit={onCommit}
                           onRevert={onRevert}
                           onStartEditing={() => onStartEditing(virtualRow.index, colId)}
@@ -283,6 +320,25 @@ export const GridTable = React.memo(function GridTable({
         </div>
       </div>
 
+      {/* Right-click context menu */}
+      {contextMenu && selectedRowIds.size > 0 && (
+        <div
+          ref={menuRef}
+          style={{ position: "fixed", top: contextMenu.y, left: contextMenu.x, zIndex: 1000 }}
+          className="w-[260px] overflow-hidden rounded-lg border border-[#e2e0ea] bg-white py-1 shadow-xl"
+        >
+          <div className="px-3 py-2 text-[12px] font-medium text-[#888]">
+            {selectedRowIds.size} {selectedRowIds.size === 1 ? "record" : "records"} selected
+          </div>
+          <div className="my-1 h-px bg-[#f0f0f0]" />
+          <ContextMenuItem icon={<AskOmniIcon />} label={`Ask Omni about ${selectedRowIds.size} records`} onClick={() => setContextMenu(null)} />
+          <ContextMenuItem icon={<RunAgentIcon />} label="Run field agent" chevron onClick={() => setContextMenu(null)} />
+          <ContextMenuItem icon={<SendIcon />} label="Send all selected records" onClick={() => setContextMenu(null)} />
+          <div className="my-1 h-px bg-[#f0f0f0]" />
+          <ContextMenuItem icon={<DeleteSelectedIcon />} label="Delete all selected records" danger onClick={() => { setContextMenu(null); onClearSelection(); }} />
+        </div>
+      )}
+
       {/* Footer: record count */}
       <div className="flex h-[36px] flex-shrink-0 items-center border-t border-[#e2e0ea] bg-white px-3">
         <span className="text-[12px] text-[#888]">
@@ -293,3 +349,68 @@ export const GridTable = React.memo(function GridTable({
     </div>
   );
 });
+
+function ContextMenuItem({
+  icon, label, danger, chevron, onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  danger?: boolean;
+  chevron?: boolean;
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex w-full items-center gap-2.5 px-3 py-[7px] text-left text-[13px] transition-colors ${
+        danger ? "text-[#d32f2f] hover:bg-[#fff5f5]" : "text-[#333] hover:bg-[#f5f5f5]"
+      }`}
+    >
+      <span className={`flex h-4 w-4 flex-shrink-0 items-center justify-center ${danger ? "text-[#d32f2f]" : "text-[#666]"}`}>
+        {icon}
+      </span>
+      <span className="flex-1">{label}</span>
+      {chevron && (
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="text-[#aaa]">
+          <path d="M3.5 2L7 5L3.5 8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
+function AskOmniIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.2" strokeDasharray="2 1.5" />
+      <circle cx="7" cy="7" r="2" fill="currentColor" />
+    </svg>
+  );
+}
+
+function RunAgentIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <rect x="1.5" y="3" width="11" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
+      <path d="M5 7h4M7 5v4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function SendIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <rect x="1.5" y="3.5" width="11" height="8" rx="1" stroke="currentColor" strokeWidth="1.2" />
+      <path d="M1.5 5.5l5.5 3.5 5.5-3.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function DeleteSelectedIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <path d="M2.5 4h9M5.5 4V2.5h3V4M6 6.5v4M8 6.5v4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M3.5 4l.5 7.5h6L11 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}

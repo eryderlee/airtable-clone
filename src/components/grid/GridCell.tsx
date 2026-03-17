@@ -10,6 +10,7 @@ interface GridCellProps {
   value: string | number | null;
   isFocused: boolean;
   isEditing: boolean;
+  initialDraft?: string; // When set, enter edit mode with this value (for printable char entry)
   onCommit: (rowId: string, columnId: string, value: string | number | null) => void;
   onRevert: () => void;
   onStartEditing: () => void;
@@ -24,6 +25,7 @@ export function GridCell({
   value,
   isFocused,
   isEditing,
+  initialDraft,
   onCommit,
   onRevert,
   onStartEditing,
@@ -32,28 +34,36 @@ export function GridCell({
   const [draft, setDraft] = useState<string>("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Initialize draft when entering edit mode
+  // Initialize draft and focus when entering edit mode.
+  // initialDraft and value are intentionally excluded from deps — only fires on isEditing toggle.
   useEffect(() => {
     if (isEditing) {
-      setDraft(String(value ?? ""));
+      setDraft(initialDraft ?? String(value ?? ""));
+      requestAnimationFrame(() => {
+        inputRef.current?.focus();
+        if (!initialDraft) {
+          inputRef.current?.select(); // Select all when Enter/click to edit
+        } else {
+          // Place cursor at end when typing to enter edit
+          const len = (initialDraft ?? "").length;
+          inputRef.current?.setSelectionRange(len, len);
+        }
+      });
     }
-  }, [isEditing, value]);
-
-  // Auto-focus and select all when entering edit mode
-  useEffect(() => {
-    if (isEditing) {
-      inputRef.current?.focus();
-      inputRef.current?.select();
-    }
-  }, [isEditing]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditing]); // Intentionally only depend on isEditing toggle
 
   const handleCommit = useCallback(() => {
     if (columnType === "number") {
       const trimmed = draft.trim();
-      const numValue = trimmed === "" ? null : Number(trimmed);
-      // Only commit if valid number or null (empty)
-      if (trimmed !== "" && isNaN(numValue as number)) return;
-      onCommit(rowId, columnId, numValue);
+      if (trimmed === "") {
+        onCommit(rowId, columnId, null);
+      } else {
+        const numValue = Number(trimmed);
+        // Silently ignore invalid number input (e.g., "abc")
+        if (isNaN(numValue)) return;
+        onCommit(rowId, columnId, numValue);
+      }
     } else {
       onCommit(rowId, columnId, draft);
     }
