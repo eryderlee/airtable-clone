@@ -75,6 +75,10 @@ export const tableRouter = createTRPCRouter({
           throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
         }
 
+        const nameColId = nameCol.id;
+        const notesColId = notesCol.id;
+        const statusColId = statusCol.id;
+
         // Create 5 rows with faker data
         const { faker } = await import("@faker-js/faker");
 
@@ -83,9 +87,9 @@ export const tableRouter = createTRPCRouter({
             tableId: table.id,
             rowOrder: i,
             cells: {
-              [nameCol!.id]: faker.person.fullName(),
-              [notesCol!.id]: faker.lorem.sentence(),
-              [statusCol!.id]: faker.helpers.arrayElement([
+              [nameColId]: faker.person.fullName(),
+              [notesColId]: faker.lorem.sentence(),
+              [statusColId]: faker.helpers.arrayElement([
                 "Todo",
                 "In Progress",
                 "Done",
