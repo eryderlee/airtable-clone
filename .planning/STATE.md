@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 ## Current Position
 
 Phase: 3 of 8 (Navigation Shell) — In progress
-Plan: 1 of 2 complete in this phase (03-01 complete)
-Status: In progress — 03-01 complete, 03-02 next
-Last activity: 2026-03-17 — Completed 03-01-PLAN.md. Route hierarchy created, InlineEdit component ready, build passing.
+Plan: 2 of 3 complete in this phase (03-01, 03-02 complete)
+Status: In progress — 03-02 complete, 03-03 next (if exists) or phase complete
+Last activity: 2026-03-17 — Completed 03-02-PLAN.md. AppSidebar, TableTabBar, ViewsPanel created. Full navigation hierarchy live. Build passing.
 
-Progress: [█████░░░░░] ~30% (6 of ~20 total plans)
+Progress: [██████░░░░] ~35% (7 of ~20 total plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
-- Average duration: ~25 min
-- Total execution time: ~125 min
+- Total plans completed: 7
+- Average duration: ~20 min
+- Total execution time: ~130 min
 
 **By Phase:**
 
@@ -29,10 +29,11 @@ Progress: [█████░░░░░] ~30% (6 of ~20 total plans)
 |-------|-------|-------|----------|
 | 01-foundation | 3/3 complete | ~78 min | ~26 min |
 | 02-data-layer | 2/2 complete | ~47 min | ~24 min |
+| 03-navigation-shell | 2/3 in progress | ~10 min | ~5 min (03-02 was fast) |
 
 **Recent Trend:**
-- Last 5 plans: 01-02 (~10 min), 01-03 (~8 min), 02-01 (~25 min), 02-02 (~22 min)
-- Trend: Stable (~22-25 min for well-specified plans)
+- Last 5 plans: 01-03 (~8 min), 02-01 (~25 min), 02-02 (~22 min), 03-01 (~5 min), 03-02 (~5 min)
+- Trend: Well-specified UI component plans execute very quickly
 
 *Updated after each plan completion*
 
@@ -72,10 +73,13 @@ Recent decisions affecting current work:
 - 03-01: src/app/page.tsx deleted — Next.js App Router disallows app/page.tsx and app/(group)/page.tsx coexisting for same route
 - 03-01: Next.js 15 layout params unused — use `await params` without destructuring to satisfy Next.js 15 requirement without triggering no-unused-vars lint
 - 03-01: Non-null array assertions (!) flagged by ESLint — use optional chaining (?.) instead of non-null assertion on array[0] accesses
+- 03-02: utils.view.getByTableId.fetch() for imperative view lookup in mutations — utils.client is not available in createTRPCReact (it is a @trpc/tanstack-react-query concept)
+- 03-02: Server layouts pass IDs as props to client nav components; client components use useParams() only for IDs not in props
+- 03-02: Table seed row count changed from 5 to 10 — TBL-04 requirement
 
 ### Pending Todos
 
-- None — 03-01 complete. 03-02 (client components: AppSidebar, TableTabBar, ViewsPanel) is next.
+- None — 03-02 complete. Check if 03-03 exists for this phase; if not, phase 03 is complete and phase 04 (grid shell) is next.
 
 ### Blockers/Concerns
 
@@ -86,5 +90,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-03-17
-Stopped at: Completed 03-01-PLAN.md — route hierarchy + InlineEdit component
-Resume file: .planning/phases/03-navigation-shell/03-02-PLAN.md
+Stopped at: Completed 03-02-PLAN.md — AppSidebar, TableTabBar, ViewsPanel, navigation hierarchy complete
+Resume file: .planning/phases/03-navigation-shell/03-03-PLAN.md (if exists) else next phase
