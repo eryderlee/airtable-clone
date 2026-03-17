@@ -7,16 +7,16 @@
 
 ### Authentication
 
-- [ ] **AUTH-01**: User can sign in via Google OAuth
-- [ ] **AUTH-02**: User session persists across browser refresh
-- [ ] **AUTH-03**: User can sign out from any page
+- [x] **AUTH-01**: User can sign in via Google OAuth
+- [x] **AUTH-02**: User session persists across browser refresh
+- [x] **AUTH-03**: User can sign out from any page
 
 ### Bases
 
 - [ ] **BASE-01**: User can create a new base
 - [ ] **BASE-02**: User can rename a base
 - [ ] **BASE-03**: User can delete a base
-- [ ] **BASE-04**: User can only see their own bases (private, no sharing)
+- [x] **BASE-04**: User can only see their own bases (private, no sharing)
 
 ### Tables
 

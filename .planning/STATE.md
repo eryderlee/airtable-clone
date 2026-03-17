@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-03-17)
 
 **Core value:** A table UI that feels exactly like Airtable and never chokes — 1M rows, instant scroll, DB-level filtering.
-**Current focus:** Phase 1 — Foundation
+**Current focus:** Phase 2 — Data Layer
 
 ## Current Position
 
 Phase: 1 of 8 (Foundation) — COMPLETE
 Plan: 3 of 3 complete in this phase (01-01 complete, 01-02 complete, 01-03 complete)
 Status: Phase 1 complete — ready for Phase 2 (tRPC CRUD routers)
-Last activity: 2026-03-17 — Completed 01-03-PLAN.md (1M-row seed + cursor pagination benchmark)
+Last activity: 2026-03-17 — Phase 1 complete. Human verification passed (OAuth, JWT, sign-out, Vercel live). Ready for Phase 2.
 
 Progress: [███░░░░░░░] ~12% (3 of 3 plans in phase 1 complete; ~3/24 total plans)
 
@@ -63,7 +63,6 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- Add https://airtable-clone-flame.vercel.app/api/auth/callback/google to Google Console OAuth authorized redirect URIs
 - Phase 2: tRPC CRUD routers — MUST use ROW tuple comparison for cursor pagination: `(row_order, id) > (cursorOrder, cursorId)`, NOT the OR-expanded form
 
 ### Blockers/Concerns
