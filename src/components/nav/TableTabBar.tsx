@@ -56,33 +56,53 @@ export function TableTabBar({ baseId }: TableTabBarProps) {
   }
 
   return (
-    <header className="flex h-10 flex-shrink-0 items-center gap-1 border-b border-gray-200 bg-white px-2">
+    <header
+      className="flex h-[40px] flex-shrink-0 items-end gap-0 overflow-x-auto px-2"
+      style={{
+        backgroundColor: "#f2efff",
+        borderBottom: "1px solid #d0c9e8",
+      }}
+    >
       {!tables || tables.length === 0 ? (
-        <span className="text-sm text-gray-400">No tables</span>
+        <span className="mb-[10px] text-sm text-gray-400">No tables</span>
       ) : (
         tables.map((table) => {
           const isActive = activeTableId === table.id;
           return (
             <div
               key={table.id}
-              className={`relative flex items-center rounded-t px-3 py-1 text-sm ${
-                isActive
-                  ? "bg-blue-50 font-medium text-blue-700"
-                  : "text-gray-600 hover:bg-gray-50"
-              }`}
+              className="relative flex flex-shrink-0 items-center"
+              style={{
+                height: "32px",
+                marginBottom: "-1px",
+                borderTopLeftRadius: "4px",
+                borderTopRightRadius: "4px",
+                backgroundColor: isActive ? "#ffffff" : "transparent",
+                borderTop: isActive ? "2px solid #166ee1" : "2px solid transparent",
+                borderLeft: isActive ? "1px solid #d0c9e8" : "none",
+                borderRight: isActive ? "1px solid #d0c9e8" : "none",
+                borderBottom: isActive ? "1px solid #ffffff" : "none",
+                paddingLeft: "12px",
+                paddingRight: hoveredId === table.id ? "4px" : "12px",
+              }}
               onMouseEnter={() => setHoveredId(table.id)}
               onMouseLeave={() => setHoveredId(null)}
             >
               <Link
                 href={`/base/${baseId}/${table.id}`}
                 className="flex items-center gap-1"
+                style={{ textDecoration: "none" }}
               >
                 <InlineEdit
                   value={table.name}
                   onSave={(name) =>
                     renameTable.mutate({ id: table.id, name })
                   }
-                  className={`text-sm ${isActive ? "font-medium text-blue-700" : "text-gray-600"}`}
+                  className={`whitespace-nowrap text-[13px] ${
+                    isActive
+                      ? "font-medium text-gray-900"
+                      : "text-gray-700 hover:text-gray-900"
+                  }`}
                 />
               </Link>
               {hoveredId === table.id && tables.length > 1 && (
@@ -92,7 +112,7 @@ export function TableTabBar({ baseId }: TableTabBarProps) {
                     e.stopPropagation();
                     handleDeleteTable(table.id);
                   }}
-                  className="ml-1 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded text-gray-400 hover:bg-red-100 hover:text-red-600"
+                  className="ml-1 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded text-gray-400 hover:bg-red-100 hover:text-red-500"
                   title="Delete table"
                 >
                   <span className="text-xs leading-none">&times;</span>
@@ -105,7 +125,7 @@ export function TableTabBar({ baseId }: TableTabBarProps) {
       <button
         onClick={handleCreateTable}
         disabled={createTable.isPending}
-        className="flex h-7 w-7 items-center justify-center rounded text-gray-500 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50"
+        className="mb-1 ml-1 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded text-gray-500 transition-colors hover:bg-black/10 hover:text-gray-700 disabled:opacity-40"
         title="Create new table"
       >
         <span className="text-base leading-none">+</span>
