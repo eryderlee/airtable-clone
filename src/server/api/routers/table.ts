@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, count, eq } from "drizzle-orm";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
@@ -32,7 +32,7 @@ export const tableRouter = createTRPCRouter({
     .input(
       z.object({
         baseId: z.string().uuid(),
-        name: z.string().min(1).max(255),
+        name: z.string().min(1).max(255).optional(),
         seed: z.boolean().default(true),
       }),
     )
@@ -50,10 +50,20 @@ export const tableRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
+      // Auto-name: "Table N" where N = existing count + 1
+      let tableName = input.name;
+      if (!tableName) {
+        const [result] = await ctx.db
+          .select({ count: count() })
+          .from(tables)
+          .where(eq(tables.baseId, input.baseId));
+        tableName = `Table ${(result?.count ?? 0) + 1}`;
+      }
+
       // Insert the table
       const [table] = await ctx.db
         .insert(tables)
-        .values({ name: input.name, baseId: input.baseId })
+        .values({ name: tableName, baseId: input.baseId })
         .returning();
 
       if (!table) {
@@ -101,7 +111,7 @@ export const tableRouter = createTRPCRouter({
         // Create default Grid View
         await ctx.db.insert(views).values({
           tableId: table.id,
-          name: "Grid View",
+          name: "Grid view",
           config: {
             filters: [],
             sorts: [],
