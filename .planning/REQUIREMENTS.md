@@ -35,11 +35,11 @@
 
 ### Cell Editing
 
-- [ ] **CELL-01**: User can click a cell to enter edit mode and edit its value
-- [ ] **CELL-02**: Arrow keys move between cells in navigation mode
-- [ ] **CELL-03**: Tab moves to next cell (right); Shift+Tab moves to previous cell (left)
-- [ ] **CELL-04**: Enter key enters edit mode on selected cell; Escape exits edit mode back to navigation mode
-- [ ] **CELL-05**: Cell changes are persisted to the database on commit (blur or Enter)
+- [x] **CELL-01**: User can click a cell to enter edit mode and edit its value
+- [x] **CELL-02**: Arrow keys move between cells in navigation mode
+- [x] **CELL-03**: Tab moves to next cell (right); Shift+Tab moves to previous cell (left)
+- [x] **CELL-04**: Enter key enters edit mode on selected cell; Escape exits edit mode back to navigation mode
+- [x] **CELL-05**: Cell changes are persisted to the database on commit (blur or Enter)
 
 ### Performance
 
@@ -133,11 +133,11 @@
 | COL-02 | Phase 4 | Complete |
 | COL-03 | Phase 4 | Complete |
 | COL-04 | Phase 4 | Complete |
-| CELL-01 | Phase 5 | Pending |
-| CELL-02 | Phase 5 | Pending |
-| CELL-03 | Phase 5 | Pending |
-| CELL-04 | Phase 5 | Pending |
-| CELL-05 | Phase 5 | Pending |
+| CELL-01 | Phase 5 | Complete |
+| CELL-02 | Phase 5 | Complete |
+| CELL-03 | Phase 5 | Complete |
+| CELL-04 | Phase 5 | Complete |
+| CELL-05 | Phase 5 | Complete |
 | PERF-01 | Phase 4 | Complete |
 | PERF-02 | Phase 4 | Complete |
 | PERF-03 | Phase 7 | Pending |

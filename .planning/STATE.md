@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-03-17)
 
 **Core value:** A table UI that feels exactly like Airtable and never chokes — 1M rows, instant scroll, DB-level filtering.
-**Current focus:** Phase 5 — Cell Editing
+**Current focus:** Phase 6 — Toolbar
 
 ## Current Position
 
-Phase: 5 of 8 (Cell Editing) — Phase complete
+Phase: 5 of 8 (Cell Editing) — Complete ✓
 Plan: 2/2 complete
-Status: 05-02 complete. Full keyboard navigation + optimistic cell mutation. Phase 5 done.
-Last activity: 2026-03-17 — Completed 05-02. handleKeyDown container handler, updateCell optimistic mutation, initialDraft for printable-char entry. Human verified all 7 points.
+Status: Phase 5 verified 13/13. Ready for Phase 6.
+Last activity: 2026-03-17 — Completed 05-02. handleKeyDown container handler, updateCell optimistic pageCacheRef mutation, initialDraft for printable-char entry. Human verified all 7 points. 13/13 must-haves verified.
 
 Progress: [████████████] ~63% (15 of ~24 total plans)
 
