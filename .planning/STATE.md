@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 ## Current Position
 
 Phase: 4 of 8 (Grid Core) — In progress
-Plan: 1 of 3 complete in this phase (04-01 complete)
-Status: In progress — 04-01 complete, 04-02 next
-Last activity: 2026-03-17 — Completed 04-01-PLAN.md. Virtualized grid with GridView + GridTable mounted in view page. Build passing.
+Plan: 2 of 3 complete in this phase (04-01, 04-02 complete)
+Status: In progress — 04-02 complete, 04-03 next
+Last activity: 2026-03-17 — Completed 04-02-PLAN.md. Column add/rename/delete UI, GridToolbar with 100k bulk insert, all mutations wired. Build passing.
 
-Progress: [████████░░] ~40% (8 of ~20 total plans)
+Progress: [█████████░] ~45% (9 of ~20 total plans)
 
 ## Performance Metrics
 
@@ -30,10 +30,10 @@ Progress: [████████░░] ~40% (8 of ~20 total plans)
 | 01-foundation | 3/3 complete | ~78 min | ~26 min |
 | 02-data-layer | 2/2 complete | ~47 min | ~24 min |
 | 03-navigation-shell | 3/3 complete | ~10 min | ~3 min |
-| 04-grid-core | 1/3 in progress | ~4 min | ~4 min |
+| 04-grid-core | 2/3 in progress | ~9 min | ~4.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 02-02 (~22 min), 03-01 (~5 min), 03-02 (~5 min), 03-03 (~unknown), 04-01 (~4 min)
+- Last 5 plans: 03-01 (~5 min), 03-02 (~5 min), 03-03 (~unknown), 04-01 (~4 min), 04-02 (~5 min)
 - Trend: Well-specified UI plans with clear component specs execute very quickly
 
 *Updated after each plan completion*
@@ -83,19 +83,23 @@ Recent decisions affecting current work:
 - 04-01: cursor NOT passed in useInfiniteQuery input — tRPC auto-injects from getNextPageParam return value
 - 04-01: RowData type exported from GridTable.tsx and imported by GridView.tsx — avoids duplication
 - 04-01: Firefox measureElement guard via navigator.userAgent.includes("Firefox") check — Firefox getBoundingClientRect bug
+- 04-02: GridHeader header name uses `header.id` fallback (not flexRender().toString()) — avoids no-base-to-string ESLint error; all current columns use string headers so this is safe
+- 04-02: Column mutations placed in GridView (not child components) — stable callback refs passed down as props; avoids mutation hooks inside list renders
+- 04-02: window.confirm() used for delete confirmation — simple browser dialog sufficient for phase 4; can be upgraded to custom modal later
 
 ### Pending Todos
 
-- None — 04-01 complete. 04-02 is next in phase 04.
+- None — 04-02 complete. 04-03 is next in phase 04.
 
 ### Blockers/Concerns
 
 - Phase 4 sticky header concern resolved: display:grid + translateY pattern confirmed working (04-01)
+- 04-03 concern: InlineEdit in GridHeader activates on double-click for column rename; if cell editing also uses double-click, the interaction model needs to be consistent — validate in 04-03
 - Phase 5: Focus management in virtualized grids is under-documented — validate scrollToIndex + requestAnimationFrame focus restoration pattern before implementing
 - Phase 7: If v1 regularly exceeds 30 columns, bi-directional virtualizer scroll performance issue (GitHub #685) needs mitigation strategy before implementation
 
 ## Session Continuity
 
 Last session: 2026-03-17
-Stopped at: Completed 04-01-PLAN.md — GridView + GridTable virtualized grid with infinite scroll, view page live
-Resume file: .planning/phases/04-grid-core/04-02-PLAN.md
+Stopped at: Completed 04-02-PLAN.md — Column management UI + bulk insert toolbar wired. Build passing.
+Resume file: .planning/phases/04-grid-core/04-03-PLAN.md
