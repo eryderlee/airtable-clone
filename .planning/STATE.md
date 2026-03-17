@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 ## Current Position
 
 Phase: 6 of 8 (Toolbar) — In progress
-Plan: 1/3 complete
-Status: 06-01 complete. Data foundation: getByOffset/count extended, GridView toolbar state wired.
-Last activity: 2026-03-17 — Completed 06-01. getByOffset two-path filter/sort/search; row.count filter/search; GridView toolbar state with debounce and cache invalidation.
+Plan: 2/3 complete
+Status: 06-02 complete. SearchBar, FilterPanel, SortPanel, HideFieldsPanel panels wired into GridToolbar as dropdowns.
+Last activity: 2026-03-17 — Completed 06-02. All four toolbar panels built; click-outside close; onTogglePanel toggle API; HideFieldsPanel completed early.
 
-Progress: [█████████████] ~67% (16 of ~24 total plans)
+Progress: [█████████████░] ~71% (17 of ~24 total plans)
 
 ## Performance Metrics
 
@@ -104,10 +104,13 @@ Recent decisions affecting current work:
 - 06-01: openPanel state lives in GridView alongside filters/sorts/search — all toolbar state co-located
 - 06-01: isFirstRender ref guards cache-reset useEffect — prevents spurious reset on mount
 - 06-01: columnOrder = visibleColumnIds (hidden columns excluded from keyboard nav index math)
+- 06-02: onTogglePanel toggle API in GridToolbar (prev === panel ? null : panel in updater)
+- 06-02: data-toolbar-panel attribute on panel wrappers for click-outside detection via element.closest()
+- 06-02: HideFieldsPanel completed early in 06-02 — Plan 06-03 scope narrowed to view config persistence only
 
 ### Pending Todos
 
-- None — Phase 6 in progress. Next: 06-02 (FilterPanel/SortPanel/HideFieldsPanel UI).
+- None — Phase 6 in progress. Next: 06-03 (view config persistence for filters/sorts/hiddenColumns). HideFieldsPanel already done.
 
 ### Blockers/Concerns
 
@@ -117,5 +120,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-03-17
-Stopped at: Completed 06-01 — data foundation for toolbar; backend params extended; GridView toolbar state wired.
+Stopped at: Completed 06-02 — SearchBar/FilterPanel/SortPanel/HideFieldsPanel panels wired; click-outside close; onTogglePanel API.
 Resume file: None
