@@ -35,6 +35,7 @@ Phases 3, 4, 5, 6, and 8 each touch the visible UI. These phases are not conside
 **Goal**: The T3 stack is scaffolded, the database schema and auth are correct, and the app is deployed live on Vercel — the skeleton is publicly accessible and every subsequent phase builds on top of it.
 **Depends on**: Nothing (first phase)
 **Requirements**: AUTH-01, AUTH-02, AUTH-03, BASE-04
+**Plans**: 3 plans
 **Success Criteria** (what must be TRUE):
   1. The app is deployed to Vercel and accessible at a public URL (even if it only shows the sign-in screen)
   2. User can sign in via Google OAuth and is redirected to their dashboard
@@ -42,12 +43,11 @@ Phases 3, 4, 5, 6, and 8 each touch the visible UI. These phases are not conside
   4. User can sign out from any page and is redirected to the sign-in screen
   5. Only the authenticated user's bases are visible — no other user's data is accessible
   6. A 1M-row seed is present in the database and cursor-paginated queries against it complete in under 200ms
-**Plans**: TBD
 
 Plans:
-- [ ] 01-01: Scaffold T3 stack via create.t3.gg (Next.js App Router, tRPC, Drizzle, NextAuth, Tailwind); configure Supabase connection (DATABASE_URL with prepare: false); set all required env vars on Vercel (DATABASE_URL, NEXTAUTH_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, NEXTAUTH_URL); deploy to Vercel and confirm public URL is live
-- [ ] 01-02: Drizzle schema (bases, tables, columns, rows, views), all indexes, and Auth.js v5 with Google OAuth (two-file edge split, JWT strategy, protectedProcedure pattern); NextAuth Google provider wired end-to-end
-- [ ] 01-03: Seed script generating 1M rows with faker.js; ANALYZE run; cursor query baseline benchmark
+- [ ] 01-01-PLAN.md — Scaffold T3 stack, configure Supabase connection, deploy to Vercel
+- [ ] 01-02-PLAN.md — Drizzle schema (all tables + indexes) and Auth.js v5 Google OAuth wiring
+- [ ] 01-03-PLAN.md — 1M-row seed script, ANALYZE, cursor pagination benchmark
 
 ### Phase 2: Data Layer
 **Goal**: All five tRPC routers expose type-safe procedures that the UI can call — cursor pagination, dynamic filter/sort, and view config merge are defined in the contract before any UI is built.
@@ -165,7 +165,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/3 | Not started | - |
+| 1. Foundation | 0/3 | Planned | - |
 | 2. Data Layer | 0/2 | Not started | - |
 | 3. Navigation Shell | 0/3 | Not started | - |
 | 4. Grid Core | 0/3 | Not started | - |
