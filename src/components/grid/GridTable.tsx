@@ -7,7 +7,7 @@ import {
   type ColumnDef,
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useRef } from "react";
+import React, { useRef } from "react";
 
 import { GridHeader } from "./GridHeader";
 
@@ -26,7 +26,7 @@ interface GridTableProps {
   onAddColumn: (type: "text" | "number") => void;
 }
 
-export function GridTable({
+export const GridTable = React.memo(function GridTable({
   rows,
   columns,
   onScroll,
@@ -129,4 +129,4 @@ export function GridTable({
       )}
     </div>
   );
-}
+});

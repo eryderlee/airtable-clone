@@ -30,6 +30,7 @@ export function GridView({ tableId, viewId }: GridViewProps) {
       getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
       refetchOnWindowFocus: false,
       placeholderData: keepPreviousData,
+      staleTime: 60_000,
     },
   );
 
