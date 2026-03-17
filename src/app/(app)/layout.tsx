@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { auth } from "~/server/auth";
+import { AppSidebar } from "~/components/nav/AppSidebar";
 
 export default async function AppLayout({
   children,
@@ -15,9 +16,7 @@ export default async function AppLayout({
 
   return (
     <div className="flex h-screen w-screen overflow-hidden">
-      <aside className="flex w-64 flex-shrink-0 flex-col border-r border-gray-200 bg-white p-3">
-        <p className="text-sm text-gray-400">Bases loading...</p>
-      </aside>
+      <AppSidebar />
       <div className="flex flex-1 flex-col overflow-hidden">{children}</div>
     </div>
   );
