@@ -10,24 +10,24 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 ## Current Position
 
 Phase: 1 of 8 (Foundation)
-Plan: 0 of 3 in current phase
-Status: Ready to plan
-Last activity: 2026-03-17 — Roadmap revised: Vercel deployment added to Phase 1; standing deployment note added for all phases
+Plan: 01-01 in progress (paused at checkpoint — awaiting env vars)
+Status: In progress
+Last activity: 2026-03-17 — Task 1 of 01-01 complete (T3 scaffold); paused at env var checkpoint
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [░░░░░░░░░░] ~3% (Task 1 of 24 total)
 
 ## Performance Metrics
 
 **Velocity:**
 - Total plans completed: 0
 - Average duration: —
-- Total execution time: 0 hours
+- Total execution time: ~30 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 01-foundation | 0/3 complete (1 in progress) | ~30 min | — |
 
 **Recent Trend:**
 - Last 5 plans: —
@@ -47,10 +47,16 @@ Recent decisions affecting current work:
 - Init: Cursor (keyset) pagination only — OFFSET is permanently banned; composite (row_order, id) cursor baked into schema
 - Init: Pin zod@3 at project init — Zod v4 + tRPC v11 compatibility unconfirmed
 - Revision: Vercel deployment is part of Phase 1, not deferred — app must be live at a public URL before Phase 1 is complete; all subsequent phases deploy to the same Vercel project
+- 01-01: Manual scaffold used (create-t3-app TTY error in non-interactive terminal) — equivalent output confirmed by build passing
+- 01-01: Auth.js v5 two-file edge split implemented: src/server/auth/config.ts (Node/DB) + src/server/auth/index.ts (exports) + src/proxy.ts (edge)
+- 01-01: Drizzle prepare: false confirmed — required for Supabase Supavisor transaction pooler (port 6543)
+- 01-01: DIRECT_URL configured as optional in src/env.js, used by drizzle.config.ts for direct migrations
 
 ### Pending Todos
 
-None yet.
+- Fill in .env with real Supabase + Google OAuth values and AUTH_SECRET
+- Verify npm run dev works at http://localhost:3000
+- Complete Task 3: Vercel deployment
 
 ### Blockers/Concerns
 
@@ -60,6 +66,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-17
-Stopped at: Roadmap revised (Vercel deployment in Phase 1); ready to begin Phase 1 planning
-Resume file: None
+Last session: 2026-03-17T01:36:00Z
+Stopped at: 01-01-PLAN.md Task 2 (checkpoint — awaiting env vars)
+Resume file: .planning/phases/01-foundation/01-01-SUMMARY.md
