@@ -13,7 +13,7 @@ Eight phases build the Airtable clone from the database outward: schema, auth, a
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation** - T3 stack scaffolding, schema, auth, Supabase connection, and live Vercel deployment
-- [ ] **Phase 2: Data Layer** - All tRPC routers with cursor pagination, dynamic filter/sort builder, and view config merge
+- [x] **Phase 2: Data Layer** - All tRPC routers with cursor pagination, dynamic filter/sort builder, and view config merge
 - [ ] **Phase 3: Navigation Shell** - App Router nested layouts, sidebar, table tab bar, views panel, base/table CRUD
 - [ ] **Phase 4: Grid Core** - Virtualized infinite scroll grid wired to live data, column management, 100k row insertion
 - [ ] **Phase 5: Cell Editing** - Inline editing with full spreadsheet keyboard navigation and optimistic updates
@@ -166,7 +166,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 3/3 | Complete | 2026-03-17 |
-| 2. Data Layer | 0/2 | Not started | - |
+| 2. Data Layer | 2/2 | Complete | 2026-03-17 |
 | 3. Navigation Shell | 0/3 | Not started | - |
 | 4. Grid Core | 0/3 | Not started | - |
 | 5. Cell Editing | 0/2 | Not started | - |
