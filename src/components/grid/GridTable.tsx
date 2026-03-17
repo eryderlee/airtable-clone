@@ -9,6 +9,8 @@ import {
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useRef } from "react";
 
+import { GridHeader } from "./GridHeader";
+
 export type RowData = {
   id: string;
   cells: Record<string, string | number | null>;
@@ -19,6 +21,9 @@ interface GridTableProps {
   columns: ColumnDef<RowData>[];
   onScroll: (e: React.UIEvent<HTMLDivElement>) => void;
   isFetchingNextPage: boolean;
+  onRenameColumn: (columnId: string, name: string) => void;
+  onDeleteColumn: (columnId: string) => void;
+  onAddColumn: (type: "text" | "number") => void;
 }
 
 export function GridTable({
@@ -26,6 +31,9 @@ export function GridTable({
   columns,
   onScroll,
   isFetchingNextPage,
+  onRenameColumn,
+  onDeleteColumn,
+  onAddColumn,
 }: GridTableProps) {
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -59,42 +67,12 @@ export function GridTable({
       style={{ contain: "strict" }}
     >
       <table style={{ display: "grid" }}>
-        <thead
-          style={{
-            display: "grid",
-            position: "sticky",
-            top: 0,
-            zIndex: 1,
-          }}
-          className="bg-gray-50"
-        >
-          {table.getHeaderGroups().map((headerGroup) => (
-            <tr
-              key={headerGroup.id}
-              style={{ display: "flex", width: "100%" }}
-            >
-              {/* Row number column header */}
-              <th
-                style={{ display: "flex", width: 66, minWidth: 66 }}
-                className="border-b border-r border-gray-200 px-2 py-1 text-left text-xs font-medium text-gray-500"
-              >
-                #
-              </th>
-              {headerGroup.headers.map((header) => (
-                <th
-                  key={header.id}
-                  style={{ display: "flex", width: 180, minWidth: 180 }}
-                  className="border-b border-r border-gray-200 px-2 py-1 text-left text-xs font-medium text-gray-600"
-                >
-                  {flexRender(
-                    header.column.columnDef.header,
-                    header.getContext(),
-                  )}
-                </th>
-              ))}
-            </tr>
-          ))}
-        </thead>
+        <GridHeader
+          headers={table.getHeaderGroups()[0]?.headers ?? []}
+          onRenameColumn={onRenameColumn}
+          onDeleteColumn={onDeleteColumn}
+          onAddColumn={onAddColumn}
+        />
 
         <tbody
           style={{
