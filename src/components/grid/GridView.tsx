@@ -28,8 +28,8 @@ export function GridView({ tableId, viewId }: GridViewProps) {
   const pageCacheRef = useRef<Record<number, RowData[]>>({});
   const loadingPagesRef = useRef<Set<number>>(new Set());
 
-  // Single dispatch to force a re-render after cache updates
-  const [, forceUpdate] = useReducer((x: number) => x + 1, 0);
+  // Single dispatch to force a re-render after cache updates; cacheVersion used by searchMatches memo
+  const [cacheVersion, forceUpdate] = useReducer((x: number) => x + 1, 0);
 
   // Cursor state — not in context, plain useState
   const [cursor, setCursor] = useState<{ rowIndex: number; columnId: string } | null>(null);
@@ -54,9 +54,9 @@ export function GridView({ tableId, viewId }: GridViewProps) {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  // Total row count — drives virtualizer size; reflects filtered count when filters/search active
+  // Total row count — drives virtualizer size; reflects filtered count when filters active
   const { data: countData, refetch: refetchCount } = api.row.count.useQuery(
-    { tableId, filters, searchQuery },
+    { tableId, filters },
     { staleTime: 30_000 },
   );
   const totalCount = countData?.count ?? 0;
@@ -174,7 +174,6 @@ export function GridView({ tableId, viewId }: GridViewProps) {
           limit: PAGE_SIZE,
           filters,
           sorts,
-          searchQuery,
         });
         pageCacheRef.current[pageIndex] = data.items.map((r) => ({
           id: r.id,
@@ -185,7 +184,7 @@ export function GridView({ tableId, viewId }: GridViewProps) {
         forceUpdate(); // re-render to show real data
       }
     },
-    [tableId, utils.row.getByOffset, filters, sorts, searchQuery],
+    [tableId, utils.row.getByOffset, filters, sorts],
   );
 
   // Reset page cache — clears all cached pages and loading state
@@ -198,7 +197,7 @@ export function GridView({ tableId, viewId }: GridViewProps) {
   // Track first render to skip cache reset on mount
   const isFirstRender = useRef(true);
 
-  // Reset cache and reload when filter/sort/search changes
+  // Reset cache and reload when filter/sort changes
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
@@ -207,7 +206,7 @@ export function GridView({ tableId, viewId }: GridViewProps) {
     resetCache();
     void refetchCount();
     // fetchPage(0) will be triggered by the existing totalCount effect
-  }, [filters, sorts, searchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [filters, sorts]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load page 0 on mount / when count first resolves
   useEffect(() => {
@@ -373,6 +372,54 @@ export function GridView({ tableId, viewId }: GridViewProps) {
   // Uses visibleColumnIds so cursor never lands on a hidden column
   const columnOrder = visibleColumnIds;
 
+  // --- Client-side search highlighting ---
+  const [searchMatchIndex, setSearchMatchIndex] = useState(-1);
+
+  // Compute matches from loaded page cache (client-side only, no server round-trip)
+  const searchMatches = useMemo((): { rowIndex: number; columnId: string }[] => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase();
+    const matches: { rowIndex: number; columnId: string }[] = [];
+    for (const [pageIdxStr, pageRows] of Object.entries(pageCacheRef.current)) {
+      const pageIdx = Number(pageIdxStr);
+      pageRows.forEach((row, i) => {
+        const rowIndex = pageIdx * PAGE_SIZE + i;
+        for (const colId of visibleColumnIds) {
+          const val = row?.cells[colId];
+          if (val != null && String(val).toLowerCase().includes(q)) {
+            matches.push({ rowIndex, columnId: colId });
+            break; // one match per row
+          }
+        }
+      });
+    }
+    return matches.sort((a, b) => a.rowIndex - b.rowIndex);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, cacheVersion, visibleColumnIds]); // cacheVersion forces recompute when pages load into cache
+
+  // Reset match index when search query changes
+  useEffect(() => {
+    setSearchMatchIndex(-1);
+  }, [searchQuery]);
+
+  // Scroll to current match
+  useEffect(() => {
+    if (searchMatchIndex >= 0 && searchMatches[searchMatchIndex]) {
+      const match = searchMatches[searchMatchIndex];
+      if (match) scrollToCell(match.rowIndex, match.columnId);
+    }
+  }, [searchMatchIndex]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handlePrevMatch = useCallback(() => {
+    if (searchMatches.length === 0) return;
+    setSearchMatchIndex((prev) => (prev <= 0 ? searchMatches.length - 1 : prev - 1));
+  }, [searchMatches.length]);
+
+  const handleNextMatch = useCallback(() => {
+    if (searchMatches.length === 0) return;
+    setSearchMatchIndex((prev) => (prev >= searchMatches.length - 1 ? 0 : prev + 1));
+  }, [searchMatches.length]);
+
   // Simplified columns for toolbar pickers
   const columnsForToolbar = useMemo(
     () => (columnsData ?? []).map((c) => ({ id: c.id, name: c.name, type: c.type, isPrimary: c.isPrimary })),
@@ -514,6 +561,10 @@ export function GridView({ tableId, viewId }: GridViewProps) {
         hiddenColumns={hiddenColumns}
         onHiddenColumnsChange={setHiddenColumns}
         columnsData={columnsForToolbar}
+        matchCount={searchMatches.length}
+        currentMatchIndex={searchMatchIndex}
+        onPrevMatch={handlePrevMatch}
+        onNextMatch={handleNextMatch}
       />
       <div className="flex flex-1 overflow-hidden">
         <ViewsPanel tableId={tableId} activeViewId={viewId} />
@@ -549,6 +600,7 @@ export function GridView({ tableId, viewId }: GridViewProps) {
           onSelectAll={handleSelectAll}
           onClearSelection={handleClearSelection}
           allSelected={totalCount > 0 && selectedRowIds.size === totalCount}
+          searchQuery={searchQuery}
         />
       )}
       </div>

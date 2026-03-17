@@ -46,50 +46,45 @@ export type SortCondition = z.infer<typeof sortConditionSchema>;
 // ---------------------------------------------------------------------------
 
 function buildFilterConditions(filters: FilterCondition[]): SQL[] {
-  return filters.map((f) => {
-    const colKey = sql.raw(f.columnId);
+  return filters.flatMap((f) => {
     if (f.filter.type === "text") {
       switch (f.filter.operator) {
         case "contains":
-          return sql`${rows.cells}->>${colKey} ilike ${"%" + (f.filter.value ?? "") + "%"}`;
+          return [sql`${rows.cells}->>${f.columnId} ilike ${"%" + (f.filter.value ?? "") + "%"}`];
         case "does_not_contain":
-          return sql`(${rows.cells}->>${colKey} is null or ${rows.cells}->>${colKey} not ilike ${"%" + (f.filter.value ?? "") + "%"})`;
+          return [sql`(${rows.cells}->>${f.columnId} is null or ${rows.cells}->>${f.columnId} not ilike ${"%" + (f.filter.value ?? "") + "%"})`];
         case "equals":
-          return sql`${rows.cells}->>${colKey} = ${f.filter.value ?? ""}`;
+          return [sql`${rows.cells}->>${f.columnId} = ${f.filter.value ?? ""}`];
         case "is_empty":
-          return sql`(${rows.cells}->>${colKey} is null or ${rows.cells}->>${colKey} = '')`;
+          return [sql`(${rows.cells}->>${f.columnId} is null or ${rows.cells}->>${f.columnId} = '')`];
         case "is_not_empty":
-          return sql`(${rows.cells}->>${colKey} is not null and ${rows.cells}->>${colKey} != '')`;
+          return [sql`(${rows.cells}->>${f.columnId} is not null and ${rows.cells}->>${f.columnId} != '')`];
       }
     } else {
       // number
       switch (f.filter.operator) {
         case "greater_than":
-          return sql`CAST(${rows.cells}->>${colKey} AS numeric) > ${f.filter.value}`;
+          return [sql`CAST(${rows.cells}->>${f.columnId} AS numeric) > ${f.filter.value}`];
         case "less_than":
-          return sql`CAST(${rows.cells}->>${colKey} AS numeric) < ${f.filter.value}`;
+          return [sql`CAST(${rows.cells}->>${f.columnId} AS numeric) < ${f.filter.value}`];
       }
     }
   });
 }
 
-function buildSortOrder(
-  sorts: SortCondition[],
-  columnTypeMap: Record<string, string>,
-): SQL[] {
+function buildSortOrder(sorts: SortCondition[], columnTypeMap: Record<string, string>): SQL[] {
   const clauses: SQL[] = sorts.map((s) => {
-    const colKey = sql.raw(s.columnId);
     const dir = sql.raw(s.direction === "asc" ? "asc nulls last" : "desc nulls last");
     if (columnTypeMap[s.columnId] === "number") {
-      return sql`CAST(${rows.cells}->>${colKey} AS numeric) ${dir}`;
+      return sql`CAST(${rows.cells}->>${s.columnId} AS numeric) ${dir}`;
     } else {
-      return sql`${rows.cells}->>${colKey} ${dir}`;
+      return sql`${rows.cells}->>${s.columnId} ${dir}`;
     }
   });
 
   // Stable tie-breaker: (rowOrder asc, id asc)
-  clauses.push(asc(rows.rowOrder) as unknown as SQL);
-  clauses.push(asc(rows.id) as unknown as SQL);
+  clauses.push(sql`"row_order" ASC`);
+  clauses.push(sql`"id" ASC`);
 
   return clauses;
 }

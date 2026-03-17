@@ -16,6 +16,10 @@ interface GridToolbarProps {
   // Search
   searchInput: string;
   onSearchChange: (value: string) => void;
+  matchCount: number;
+  currentMatchIndex: number;
+  onPrevMatch: () => void;
+  onNextMatch: () => void;
   // Filter
   filters: FilterCondition[];
   onFiltersChange: (filters: FilterCondition[]) => void;
@@ -43,6 +47,10 @@ export function GridToolbar({
   onFiltersChange,
   onSortsChange,
   columnsData,
+  matchCount,
+  currentMatchIndex,
+  onPrevMatch,
+  onNextMatch,
 }: GridToolbarProps) {
   return (
     <div
@@ -134,6 +142,10 @@ export function GridToolbar({
             searchInput={searchInput}
             onSearchChange={onSearchChange}
             onClose={() => onTogglePanel("search")}
+            matchCount={matchCount}
+            currentMatchIndex={currentMatchIndex}
+            onPrevMatch={onPrevMatch}
+            onNextMatch={onNextMatch}
           />
         </div>
       )}

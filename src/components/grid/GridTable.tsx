@@ -32,6 +32,7 @@ interface GridTableProps {
   onDeleteColumn: (columnId: string) => void;
   onAddColumn: (type: "text" | "number") => void;
   displayCount: number;
+  searchQuery?: string;
   cursor: { rowIndex: number; columnId: string } | null;
   editingCell: { rowIndex: number; columnId: string } | null;
   onSelect: (rowIndex: number, columnId: string) => void;
@@ -43,8 +44,9 @@ interface GridTableProps {
   rowVirtualizerRef: React.MutableRefObject<Virtualizer<HTMLDivElement, Element> | null>;
   selectedRowIds: Set<string>;
   onToggleRow: (rowId: string) => void;
-  onSelectAll: () => void;
+  onSelectAll: () => void | Promise<void>;
   onClearSelection: () => void;
+  allSelected: boolean;
 }
 
 export const GridTable = React.memo(function GridTable({
@@ -60,6 +62,7 @@ export const GridTable = React.memo(function GridTable({
   onDeleteColumn,
   onAddColumn,
   displayCount,
+  searchQuery,
   cursor,
   editingCell,
   onSelect,
@@ -73,6 +76,7 @@ export const GridTable = React.memo(function GridTable({
   onToggleRow,
   onSelectAll,
   onClearSelection,
+  allSelected,
 }: GridTableProps) {
   const parentRef = useRef<HTMLDivElement>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
@@ -143,12 +147,12 @@ export const GridTable = React.memo(function GridTable({
         })()}
         <table style={{ display: "grid", width: "fit-content", minWidth: "100%" }}>
           <GridHeader
-            headers={table.getHeaderGroups()[0]?.headers ?? []}
+            headers={(table.getHeaderGroups()[0]?.headers ?? []).filter((h) => columnIds.includes(h.id))}
             onRenameColumn={onRenameColumn}
             onUpdateColumn={onUpdateColumn}
             onDeleteColumn={onDeleteColumn}
             onAddColumn={onAddColumn}
-            allSelected={totalCount > 0 && selectedRowIds.size === totalCount}
+            allSelected={allSelected}
             onSelectAll={onSelectAll}
           />
 
@@ -223,19 +227,22 @@ export const GridTable = React.memo(function GridTable({
                 >
                   {/* Checkbox + row number */}
                   <td
-                    style={{ display: "flex", width: 100, minWidth: 100, position: "relative" }}
+                    style={{ display: "flex", width: 100, minWidth: 100 }}
                     className="h-full items-center px-2 py-0"
                   >
-                    <input
-                      type="checkbox"
-                      checked={selectedRowIds.has(rowData.id)}
-                      onChange={() => onToggleRow(rowData.id)}
-                      className="absolute left-2 h-3.5 w-3.5 cursor-pointer rounded border-[#ccc] accent-[#2563eb] opacity-0 group-hover:opacity-100"
-                      style={{ opacity: selectedRowIds.has(rowData.id) ? 1 : undefined }}
-                    />
-                    <span className={`flex-1 text-center text-xs text-[#aaa] group-hover:invisible ${selectedRowIds.has(rowData.id) ? "invisible" : ""}`}>
-                      {virtualRow.index + 1}
-                    </span>
+                    {/* Checkbox / row number — same position, swap on hover/selected */}
+                    <label className="relative flex h-3.5 w-3.5 flex-shrink-0 cursor-pointer items-center justify-center">
+                      <input
+                        type="checkbox"
+                        checked={selectedRowIds.has(rowData.id)}
+                        onChange={() => onToggleRow(rowData.id)}
+                        className="absolute inset-0 h-3.5 w-3.5 cursor-pointer accent-[#2563eb] opacity-0 group-hover:opacity-100"
+                        style={{ opacity: selectedRowIds.has(rowData.id) ? 1 : undefined }}
+                      />
+                      <span className={`select-none text-xs text-[#aaa] group-hover:hidden ${selectedRowIds.has(rowData.id) ? "hidden" : ""}`}>
+                        {virtualRow.index + 1}
+                      </span>
+                    </label>
                     <button
                       className="ml-auto hidden items-center justify-center rounded text-[#888] hover:bg-[#e8e4f5] group-hover:flex"
                       title="Expand row"
@@ -274,6 +281,7 @@ export const GridTable = React.memo(function GridTable({
                           isFocused={isFocused}
                           isEditing={isEditing}
                           initialDraft={isEditing ? initialDraft : undefined}
+                          searchQuery={searchQuery}
                           onCommit={onCommit}
                           onRevert={onRevert}
                           onStartEditing={() => onStartEditing(virtualRow.index, colId)}
@@ -295,9 +303,8 @@ export const GridTable = React.memo(function GridTable({
           style={{ width: "fit-content" }}
         >
           <div style={{ width: 100, minWidth: 100 }} className="flex items-center px-2">
-            {/* invisible checkbox placeholder to match row layout */}
-            <div className="h-3.5 w-2 flex-shrink-0" />
-            <div className="w-1.5 flex-shrink-0" />
+            {/* placeholder matching the 14px label + gap */}
+            <div className="w-3.5 flex-shrink-0" />
             <button
               className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded text-[#888] hover:bg-[#e2e0ea]"
               title="Add row"

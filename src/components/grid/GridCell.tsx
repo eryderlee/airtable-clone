@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import React from "react";
 
 interface GridCellProps {
   rowId: string;
@@ -11,10 +12,24 @@ interface GridCellProps {
   isFocused: boolean;
   isEditing: boolean;
   initialDraft?: string; // When set, enter edit mode with this value (for printable char entry)
+  searchQuery?: string;
   onCommit: (rowId: string, columnId: string, value: string | number | null) => void;
   onRevert: () => void;
   onStartEditing: () => void;
   onSelect: () => void;
+}
+
+function highlightText(text: string, query: string): React.ReactNode {
+  if (!query) return text;
+  const idx = text.toLowerCase().indexOf(query.toLowerCase());
+  if (idx === -1) return text;
+  return (
+    <>
+      {text.slice(0, idx)}
+      <span className="bg-yellow-200">{text.slice(idx, idx + query.length)}</span>
+      {text.slice(idx + query.length)}
+    </>
+  );
 }
 
 export function GridCell({
@@ -26,6 +41,7 @@ export function GridCell({
   isFocused,
   isEditing,
   initialDraft,
+  searchQuery,
   onCommit,
   onRevert,
   onStartEditing,
@@ -113,7 +129,11 @@ export function GridCell({
           className="h-full w-full bg-transparent outline-none"
         />
       ) : (
-        <span className="truncate">{value ?? ""}</span>
+        <span className="truncate">
+          {searchQuery && value != null
+            ? highlightText(String(value), searchQuery)
+            : (value ?? "")}
+        </span>
       )}
     </div>
   );
