@@ -10,29 +10,29 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 ## Current Position
 
 Phase: 2 of 8 (Data Layer) — In progress
-Plan: 1 of 3 complete in this phase (02-01 complete)
-Status: In progress — 02-01 CRUD routers done; 02-02 (row pagination router) next
-Last activity: 2026-03-17 — Completed 02-01-PLAN.md. Four tRPC CRUD routers created. Build passing.
+Plan: 2 of 3 complete in this phase (02-02 complete — row router with cursor pagination, filters, sorts, view merge)
+Status: In progress — 02-02 row router done; 02-03 next
+Last activity: 2026-03-17 — Completed 02-02-PLAN.md. Row router with ROW tuple cursor pagination, JSONB filters, sorts, view config merge, bulkCreate. Build passing.
 
-Progress: [████░░░░░░] ~17% (~4/24 total plans)
+Progress: [█████░░░░░] ~21% (~5/24 total plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: ~22 min
-- Total execution time: ~103 min
+- Total plans completed: 5
+- Average duration: ~25 min
+- Total execution time: ~125 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-foundation | 3/3 complete | ~78 min | ~26 min |
-| 02-data-layer | 1/3 complete | ~25 min | ~25 min |
+| 02-data-layer | 2/3 complete | ~47 min | ~24 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (60 min), 01-02 (~10 min), 01-03 (~8 min), 02-01 (~25 min)
-- Trend: Stable (~25 min for well-specified plans)
+- Last 5 plans: 01-02 (~10 min), 01-03 (~8 min), 02-01 (~25 min), 02-02 (~22 min)
+- Trend: Stable (~22-25 min for well-specified plans)
 
 *Updated after each plan completion*
 
@@ -65,10 +65,14 @@ Recent decisions affecting current work:
 - 02-01: max(columns.order) + 1 for column auto-increment — handles gaps/deletions gracefully; no counter column needed
 - 02-01: NOT_FOUND for ownership violations — avoids leaking whether a resource exists for a different user (no info leak)
 - 02-01: view.updateConfig uses partial merge — clients can update only searchQuery without resetting filters
+- 02-02: .$dynamic() called immediately after .from(rows) — required for Drizzle dynamic .where()/.orderBy() arrays
+- 02-02: ROW tuple cursor confirmed: (row_order, id) > (cursor_order, cursor_id) — tight composite index range, ~2ms at 1M rows
+- 02-02: View config merge: call-time params override stored config; empty array/string counts as "not provided"
+- 02-02: bulkCreate returns { count } not items — returning 100k rows would saturate tRPC response
 
 ### Pending Todos
 
-- Phase 2: tRPC row router (02-02) — MUST use ROW tuple comparison for cursor pagination: `(row_order, id) > (cursorOrder, cursorId)`, NOT the OR-expanded form
+- None for 02-02 — all row router constraints met (ROW tuple, .$dynamic(), filter/sort in PostgreSQL)
 
 ### Blockers/Concerns
 
@@ -78,6 +82,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-03-17T05:29:00Z
-Stopped at: Completed 02-01-PLAN.md (four CRUD routers created, build passing)
-Resume file: .planning/phases/02-data-layer/02-02-PLAN.md (row pagination router)
+Last session: 2026-03-17T05:56:00Z
+Stopped at: Completed 02-02-PLAN.md (row router with cursor pagination, filters, sorts, view merge, bulkCreate)
+Resume file: .planning/phases/02-data-layer/02-03-PLAN.md (next plan in data layer phase)
