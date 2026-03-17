@@ -133,12 +133,12 @@ Plans:
   3. User can add one or more sort rules (Text A→Z/Z→A; Number ascending/descending) and the grid re-orders via a database query
   4. User can toggle column visibility from the Hide Fields panel and selected columns disappear from the grid
   5. The toolbar shows badge counts for active filter and sort rules
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 06-01: Search bar wired to row.getRows search param with 300ms debounce and placeholderData: keepPreviousData to prevent flicker
-- [ ] 06-02: Filter panel (add/remove conditions, field + operator + value, AND logic, live preview) wired to row.getRows filter params
-- [ ] 06-03: Sort panel (add/remove rules, field + direction) and Hide Fields panel (toggle per column); toolbar badge counts
+- [ ] 06-01-PLAN.md — Extend getByOffset/count with filter/sort/search params; add toolbar state to GridView with cache invalidation
+- [ ] 06-02-PLAN.md — SearchBar, FilterPanel, SortPanel components wired into toolbar with DB-level execution
+- [ ] 06-03-PLAN.md — HideFieldsPanel, badge counts on Filter/Sort buttons, hidden column exclusion in grid and keyboard nav
 
 ### Phase 7: Column Virtualization
 **Goal**: The grid handles large column counts without lag by activating horizontal virtualization above the threshold where rendering all columns becomes expensive.
