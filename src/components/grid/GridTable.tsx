@@ -5,9 +5,10 @@ import {
   getCoreRowModel,
   type ColumnDef,
 } from "@tanstack/react-table";
-import { useVirtualizer } from "@tanstack/react-virtual";
+import { useVirtualizer, type Virtualizer } from "@tanstack/react-virtual";
 import React, { useRef } from "react";
 
+import { GridCell } from "./GridCell";
 import { GridHeader } from "./GridHeader";
 
 export type RowData = {
@@ -22,6 +23,7 @@ interface GridTableProps {
   totalCount: number;
   getRow: (index: number) => RowData | undefined;
   columnIds: string[];
+  columnWidths: Record<string, number>;
   columns: ColumnDef<RowData>[];
   onScroll: (e: React.UIEvent<HTMLDivElement>) => void;
   isBulkCreating: boolean;
@@ -30,12 +32,20 @@ interface GridTableProps {
   onDeleteColumn: (columnId: string) => void;
   onAddColumn: (type: "text" | "number") => void;
   displayCount: number;
+  cursor: { rowIndex: number; columnId: string } | null;
+  editingCell: { rowIndex: number; columnId: string } | null;
+  onSelect: (rowIndex: number, columnId: string) => void;
+  onStartEditing: (rowIndex: number, columnId: string) => void;
+  onCommit: (rowId: string, columnId: string, value: string | number | null) => void;
+  onRevert: () => void;
+  rowVirtualizerRef: React.MutableRefObject<Virtualizer<HTMLDivElement, Element> | null>;
 }
 
 export const GridTable = React.memo(function GridTable({
   totalCount,
   getRow,
   columnIds,
+  columnWidths,
   columns,
   onScroll,
   isBulkCreating,
@@ -44,6 +54,13 @@ export const GridTable = React.memo(function GridTable({
   onDeleteColumn,
   onAddColumn,
   displayCount,
+  cursor,
+  editingCell,
+  onSelect,
+  onStartEditing,
+  onCommit,
+  onRevert,
+  rowVirtualizerRef,
 }: GridTableProps) {
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -68,16 +85,37 @@ export const GridTable = React.memo(function GridTable({
         ? (element) => element.getBoundingClientRect().height
         : undefined,
   });
+  rowVirtualizerRef.current = rowVirtualizer;
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       <div
         ref={parentRef}
         onScroll={onScroll}
-        className="flex-1 overflow-auto"
+        tabIndex={0}
+        className="flex-1 overflow-auto bg-[#f4f5f7] outline-none"
         style={{ contain: "strict" }}
       >
-        <table style={{ display: "grid" }}>
+        {/* Primary column full-height border line */}
+        {(() => {
+          const primaryColWidth = columnWidths[columnIds[0] ?? ""] ?? 180;
+          const left = 100 + primaryColWidth;
+          return (
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left,
+                width: 1,
+                height: "100%",
+                backgroundColor: "#e2e0ea",
+                pointerEvents: "none",
+                zIndex: 2,
+              }}
+            />
+          );
+        })()}
+        <table style={{ display: "grid", width: "fit-content", minWidth: "100%" }}>
           <GridHeader
             headers={table.getHeaderGroups()[0]?.headers ?? []}
             onRenameColumn={onRenameColumn}
@@ -91,6 +129,7 @@ export const GridTable = React.memo(function GridTable({
               display: "grid",
               height: `${rowVirtualizer.getTotalSize()}px`,
               position: "relative",
+              width: "fit-content",
             }}
           >
             {rowVirtualizer.getVirtualItems().map((virtualRow) => {
@@ -105,22 +144,23 @@ export const GridTable = React.memo(function GridTable({
                       display: "flex",
                       position: "absolute",
                       transform: `translateY(${virtualRow.start}px)`,
-                      width: "100%",
                       height: 32,
                     }}
-                    className="border-b border-[#e2e0ea]"
+                    className="border-b border-[#e2e0ea] bg-white"
                   >
                     <td
-                      style={{ display: "flex", width: 66, minWidth: 66 }}
-                      className="items-center border-r border-[#e2e0ea] px-2 py-0"
+                      style={{ display: "flex", width: 100, minWidth: 100 }}
+                      className="h-full items-center px-2 py-0"
                     >
                       <div className="h-3 w-8 animate-pulse rounded bg-[#ece9f5]" />
                     </td>
-                    {columnIds.map((colId, colIdx) => (
+                    {columnIds.map((colId, colIdx) => {
+                      const w = columnWidths[colId] ?? 180;
+                      return (
                       <td
                         key={colId}
-                        style={{ display: "flex", width: 180, minWidth: 180 }}
-                        className="items-center border-r border-[#e2e0ea] px-2 py-0"
+                        style={{ display: "flex", width: w, minWidth: w }}
+                        className="h-full items-center border-r border-[#e2e0ea] px-2 py-0"
                       >
                         <div
                           className="h-3 animate-pulse rounded bg-[#f0edf8]"
@@ -129,8 +169,8 @@ export const GridTable = React.memo(function GridTable({
                           }}
                         />
                       </td>
-                    ))}
-                    <td style={{ display: "flex", flex: 1 }} />
+                      );
+                    })}
                   </tr>
                 );
               }
@@ -144,20 +184,20 @@ export const GridTable = React.memo(function GridTable({
                     display: "flex",
                     position: "absolute",
                     transform: `translateY(${virtualRow.start}px)`,
-                    width: "100%",
+                    height: 32,
                   }}
-                  className="group border-b border-[#e2e0ea] hover:bg-[#f5f7fa]"
+                  className="group border-b border-[#e2e0ea] bg-white hover:bg-[#f5f7fa]"
                 >
                   {/* Checkbox + row number */}
                   <td
-                    style={{ display: "flex", width: 66, minWidth: 66 }}
-                    className="items-center gap-1.5 border-r border-[#e2e0ea] px-2 py-0"
+                    style={{ display: "flex", width: 100, minWidth: 100, position: "relative" }}
+                    className="h-full items-center px-2 py-0"
                   >
                     <input
                       type="checkbox"
-                      className="h-3.5 w-3.5 flex-shrink-0 cursor-pointer rounded border-[#ccc] accent-[#2563eb] opacity-0 group-hover:opacity-100"
+                      className="absolute left-2 h-3.5 w-3.5 cursor-pointer rounded border-[#ccc] accent-[#2563eb] opacity-0 group-hover:opacity-100"
                     />
-                    <span className="text-xs text-[#aaa]">
+                    <span className="flex-1 text-center text-xs text-[#aaa] group-hover:invisible">
                       {virtualRow.index + 1}
                     </span>
                     <button
@@ -174,20 +214,38 @@ export const GridTable = React.memo(function GridTable({
                   </td>
 
                   {columnIds.map((colId) => {
-                    const value = rowData.cells[colId];
+                    const meta = columns.find((c) => c.id === colId)?.meta as
+                      | { type: string; columnId: string }
+                      | undefined;
+                    const columnType = (meta?.type ?? "text") as "text" | "number";
+                    const cellValue = rowData.cells[colId] ?? null;
+                    const w = columnWidths[colId] ?? 180;
+                    const isFocused = cursor?.rowIndex === virtualRow.index && cursor?.columnId === colId;
+                    const isEditing = editingCell?.rowIndex === virtualRow.index && editingCell?.columnId === colId;
+
                     return (
                       <td
                         key={colId}
-                        style={{ display: "flex", width: 180, minWidth: 180 }}
-                        className="items-center truncate border-r border-[#e2e0ea] px-2 py-0 text-[13px] text-[#1f2328]"
+                        style={{ display: "flex", width: w, minWidth: w }}
+                        className="border-r border-[#e2e0ea]"
                       >
-                        {value !== null && value !== undefined ? String(value) : ""}
+                        <GridCell
+                          rowId={rowData.id}
+                          rowIndex={virtualRow.index}
+                          columnId={colId}
+                          columnType={columnType}
+                          value={cellValue}
+                          isFocused={isFocused}
+                          isEditing={isEditing}
+                          onCommit={onCommit}
+                          onRevert={onRevert}
+                          onStartEditing={() => onStartEditing(virtualRow.index, colId)}
+                          onSelect={() => onSelect(virtualRow.index, colId)}
+                        />
                       </td>
                     );
                   })}
 
-                  {/* Trailing empty cell */}
-                  <td style={{ display: "flex", flex: 1 }} className="border-r-0" />
                 </tr>
               );
             })}
@@ -196,12 +254,15 @@ export const GridTable = React.memo(function GridTable({
 
         {/* Add row button */}
         <div
-          className="flex items-center border-b border-[#e2e0ea] bg-white hover:bg-[#f5f7fa]"
-          style={{ width: "100%" }}
+          className="flex h-8 items-center border-b border-[#e2e0ea] bg-white hover:bg-[#f5f7fa]"
+          style={{ width: "fit-content" }}
         >
-          <div style={{ width: 66, minWidth: 66 }} className="flex items-center justify-center border-r border-[#e2e0ea] py-2">
+          <div style={{ width: 100, minWidth: 100 }} className="flex items-center px-2">
+            {/* invisible checkbox placeholder to match row layout */}
+            <div className="h-3.5 w-2 flex-shrink-0" />
+            <div className="w-1.5 flex-shrink-0" />
             <button
-              className="flex h-5 w-5 items-center justify-center rounded text-[#888] hover:bg-[#e2e0ea]"
+              className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded text-[#888] hover:bg-[#e2e0ea]"
               title="Add row"
             >
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -209,7 +270,16 @@ export const GridTable = React.memo(function GridTable({
               </svg>
             </button>
           </div>
-          <div className="flex-1" />
+          {columnIds.map((colId) => {
+            const w = columnWidths[colId] ?? 180;
+            return (
+            <div
+              key={colId}
+              style={{ width: w, minWidth: w }}
+              className="h-full border-r border-[#e2e0ea]"
+            />
+            );
+          })}
         </div>
       </div>
 

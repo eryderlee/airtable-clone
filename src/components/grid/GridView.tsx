@@ -1,11 +1,13 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { useMemo, useCallback, useRef, useReducer, useEffect } from "react";
+import type { Virtualizer } from "@tanstack/react-virtual";
+import { useMemo, useCallback, useRef, useReducer, useEffect, useState } from "react";
 
 import { api } from "~/trpc/react";
 import { GridTable, type RowData } from "./GridTable";
 import { GridToolbar } from "./GridToolbar";
+import { ViewsPanel } from "~/components/nav/ViewsPanel";
 
 const PAGE_SIZE = 100;
 const ROW_HEIGHT = 32;
@@ -15,7 +17,7 @@ interface GridViewProps {
   viewId: string;
 }
 
-export function GridView({ tableId, viewId: _viewId }: GridViewProps) {
+export function GridView({ tableId, viewId }: GridViewProps) {
   const utils = api.useUtils();
 
   // Column definitions
@@ -34,6 +36,45 @@ export function GridView({ tableId, viewId: _viewId }: GridViewProps) {
 
   // Single dispatch to force a re-render after cache updates
   const [, forceUpdate] = useReducer((x: number) => x + 1, 0);
+
+  // Cursor state — not in context, plain useState
+  const [cursor, setCursor] = useState<{ rowIndex: number; columnId: string } | null>(null);
+  const [editingCell, setEditingCell] = useState<{ rowIndex: number; columnId: string } | null>(null);
+
+  // Ref for the rowVirtualizer — lets GridView call scrollToIndex
+  const rowVirtualizerRef = useRef<Virtualizer<HTMLDivElement, Element> | null>(null);
+
+  // Double-rAF: first allows virtualizer to scroll+render, second allows DOM query
+  const scrollToCell = useCallback((rowIndex: number, columnId: string) => {
+    requestAnimationFrame(() => {
+      rowVirtualizerRef.current?.scrollToIndex(rowIndex, { align: "auto" });
+      requestAnimationFrame(() => {
+        const cellEl = document.querySelector<HTMLElement>(
+          `[data-row-index="${rowIndex}"][data-column-id="${columnId}"]`,
+        );
+        cellEl?.focus();
+      });
+    });
+  }, []);
+
+  const handleSelect = useCallback((rowIndex: number, columnId: string) => {
+    setCursor({ rowIndex, columnId });
+    setEditingCell(null);
+    scrollToCell(rowIndex, columnId);
+  }, [scrollToCell]);
+
+  const handleStartEditing = useCallback((rowIndex: number, columnId: string) => {
+    setEditingCell({ rowIndex, columnId });
+  }, []);
+
+  const handleRevert = useCallback(() => {
+    setEditingCell(null);
+  }, []);
+
+  const handleCommit = useCallback((_rowId: string, _columnId: string, _value: string | number | null) => {
+    setEditingCell(null);
+    // Mutation will be added in 05-02
+  }, []);
 
   function getRow(index: number): RowData | undefined {
     const page = Math.floor(index / PAGE_SIZE);
@@ -100,6 +141,15 @@ export function GridView({ tableId, viewId: _viewId }: GridViewProps) {
   });
 
   const renameColumn = api.column.update.useMutation({
+    onMutate: ({ id, name, type }) => {
+      utils.column.getByTableId.setData({ tableId }, (old) =>
+        old?.map((col) =>
+          col.id === id
+            ? { ...col, name, ...(type ? { type } : {}) }
+            : col,
+        ),
+      );
+    },
     onSuccess: () => {
       void utils.column.getByTableId.invalidate({ tableId });
     },
@@ -179,12 +229,17 @@ export function GridView({ tableId, viewId: _viewId }: GridViewProps) {
       id: col.id,
       header: col.name,
       accessorFn: (row: RowData) => row.cells[col.id] ?? null,
-      meta: { type: col.type, columnId: col.id },
+      meta: { type: col.type, columnId: col.id, isPrimary: col.isPrimary },
     }));
   }, [columnsData]);
 
   const columnIds = useMemo(
     () => columnsData?.map((c) => c.id) ?? [],
+    [columnsData],
+  );
+
+  const columnWidths = useMemo(
+    () => Object.fromEntries((columnsData ?? []).map((c) => [c.id, c.isPrimary ? 200 : 180])),
     [columnsData],
   );
 
@@ -197,6 +252,8 @@ export function GridView({ tableId, viewId: _viewId }: GridViewProps) {
         isBulkCreating={bulkCreate.isPending}
         rowCount={totalCount}
       />
+      <div className="flex flex-1 overflow-hidden">
+        <ViewsPanel tableId={tableId} activeViewId={viewId} />
       {isInitialLoading ? (
         <div className="flex flex-1 items-center justify-center">
           <p className="text-sm text-[#aaa]">Loading...</p>
@@ -206,6 +263,7 @@ export function GridView({ tableId, viewId: _viewId }: GridViewProps) {
           totalCount={totalCount}
           getRow={getRow}
           columnIds={columnIds}
+          columnWidths={columnWidths}
           columns={columnDefs}
           onScroll={handleScroll}
           isBulkCreating={bulkCreate.isPending}
@@ -214,8 +272,16 @@ export function GridView({ tableId, viewId: _viewId }: GridViewProps) {
           onDeleteColumn={handleDeleteColumn}
           onAddColumn={handleAddColumn}
           displayCount={displayCount}
+          cursor={cursor}
+          editingCell={editingCell}
+          onSelect={handleSelect}
+          onStartEditing={handleStartEditing}
+          onCommit={handleCommit}
+          onRevert={handleRevert}
+          rowVirtualizerRef={rowVirtualizerRef}
         />
       )}
+      </div>
     </div>
   );
 }
