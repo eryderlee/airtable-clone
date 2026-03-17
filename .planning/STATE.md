@@ -9,29 +9,30 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 
 ## Current Position
 
-Phase: 1 of 8 (Foundation) — COMPLETE
-Plan: 3 of 3 complete in this phase (01-01 complete, 01-02 complete, 01-03 complete)
-Status: Phase 1 complete — ready for Phase 2 (tRPC CRUD routers)
-Last activity: 2026-03-17 — Phase 1 complete. Human verification passed (OAuth, JWT, sign-out, Vercel live). Ready for Phase 2.
+Phase: 2 of 8 (Data Layer) — In progress
+Plan: 1 of 3 complete in this phase (02-01 complete)
+Status: In progress — 02-01 CRUD routers done; 02-02 (row pagination router) next
+Last activity: 2026-03-17 — Completed 02-01-PLAN.md. Four tRPC CRUD routers created. Build passing.
 
-Progress: [███░░░░░░░] ~12% (3 of 3 plans in phase 1 complete; ~3/24 total plans)
+Progress: [████░░░░░░] ~17% (~4/24 total plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: ~35 min
-- Total execution time: ~70 min
+- Total plans completed: 4
+- Average duration: ~22 min
+- Total execution time: ~103 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-foundation | 3/3 complete | ~78 min | ~26 min |
+| 02-data-layer | 1/3 complete | ~25 min | ~25 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (60 min), 01-02 (~10 min), 01-03 (~8 min)
-- Trend: Improving (01-02 and 01-03 both fast; well-specified plans execute quickly)
+- Last 5 plans: 01-01 (60 min), 01-02 (~10 min), 01-03 (~8 min), 02-01 (~25 min)
+- Trend: Stable (~25 min for well-specified plans)
 
 *Updated after each plan completion*
 
@@ -60,10 +61,14 @@ Recent decisions affecting current work:
 - 01-03: ROW tuple comparison required for cursor pagination — OR-expanded cursor pattern causes O(n) filter scan; `(row_order, id) > (cursorOrder, cursorId)` uses composite index as tight range, executes in 2ms on 1M rows
 - 01-03: Benchmark baseline — first page 176ms client-side (5ms DB), large page 178ms client-side; cursor queries with correct ROW pattern are 2ms DB-side (network latency dominates)
 - 01-03: 1M rows seeded via transaction pooler (DATABASE_URL port 6543); DIRECT_URL unavailable (IPv6-only) but not needed for 1000-row chunks
+- 02-01: @faker-js/faker moved from devDependencies to dependencies — table.create seed runs at runtime; devDep not available in production builds
+- 02-01: max(columns.order) + 1 for column auto-increment — handles gaps/deletions gracefully; no counter column needed
+- 02-01: NOT_FOUND for ownership violations — avoids leaking whether a resource exists for a different user (no info leak)
+- 02-01: view.updateConfig uses partial merge — clients can update only searchQuery without resetting filters
 
 ### Pending Todos
 
-- Phase 2: tRPC CRUD routers — MUST use ROW tuple comparison for cursor pagination: `(row_order, id) > (cursorOrder, cursorId)`, NOT the OR-expanded form
+- Phase 2: tRPC row router (02-02) — MUST use ROW tuple comparison for cursor pagination: `(row_order, id) > (cursorOrder, cursorId)`, NOT the OR-expanded form
 
 ### Blockers/Concerns
 
@@ -73,6 +78,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-03-17T03:10:25Z
-Stopped at: Completed 01-03-PLAN.md (Phase 1 complete — seed + benchmark done)
-Resume file: .planning/phases/02-trpc-crud/02-01-PLAN.md (Phase 2 begins)
+Last session: 2026-03-17T05:29:00Z
+Stopped at: Completed 02-01-PLAN.md (four CRUD routers created, build passing)
+Resume file: .planning/phases/02-data-layer/02-02-PLAN.md (row pagination router)
