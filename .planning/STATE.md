@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 
 ## Current Position
 
-Phase: 5 of 8 (Cell Editing) — Complete ✓
-Plan: 2/2 complete
-Status: Phase 5 verified 13/13. Ready for Phase 6.
-Last activity: 2026-03-17 — Completed 05-02. handleKeyDown container handler, updateCell optimistic pageCacheRef mutation, initialDraft for printable-char entry. Human verified all 7 points. 13/13 must-haves verified.
+Phase: 6 of 8 (Toolbar) — In progress
+Plan: 1/3 complete
+Status: 06-01 complete. Data foundation: getByOffset/count extended, GridView toolbar state wired.
+Last activity: 2026-03-17 — Completed 06-01. getByOffset two-path filter/sort/search; row.count filter/search; GridView toolbar state with debounce and cache invalidation.
 
-Progress: [████████████] ~63% (15 of ~24 total plans)
+Progress: [█████████████] ~67% (16 of ~24 total plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
-- Average duration: ~18 min
-- Total execution time: ~134 min
+- Total plans completed: 9
+- Average duration: ~17 min
+- Total execution time: ~142 min
 
 **By Phase:**
 
@@ -32,9 +32,10 @@ Progress: [████████████] ~63% (15 of ~24 total plans)
 | 03-navigation-shell | 3/3 complete | ~10 min | ~3 min |
 | 04-grid-core | 3/3 complete | ~9 min | ~4.5 min |
 | 05-cell-editing | 2/2 complete | ~15 min | ~7.5 min |
+| 06-toolbar | 1/3 in progress | ~8 min | ~8 min |
 
 **Recent Trend:**
-- Last 5 plans: 03-02 (~5 min), 03-03 (~unknown), 04-01 (~4 min), 04-02 (~5 min), 05-01 (~5 min)
+- Last 5 plans: 04-01 (~4 min), 04-02 (~5 min), 05-01 (~5 min), 05-02 (~10 min), 06-01 (~8 min)
 - Trend: Well-specified UI plans with clear component specs execute very quickly
 
 *Updated after each plan completion*
@@ -98,10 +99,15 @@ Recent decisions affecting current work:
 - 05-02: Tab intercepted at container level even in edit mode; Enter/Escape handled by GridCell input onKeyDown with stopPropagation
 - 05-02: Printable-char detection: e.key.length === 1 && !ctrlKey && !metaKey && !altKey — catches all typeable chars, excludes modifier combos
 - 05-02: Arrow keys stop at grid boundaries (no wrap); Tab wraps end-of-row to start-of-next-row
+- 06-01: Two-path getByOffset: isFastPath = no filters + no sorts + no search uses rowOrder seek; SQL OFFSET when active — accepted O(n) trade-off for filtered/sorted queries
+- 06-01: row.count only needs filters and searchQuery, not sorts — sorts don't affect row count
+- 06-01: openPanel state lives in GridView alongside filters/sorts/search — all toolbar state co-located
+- 06-01: isFirstRender ref guards cache-reset useEffect — prevents spurious reset on mount
+- 06-01: columnOrder = visibleColumnIds (hidden columns excluded from keyboard nav index math)
 
 ### Pending Todos
 
-- None — Phase 5 complete. Phase 6 (search/filter) is next.
+- None — Phase 6 in progress. Next: 06-02 (FilterPanel/SortPanel/HideFieldsPanel UI).
 
 ### Blockers/Concerns
 
@@ -111,5 +117,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-03-17
-Stopped at: Completed 05-02 — keyboard navigation, optimistic cell mutation, human-verified.
+Stopped at: Completed 06-01 — data foundation for toolbar; backend params extended; GridView toolbar state wired.
 Resume file: None
