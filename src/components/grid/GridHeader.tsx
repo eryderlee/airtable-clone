@@ -1,6 +1,6 @@
 "use client";
 
-import { flexRender, type Header } from "@tanstack/react-table";
+import { type Header } from "@tanstack/react-table";
 import { useState } from "react";
 
 import { InlineEdit } from "~/components/ui/InlineEdit";
@@ -69,7 +69,7 @@ export function GridHeader({
           const headerName =
             typeof header.column.columnDef.header === "string"
               ? header.column.columnDef.header
-              : flexRender(header.column.columnDef.header, header.getContext())?.toString() ?? header.id;
+              : header.id;
           return (
             <th
               key={header.id}
