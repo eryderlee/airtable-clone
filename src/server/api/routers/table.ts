@@ -79,11 +79,11 @@ export const tableRouter = createTRPCRouter({
         const notesColId = notesCol.id;
         const statusColId = statusCol.id;
 
-        // Create 5 rows with faker data
+        // Create 10 rows with faker data
         const { faker } = await import("@faker-js/faker");
 
         await ctx.db.insert(rows).values(
-          Array.from({ length: 5 }, (_, i) => ({
+          Array.from({ length: 10 }, (_, i) => ({
             tableId: table.id,
             rowOrder: i,
             cells: {
