@@ -24,14 +24,14 @@
 - [ ] **TBL-02**: User can rename a table
 - [ ] **TBL-03**: User can delete a table
 - [ ] **TBL-04**: New tables are pre-populated with default rows and columns using faker.js data
-- [ ] **TBL-05**: User can add 100k rows to any table via a single button click
+- [x] **TBL-05**: User can add 100k rows to any table via a single button click
 
 ### Columns
 
-- [ ] **COL-01**: User can dynamically add a Text-type column to a table
-- [ ] **COL-02**: User can dynamically add a Number-type column to a table
-- [ ] **COL-03**: User can rename a column by double-clicking its header
-- [ ] **COL-04**: User can delete a column (removes column and all its cell data)
+- [x] **COL-01**: User can dynamically add a Text-type column to a table
+- [x] **COL-02**: User can dynamically add a Number-type column to a table
+- [x] **COL-03**: User can rename a column by double-clicking its header
+- [x] **COL-04**: User can delete a column (removes column and all its cell data)
 
 ### Cell Editing
 
@@ -43,11 +43,11 @@
 
 ### Performance
 
-- [ ] **PERF-01**: Table uses virtualized infinite scroll — only visible rows are rendered in the DOM
-- [ ] **PERF-02**: Row virtualization handles 1M rows without lag (TanStack Virtualizer)
+- [x] **PERF-01**: Table uses virtualized infinite scroll — only visible rows are rendered in the DOM
+- [x] **PERF-02**: Row virtualization handles 1M rows without lag (TanStack Virtualizer)
 - [ ] **PERF-03**: Column virtualization handles large numbers of columns without lag
 - [ ] **PERF-04**: Columns are fetched incrementally as the user scrolls horizontally
-- [ ] **PERF-05**: Loading states are shown during all async operations (fetch, filter, sort, search)
+- [x] **PERF-05**: Loading states are shown during all async operations (fetch, filter, sort, search)
 
 ### Search, Filter & Sort
 
@@ -128,21 +128,21 @@
 | TBL-02 | Phase 3 | Pending |
 | TBL-03 | Phase 3 | Pending |
 | TBL-04 | Phase 3 | Pending |
-| TBL-05 | Phase 4 | Pending |
-| COL-01 | Phase 4 | Pending |
-| COL-02 | Phase 4 | Pending |
-| COL-03 | Phase 4 | Pending |
-| COL-04 | Phase 4 | Pending |
+| TBL-05 | Phase 4 | Complete |
+| COL-01 | Phase 4 | Complete |
+| COL-02 | Phase 4 | Complete |
+| COL-03 | Phase 4 | Complete |
+| COL-04 | Phase 4 | Complete |
 | CELL-01 | Phase 5 | Pending |
 | CELL-02 | Phase 5 | Pending |
 | CELL-03 | Phase 5 | Pending |
 | CELL-04 | Phase 5 | Pending |
 | CELL-05 | Phase 5 | Pending |
-| PERF-01 | Phase 4 | Pending |
-| PERF-02 | Phase 4 | Pending |
+| PERF-01 | Phase 4 | Complete |
+| PERF-02 | Phase 4 | Complete |
 | PERF-03 | Phase 7 | Pending |
 | PERF-04 | Phase 7 | Pending |
-| PERF-05 | Phase 4 | Pending |
+| PERF-05 | Phase 4 | Complete |
 | SFS-01 | Phase 6 | Pending |
 | SFS-02 | Phase 6 | Pending |
 | SFS-03 | Phase 6 | Pending |

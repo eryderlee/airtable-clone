@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-17)
 
 **Core value:** A table UI that feels exactly like Airtable and never chokes — 1M rows, instant scroll, DB-level filtering.
-**Current focus:** Phase 4 — Grid Core
+**Current focus:** Phase 5 — Cell Editing
 
 ## Current Position
 
-Phase: 4 of 8 (Grid Core) — In progress
-Plan: 2 of 3 complete in this phase (04-01, 04-02 complete)
-Status: In progress — 04-02 complete, 04-03 next
-Last activity: 2026-03-17 — Completed 04-02-PLAN.md. Column add/rename/delete UI, GridToolbar with 100k bulk insert, all mutations wired. Build passing.
+Phase: 4 of 8 (Grid Core) — Complete ✓
+Plan: 3/3 complete
+Status: Phase 4 verified 5/5. Ready for Phase 5.
+Last activity: 2026-03-17 — Completed 04-03. Random-access virtual scroll, skeleton rows, live bulk insert count, rowOrder seek optimization. User verified in browser.
 
-Progress: [█████████░] ~45% (9 of ~20 total plans)
+Progress: [██████████] ~55% (12 of ~20 total plans)
 
 ## Performance Metrics
 
@@ -30,7 +30,7 @@ Progress: [█████████░] ~45% (9 of ~20 total plans)
 | 01-foundation | 3/3 complete | ~78 min | ~26 min |
 | 02-data-layer | 2/2 complete | ~47 min | ~24 min |
 | 03-navigation-shell | 3/3 complete | ~10 min | ~3 min |
-| 04-grid-core | 2/3 in progress | ~9 min | ~4.5 min |
+| 04-grid-core | 3/3 complete | ~9 min | ~4.5 min |
 
 **Recent Trend:**
 - Last 5 plans: 03-01 (~5 min), 03-02 (~5 min), 03-03 (~unknown), 04-01 (~4 min), 04-02 (~5 min)
@@ -86,20 +86,21 @@ Recent decisions affecting current work:
 - 04-02: GridHeader header name uses `header.id` fallback (not flexRender().toString()) — avoids no-base-to-string ESLint error; all current columns use string headers so this is safe
 - 04-02: Column mutations placed in GridView (not child components) — stable callback refs passed down as props; avoids mutation hooks inside list renders
 - 04-02: window.confirm() used for delete confirmation — simple browser dialog sufficient for phase 4; can be upgraded to custom modal later
+- 04-03: useInfiniteQuery replaced with ref-based page cache — virtualizer sized to totalCount from row.count; fetchPage() uses utils.row.getByOffset.fetch() imperatively; forceUpdate() controls re-renders
+- 04-03: getByOffset uses rowOrder >= offset seek (O(log n)) not SQL OFFSET (O(n)) — assumes dense rowOrder; breaks on row deletion (documented in ROADMAP Technical Constraints)
+- 04-03: TanStack Table kept only for column header management — row rendering bypasses it entirely; cell values rendered directly from rowData.cells[colId]
 
 ### Pending Todos
 
-- None — 04-02 complete. 04-03 is next in phase 04.
+- None — Phase 4 complete. Phase 5 (Cell Editing) is next.
 
 ### Blockers/Concerns
 
-- Phase 4 sticky header concern resolved: display:grid + translateY pattern confirmed working (04-01)
-- 04-03 concern: InlineEdit in GridHeader activates on double-click for column rename; if cell editing also uses double-click, the interaction model needs to be consistent — validate in 04-03
 - Phase 5: Focus management in virtualized grids is under-documented — validate scrollToIndex + requestAnimationFrame focus restoration pattern before implementing
 - Phase 7: If v1 regularly exceeds 30 columns, bi-directional virtualizer scroll performance issue (GitHub #685) needs mitigation strategy before implementation
 
 ## Session Continuity
 
 Last session: 2026-03-17
-Stopped at: Completed 04-02-PLAN.md — Column management UI + bulk insert toolbar wired. Build passing.
-Resume file: .planning/phases/04-grid-core/04-03-PLAN.md
+Stopped at: Phase 4 complete — all 3 plans done, verified 5/5. Ready for Phase 5.
+Resume file: /gsd:plan-phase 05
