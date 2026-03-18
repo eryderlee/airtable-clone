@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 ## Current Position
 
 Phase: 9 of 9 (Neon Migration) — In progress
-Plan: 1/3 complete
-Status: Phases 1-8 complete. Phase 9 Plan 1 complete (Neon connected, schema applied).
-Last activity: 2026-03-18 — Completed 09-01-PLAN.md (Neon setup, schema push, local dev verified)
+Plan: 2/3 complete
+Status: Phases 1-8 complete. Phase 9 Plans 1-2 complete (Neon connected, schema applied, app build verified against Neon).
+Last activity: 2026-03-18 — Completed 09-02-PLAN.md (data migration — Option B chosen, build fix, bulkCreate verified)
 
-Progress: [████████████████████░░░] ~88% (25 of 27 total plans)
+Progress: [█████████████████████░░] ~91% (26 of 27 total plans)
 
 ## Performance Metrics
 
@@ -125,10 +125,12 @@ Recent decisions affecting current work:
 - 09-01: Neon PgBouncer requires prepare: false same as Supabase Supavisor — no runtime config change needed
 - 09-01: sslmode=require in Neon connection URL is sufficient; no explicit ssl option in postgres() call needed
 - 09-01: drizzle-kit push via DIRECT_URL (non-pooled) applied all 9 tables+indexes to fresh Neon DB cleanly
+- 09-02: Option B (re-seed) chosen — pg_dump not available; Neon starts empty, user seeds via +100k button in browser UI
+- 09-02: build failure (react/no-unescaped-entities in ViewsPanel.tsx) found and fixed during verification
 
 ### Pending Todos
 
-- None — Phase 9 plan 2 (data migration) next.
+- None — Phase 9 plan 3 (Vercel env update) next.
 
 ### Blockers/Concerns
 
@@ -138,5 +140,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-03-18
-Stopped at: Completed 09-01-PLAN.md (Neon setup: schema applied, local dev verified). Phase 9 plan 1 complete.
+Stopped at: Completed 09-02-PLAN.md (data migration: Option B — re-seed path, build fix, bulkCreate verified). Phase 9 plan 2 complete.
 Resume file: None
