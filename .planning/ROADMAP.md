@@ -20,6 +20,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 6: Toolbar** - Search, filter, sort, and hide-columns controls with DB-level execution
 - [x] **Phase 7: Column Virtualization** - Horizontal virtualization for large column counts, column resize
 - [x] **Phase 8: View Persistence** - Full per-view state saved and restored across sessions
+- [ ] **Phase 9: Neon Migration** - Database migration from Supabase to Neon, Vercel env update, production cutover
 
 ## Standing Deployment Note
 
@@ -177,7 +178,12 @@ Plans:
   3. `npx drizzle-kit push` runs successfully against Neon from a local machine
   4. The 1M-row seed is present (either migrated or re-seeded) and cursor-paginated queries complete in under 200ms
   5. Cold-start behavior is documented (Neon free tier scales to zero after inactivity)
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 09-01-PLAN.md — Neon project setup, local env config, schema push, dev server verification
+- [ ] 09-02-PLAN.md — Data migration (pg_dump/pg_restore or re-seed fallback), integrity and performance verification
+- [ ] 09-03-PLAN.md — Vercel env var update, production deployment, live verification, cold-start documentation
 
 ### Phase 10: UX Performance — Optimistic Updates
 **Goal**: Every user-facing mutation (create/rename/delete base, table, column, row, view; switch view; open base) feels instant — optimistic updates eliminate visible loading states for all common operations so the UI responds in under 50ms regardless of network latency.
@@ -208,5 +214,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 6. Toolbar | 3/3 | Complete | 2026-03-18 |
 | 7. Column Virtualization | 1/1 | Complete | 2026-03-18 |
 | 8. View Persistence | 2/2 | Complete | 2026-03-18 |
-| 9. Neon Migration | 0/TBD | Not started | - |
+| 9. Neon Migration | 0/3 | Not started | - |
 | 10. UX Performance | 0/TBD | Not started | - |
