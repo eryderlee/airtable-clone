@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-17)
 
 **Core value:** A table UI that feels exactly like Airtable and never chokes — 1M rows, instant scroll, DB-level filtering.
-**Current focus:** Phase 7 — Column Virtualization
+**Current focus:** Phase 8 — View Persistence
 
 ## Current Position
 
-Phase: 7 of 8 (Column Virtualization) — In progress
-Plan: 0/1 complete (07-01 tasks done, awaiting human-verify checkpoint)
-Status: 07-01 tasks 1 & 2 complete, build verified. Stopped at checkpoint:human-verify.
-Last activity: 2026-03-18 — Completed 07-01 tasks. Awaiting human verification of column virtualization.
+Phase: 8 of 8 (View Persistence) — Not started
+Plan: 0/2 complete
+Status: Phase 7 approved 2026-03-18. Phase 8 pending plan.
+Last activity: 2026-03-18 — Completed Phase 7 (Column Virtualization). Human verified and approved.
 
-Progress: [████████████████░] ~83% (20 of ~24 total plans)
+Progress: [█████████████████░] ~88% (21 of ~24 total plans)
 
 ## Performance Metrics
 
@@ -114,19 +114,22 @@ Recent decisions affecting current work:
 - 07-01: COLUMN_VIRTUALIZATION_THRESHOLD=20 — avoids GitHub #685 bi-directional scroll lag for tables under threshold; enabled: false on virtualizer skips all overhead
 - 07-01: Virtual padding spacer pattern for column virtualization — left/right <td>/<th> spacers instead of translateX per cell; integrates with display:grid table layout
 - 07-01: columnsToRender uses flatMap+undefined guard not non-null assertion — required by @typescript-eslint/no-unnecessary-type-assertion
-- 07-01: Column defs/visibleColumnIds moved before scrollToCell in GridView — TypeScript block-scoped use-before-declare error from scrollToCell referencing visibleColumnIds which was defined after handleSelect
+- 07-01: COLUMN_VIRTUALIZATION_THRESHOLD=20 — avoids GitHub #685 bi-directional scroll lag for tables under threshold; enabled: false on virtualizer skips all overhead
+- 07-01: Virtual padding spacer pattern for column virtualization — left/right <td>/<th> spacers instead of translateX per cell; integrates with display:grid table layout
+- 07-01: columnsToRender uses flatMap+undefined guard not non-null assertion — required by @typescript-eslint/no-unnecessary-type-assertion
+- 07-01: Column defs/visibleColumnIds moved before scrollToCell in GridView — TypeScript block-scoped use-before-declare error
 
 ### Pending Todos
 
-- None — Phase 7 next.
+- None — Phase 8 next.
 
 ### Blockers/Concerns
 
-- Phase 5: Focus management in virtualized grids is under-documented — RESOLVED in 05-01: double-rAF pattern (scrollToIndex then DOM querySelector focus) works correctly
-- Phase 7: If v1 regularly exceeds 30 columns, bi-directional virtualizer scroll performance issue (GitHub #685) needs mitigation strategy before implementation
+- Phase 5: Focus management in virtualized grids is under-documented — RESOLVED in 05-01: double-rAF pattern works correctly
+- Phase 7: GitHub #685 bi-directional scroll lag — RESOLVED via threshold-based activation (threshold=20 avoids the issue entirely for typical tables)
 
 ## Session Continuity
 
 Last session: 2026-03-18
-Stopped at: 07-01 checkpoint:human-verify. Tasks 1+2 committed (51f29b9). Awaiting user verification of column virtualization behavior with 25+ columns.
+Stopped at: Phase 7 complete and human-approved. Ready to plan Phase 8 (View Persistence).
 Resume file: None
