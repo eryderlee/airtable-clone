@@ -74,6 +74,9 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
   );
   const totalCount = countData?.count ?? 0;
 
+  // View config auto-save mutation — fire and forget, no optimistic update needed
+  const updateViewConfig = api.view.updateConfig.useMutation();
+
   // Optimistic cell update mutation — directly mutates pageCacheRef for instant feedback
   const updateCell = api.row.update.useMutation({
     onMutate: ({ id, cells }) => {
@@ -261,6 +264,25 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
     void refetchCount();
     // fetchPage(0) will be triggered by the existing totalCount effect
   }, [filters, sorts]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Separate ref to guard auto-save — prevents saving on initial mount (SSR-seeded values already correct in DB)
+  const isFirstConfigRender = useRef(true);
+
+  // Auto-save filters/sorts/hiddenColumns to DB after 800ms debounce
+  // searchInput/searchQuery are intentionally excluded — search is ephemeral (Phase 6 decision)
+  useEffect(() => {
+    if (isFirstConfigRender.current) {
+      isFirstConfigRender.current = false;
+      return;
+    }
+    const timer = setTimeout(() => {
+      updateViewConfig.mutate({
+        id: viewId,
+        config: { filters, sorts, hiddenColumns },
+      });
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [filters, sorts, hiddenColumns]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load page 0 on mount / when count first resolves
   useEffect(() => {
