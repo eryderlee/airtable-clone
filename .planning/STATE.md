@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 
 ## Current Position
 
-Phase: 8 of 8 (View Persistence) — In progress
-Plan: 1/2 complete
-Status: Phase 8 plan 1 complete. Plan 2 (view switching UX) pending.
-Last activity: 2026-03-18 — Completed 08-01-PLAN.md (SSR-seeded view config persistence)
+Phase: 8 of 8 (View Persistence) — Complete
+Plan: 2/2 complete
+Status: All plans executed. Phase 8 complete. Human verification passed.
+Last activity: 2026-03-18 — Completed 08-02-PLAN.md (view rename/delete UI + human-verified persistence pipeline)
 
-Progress: [██████████████████░] ~92% (22 of ~24 total plans)
+Progress: [████████████████████] 100% (24 of 24 total plans)
 
 ## Performance Metrics
 
@@ -121,6 +121,7 @@ Recent decisions affecting current work:
 - 08-01: key={viewId} on GridView forces React unmount/remount on view switch — eliminates stale state without manual cleanup
 - 08-01: isFirstConfigRender ref separate from isFirstRender ref — each useEffect guard is independent
 - 08-01: updateViewConfig is fire-and-forget (no optimistic update) — config save failure is silent; acceptable for v1
+- 08-02: ViewsPanel rename via InlineEdit double-click + delete button with last-view guard; active-view deletion redirects to first remaining view
 
 ### Pending Todos
 
@@ -134,5 +135,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-03-18
-Stopped at: Completed 08-01-PLAN.md (SSR-seeded view config persistence). Phase 8 plan 2 pending.
+Stopped at: Completed 08-02-PLAN.md (view rename/delete UI + human-verified persistence). Phase 8 complete. All 8 phases done.
 Resume file: None
