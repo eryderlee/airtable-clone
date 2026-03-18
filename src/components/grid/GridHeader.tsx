@@ -11,6 +11,11 @@ interface GridHeaderProps {
   onUpdateColumn: (columnId: string, name: string, type: "text" | "number") => void;
   onDeleteColumn: (columnId: string) => void;
   onAddColumn: (type: "text" | "number") => void;
+  allSelected: boolean;
+  onSelectAll: () => void | Promise<void>;
+  columnsToRender?: string[];       // column IDs to actually render (when virtualized)
+  virtualPaddingLeft?: number;
+  virtualPaddingRight?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -230,12 +235,14 @@ function AddColumnMenu({ onAdd }: { onAdd: (type: "text" | "number") => void }) 
 function ColumnMenu({
   columnId: _columnId,
   columnName: _columnName,
+  isPrimary,
   onRename: _onRename,
   onDelete,
   onEditField,
 }: {
   columnId: string;
   columnName: string;
+  isPrimary: boolean;
   onRename: (name: string) => void;
   onDelete: () => void;
   onEditField: () => void;
@@ -291,7 +298,7 @@ function ColumnMenu({
           <Item icon={<GroupIcon />} label="Group by this field" onClick={() => setOpen(false)} />
           <Divider />
           <Item icon={<HideIcon />} label="Hide field" disabled />
-          <Item icon={<DeleteIcon />} label="Delete field" onClick={handleDelete} danger />
+          {!isPrimary && <Item icon={<DeleteIcon />} label="Delete field" onClick={handleDelete} danger />}
         </div>
       )}
     </div>
@@ -351,27 +358,52 @@ export function GridHeader({
   onUpdateColumn,
   onDeleteColumn,
   onAddColumn,
+  allSelected,
+  onSelectAll,
+  columnsToRender,
+  virtualPaddingLeft = 0,
+  virtualPaddingRight = 0,
 }: GridHeaderProps) {
   // Track which column has its edit modal open
   const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
 
+  // When virtualized, only render headers whose id is in columnsToRender
+  const headersToRender = columnsToRender
+    ? headers.filter((h) => columnsToRender.includes(h.id))
+    : headers;
+
   return (
     <thead style={{ display: "grid", position: "sticky", top: 0, zIndex: 1 }}>
-      <tr style={{ display: "flex", width: "100%" }}>
+      <tr style={{ display: "flex" }}>
         {/* Checkbox column */}
         <th
-          style={{ display: "flex", width: 66, minWidth: 66 }}
-          className="items-center border-b border-r border-[#e2e0ea] bg-[#f6f7fb] px-2"
+          style={{ display: "flex", width: 100, minWidth: 100, height: 32 }}
+          className="items-center border-b border-[#e2e0ea] bg-white px-2"
         >
-          <input type="checkbox" className="h-3.5 w-3.5 cursor-pointer rounded border-[#ccc] accent-[#2563eb]" />
+          <input
+            type="checkbox"
+            checked={allSelected}
+            onChange={onSelectAll}
+            className="h-3.5 w-3.5 cursor-pointer rounded border-[#ccc] accent-[#2563eb]"
+          />
         </th>
 
-        {headers.map((header) => {
+        {/* Left virtual padding spacer */}
+        {virtualPaddingLeft > 0 && (
+          <th
+            style={{ display: "flex", width: virtualPaddingLeft, minWidth: virtualPaddingLeft, height: 32 }}
+            className="border-b border-[#e2e0ea] bg-white"
+          />
+        )}
+
+        {headersToRender.map((header) => {
           const meta = header.column.columnDef.meta as
-            | { type: string; columnId: string }
+            | { type: string; columnId: string; isPrimary?: boolean }
             | undefined;
           const columnId = meta?.columnId ?? header.id;
           const colType = (meta?.type ?? "text") as "text" | "number";
+          const isPrimary = meta?.isPrimary ?? false;
+          const colWidth = isPrimary ? 200 : 180;
           const headerName =
             typeof header.column.columnDef.header === "string"
               ? header.column.columnDef.header
@@ -381,17 +413,17 @@ export function GridHeader({
           return (
             <th
               key={header.id}
-              style={{ display: "flex", width: 180, minWidth: 180 }}
-              className="group relative items-center border-b border-r border-[#e2e0ea] bg-[#f6f7fb] px-2 py-0 text-left"
+              style={{ display: "flex", width: colWidth, minWidth: colWidth, height: 32 }}
+              className="group relative items-center border-b border-r border-[#e2e0ea] bg-white px-2 py-0 text-left"
             >
-              {/* Field type icon */}
+              {/* Field type icon — key for primary, text/number otherwise */}
               <span className="mr-1.5 flex-shrink-0 text-[#888]">
-                {colType === "number" ? <NumberIcon /> : <TextIcon />}
+                {isPrimary ? <PrimaryKeyIcon /> : colType === "number" ? <NumberIcon /> : <TextIcon />}
               </span>
 
               {/* Column name — double-click opens edit modal */}
               <span
-                className="flex-1 truncate text-[13px] font-medium text-[#333]"
+                className="flex-1 cursor-default truncate text-[13px] font-medium text-[#333]"
                 onDoubleClick={(e) => { e.stopPropagation(); setEditingColumnId(columnId); }}
               >
                 {headerName}
@@ -402,6 +434,7 @@ export function GridHeader({
                 <ColumnMenu
                   columnId={columnId}
                   columnName={headerName}
+                  isPrimary={isPrimary}
                   onRename={(name) => onRenameColumn(columnId, name)}
                   onDelete={() => onDeleteColumn(columnId)}
                   onEditField={() => setEditingColumnId(columnId)}
@@ -422,19 +455,22 @@ export function GridHeader({
           );
         })}
 
+        {/* Right virtual padding spacer — before add-column button */}
+        {virtualPaddingRight > 0 && (
+          <th
+            style={{ display: "flex", width: virtualPaddingRight, minWidth: virtualPaddingRight, height: 32 }}
+            className="border-b border-[#e2e0ea] bg-white"
+          />
+        )}
+
         {/* Add column button */}
         <th
-          style={{ display: "flex", width: 40, minWidth: 40 }}
-          className="border-b border-r border-[#e2e0ea] bg-[#f6f7fb] p-0"
+          style={{ display: "flex", width: 90, minWidth: 90, height: 32 }}
+          className="border-b border-r border-[#e2e0ea] bg-white p-0"
         >
           <AddColumnMenu onAdd={onAddColumn} />
         </th>
 
-        {/* Trailing filler */}
-        <th
-          style={{ display: "flex", flex: 1 }}
-          className="border-b border-[#e2e0ea] bg-[#f6f7fb]"
-        />
       </tr>
     </thead>
   );
@@ -443,6 +479,15 @@ export function GridHeader({
 // ---------------------------------------------------------------------------
 // Icons
 // ---------------------------------------------------------------------------
+
+function PrimaryKeyIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+      <circle cx="4.5" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.2" />
+      <path d="M6.5 5h3M8 3.5V5M9.5 3.5V5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
+  );
+}
 
 function TextIcon() {
   return (

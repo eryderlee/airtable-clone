@@ -16,11 +16,13 @@ export type RowData = {
   cells: Record<string, string | number | null>;
 };
 
+// Column virtualization activates when column count meets or exceeds this threshold
+export const COLUMN_VIRTUALIZATION_THRESHOLD = 20;
+
 // Stable empty array so useReactTable doesn't see a new reference each render
 const EMPTY_ROWS: RowData[] = [];
 
 interface GridTableProps {
-  totalCount: number;
   getRow: (index: number) => RowData | undefined;
   columnIds: string[];
   columnWidths: Record<string, number>;
@@ -33,6 +35,7 @@ interface GridTableProps {
   onAddColumn: (type: "text" | "number") => void;
   displayCount: number;
   searchQuery?: string;
+  currentSearchMatch?: { rowIndex: number; columnId: string } | null;
   cursor: { rowIndex: number; columnId: string } | null;
   editingCell: { rowIndex: number; columnId: string } | null;
   onSelect: (rowIndex: number, columnId: string) => void;
@@ -42,6 +45,7 @@ interface GridTableProps {
   onKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void;
   initialDraft?: string;
   rowVirtualizerRef: React.MutableRefObject<Virtualizer<HTMLDivElement, Element> | null>;
+  columnVirtualizerRef: React.MutableRefObject<Virtualizer<HTMLDivElement, Element> | null>;
   selectedRowIds: Set<string>;
   onToggleRow: (rowId: string) => void;
   onSelectAll: () => void | Promise<void>;
@@ -50,7 +54,6 @@ interface GridTableProps {
 }
 
 export const GridTable = React.memo(function GridTable({
-  totalCount,
   getRow,
   columnIds,
   columnWidths,
@@ -63,6 +66,7 @@ export const GridTable = React.memo(function GridTable({
   onAddColumn,
   displayCount,
   searchQuery,
+  currentSearchMatch,
   cursor,
   editingCell,
   onSelect,
@@ -72,6 +76,7 @@ export const GridTable = React.memo(function GridTable({
   onKeyDown,
   initialDraft,
   rowVirtualizerRef,
+  columnVirtualizerRef,
   selectedRowIds,
   onToggleRow,
   onSelectAll,
@@ -105,7 +110,7 @@ export const GridTable = React.memo(function GridTable({
   });
 
   const rowVirtualizer = useVirtualizer({
-    count: totalCount,
+    count: displayCount,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 32,
     overscan: 20,
@@ -115,6 +120,32 @@ export const GridTable = React.memo(function GridTable({
         : undefined,
   });
   rowVirtualizerRef.current = rowVirtualizer;
+
+  // Column virtualization — only activates when column count >= threshold
+  const shouldVirtualizeColumns = columnIds.length >= COLUMN_VIRTUALIZATION_THRESHOLD;
+
+  const columnVirtualizer = useVirtualizer({
+    count: columnIds.length,
+    estimateSize: (index) => columnWidths[columnIds[index] ?? ""] ?? 180,
+    getScrollElement: () => parentRef.current,
+    horizontal: true,
+    overscan: 3,
+    enabled: shouldVirtualizeColumns,
+  });
+  columnVirtualizerRef.current = columnVirtualizer;
+
+  // Derived values for column virtualization rendering
+  const virtualColumns = shouldVirtualizeColumns ? columnVirtualizer.getVirtualItems() : null;
+  const virtualPaddingLeft = virtualColumns ? (virtualColumns[0]?.start ?? 0) : 0;
+  const virtualPaddingRight = virtualColumns
+    ? columnVirtualizer.getTotalSize() - (virtualColumns[virtualColumns.length - 1]?.end ?? 0)
+    : 0;
+  const columnsToRender: string[] = virtualColumns
+    ? virtualColumns.flatMap((vc) => {
+        const id = columnIds[vc.index];
+        return id !== undefined ? [id] : [];
+      })
+    : columnIds;
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
@@ -154,6 +185,9 @@ export const GridTable = React.memo(function GridTable({
             onAddColumn={onAddColumn}
             allSelected={allSelected}
             onSelectAll={onSelectAll}
+            columnsToRender={columnsToRender}
+            virtualPaddingLeft={virtualPaddingLeft}
+            virtualPaddingRight={virtualPaddingRight}
           />
 
           <tbody
@@ -186,8 +220,13 @@ export const GridTable = React.memo(function GridTable({
                     >
                       <div className="h-3 w-8 animate-pulse rounded bg-[#ece9f5]" />
                     </td>
-                    {columnIds.map((colId, colIdx) => {
+                    {virtualPaddingLeft > 0 && (
+                      <td style={{ display: "flex", width: virtualPaddingLeft }} />
+                    )}
+                    {columnsToRender.map((colId, colIdx) => {
                       const w = columnWidths[colId] ?? 180;
+                      // Use original column index for skeleton width variation
+                      const origIdx = columnIds.indexOf(colId);
                       return (
                       <td
                         key={colId}
@@ -197,12 +236,15 @@ export const GridTable = React.memo(function GridTable({
                         <div
                           className="h-3 animate-pulse rounded bg-[#f0edf8]"
                           style={{
-                            width: `${40 + ((virtualRow.index * 17 + colIdx * 11) % 45)}%`,
+                            width: `${40 + ((virtualRow.index * 17 + (origIdx >= 0 ? origIdx : colIdx) * 11) % 45)}%`,
                           }}
                         />
                       </td>
                       );
                     })}
+                    {virtualPaddingRight > 0 && (
+                      <td style={{ display: "flex", width: virtualPaddingRight }} />
+                    )}
                   </tr>
                 );
               }
@@ -256,7 +298,10 @@ export const GridTable = React.memo(function GridTable({
                     </button>
                   </td>
 
-                  {columnIds.map((colId) => {
+                  {virtualPaddingLeft > 0 && (
+                    <td style={{ display: "flex", width: virtualPaddingLeft }} />
+                  )}
+                  {columnsToRender.map((colId) => {
                     const meta = columns.find((c) => c.id === colId)?.meta as
                       | { type: string; columnId: string }
                       | undefined;
@@ -265,6 +310,7 @@ export const GridTable = React.memo(function GridTable({
                     const w = columnWidths[colId] ?? 180;
                     const isFocused = cursor?.rowIndex === virtualRow.index && cursor?.columnId === colId;
                     const isEditing = editingCell?.rowIndex === virtualRow.index && editingCell?.columnId === colId;
+                    const isCurrentMatch = currentSearchMatch?.rowIndex === virtualRow.index && currentSearchMatch?.columnId === colId;
 
                     return (
                       <td
@@ -282,6 +328,7 @@ export const GridTable = React.memo(function GridTable({
                           isEditing={isEditing}
                           initialDraft={isEditing ? initialDraft : undefined}
                           searchQuery={searchQuery}
+                          isCurrentMatch={isCurrentMatch}
                           onCommit={onCommit}
                           onRevert={onRevert}
                           onStartEditing={() => onStartEditing(virtualRow.index, colId)}
@@ -290,6 +337,9 @@ export const GridTable = React.memo(function GridTable({
                       </td>
                     );
                   })}
+                  {virtualPaddingRight > 0 && (
+                    <td style={{ display: "flex", width: virtualPaddingRight }} />
+                  )}
 
                 </tr>
               );
@@ -303,10 +353,8 @@ export const GridTable = React.memo(function GridTable({
           style={{ width: "fit-content" }}
         >
           <div style={{ width: 100, minWidth: 100 }} className="flex items-center px-2">
-            {/* placeholder matching the 14px label + gap */}
-            <div className="w-3.5 flex-shrink-0" />
             <button
-              className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded text-[#888] hover:bg-[#e2e0ea]"
+              className="flex h-3.5 w-3.5 flex-shrink-0 items-center justify-center rounded text-[#888] hover:bg-[#e2e0ea]"
               title="Add row"
             >
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -314,7 +362,10 @@ export const GridTable = React.memo(function GridTable({
               </svg>
             </button>
           </div>
-          {columnIds.map((colId) => {
+          {virtualPaddingLeft > 0 && (
+            <div style={{ width: virtualPaddingLeft, minWidth: virtualPaddingLeft }} className="h-full" />
+          )}
+          {columnsToRender.map((colId) => {
             const w = columnWidths[colId] ?? 180;
             return (
             <div
@@ -324,6 +375,9 @@ export const GridTable = React.memo(function GridTable({
             />
             );
           })}
+          {virtualPaddingRight > 0 && (
+            <div style={{ width: virtualPaddingRight, minWidth: virtualPaddingRight }} className="h-full" />
+          )}
         </div>
       </div>
 
@@ -347,7 +401,25 @@ export const GridTable = React.memo(function GridTable({
       )}
 
       {/* Footer: record count */}
-      <div className="flex h-[36px] flex-shrink-0 items-center border-t border-[#e2e0ea] bg-white px-3">
+      <div className="relative flex h-[36px] flex-shrink-0 items-center border-t border-[#e2e0ea] bg-white px-3">
+        {/* Floating pill — sits above the footer bar */}
+        <div className="absolute left-3 z-20 flex items-center overflow-hidden rounded-full border border-[#d1d5db] bg-white" style={{ bottom: "80%" }}>
+          <button className="flex h-7 w-7 items-center justify-center text-[#4c5667] hover:bg-[#f3f4f6]" title="Add row">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M6 2v8M2 6h8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+            </svg>
+          </button>
+          <div className="h-4 w-px bg-[#d1d5db]" />
+          <button className="flex h-7 items-center gap-1.5 px-3 text-[12px] text-[#4c5667] hover:bg-[#f3f4f6]" title="Add...">
+            <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+              <path d="M2 5.5h4M5.5 2v4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+              <path d="M7.5 8.5l1.5 1.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+              <circle cx="7.5" cy="7.5" r="2" stroke="currentColor" strokeWidth="1.1" />
+            </svg>
+            Add...
+          </button>
+        </div>
+
         <span className="text-[12px] text-[#888]">
           {isBulkCreating ? "Inserting… " : ""}
           {displayCount.toLocaleString()} {displayCount === 1 ? "record" : "records"}

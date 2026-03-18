@@ -5,7 +5,7 @@ import type { Virtualizer } from "@tanstack/react-virtual";
 import { useMemo, useCallback, useRef, useReducer, useEffect, useState } from "react";
 
 import { api } from "~/trpc/react";
-import { GridTable, type RowData } from "./GridTable";
+import { GridTable, type RowData, COLUMN_VIRTUALIZATION_THRESHOLD } from "./GridTable";
 import { GridToolbar } from "./GridToolbar";
 import { ViewsPanel } from "~/components/nav/ViewsPanel";
 import type { FilterCondition, SortCondition } from "~/server/api/routers/row";
@@ -116,13 +116,54 @@ export function GridView({ tableId, viewId }: GridViewProps) {
     setSelectedRowIds(new Set());
   }, []);
 
-  // Ref for the rowVirtualizer — lets GridView call scrollToIndex
+  // Refs for virtualizers — lets GridView call scrollToIndex / scrollToCell
   const rowVirtualizerRef = useRef<Virtualizer<HTMLDivElement, Element> | null>(null);
+  const columnVirtualizerRef = useRef<Virtualizer<HTMLDivElement, Element> | null>(null);
+
+  // ---------------------------------------------------------------------------
+  // Column/row definitions — placed here so scrollToCell can reference them
+  // ---------------------------------------------------------------------------
+
+  const columnDefs = useMemo<ColumnDef<RowData>[]>(() => {
+    if (!columnsData) return [];
+    return columnsData.map((col) => ({
+      id: col.id,
+      header: col.name,
+      accessorFn: (row: RowData) => row.cells[col.id] ?? null,
+      meta: { type: col.type, columnId: col.id, isPrimary: col.isPrimary },
+    }));
+  }, [columnsData]);
+
+  const columnIds = useMemo(
+    () => columnsData?.map((c) => c.id) ?? [],
+    [columnsData],
+  );
+
+  const columnWidths = useMemo(
+    () => Object.fromEntries((columnsData ?? []).map((c) => [c.id, c.isPrimary ? 200 : 180])),
+    [columnsData],
+  );
+
+  // Visible column IDs — excludes hidden columns; used for rendering and keyboard nav
+  const visibleColumnIds = useMemo(
+    () => columnIds.filter((id) => !hiddenColumns.includes(id)),
+    [columnIds, hiddenColumns],
+  );
+
+  // Ordered list of visible column IDs for arrow-key / Tab navigation
+  const columnOrder = visibleColumnIds;
+
+  // Column virtualization is active when visible column count meets the threshold
+  const shouldVirtualizeColumns = visibleColumnIds.length >= COLUMN_VIRTUALIZATION_THRESHOLD;
 
   // Double-rAF: first allows virtualizer to scroll+render, second allows DOM query
   const scrollToCell = useCallback((rowIndex: number, columnId: string) => {
+    const colIndex = visibleColumnIds.indexOf(columnId);
     requestAnimationFrame(() => {
       rowVirtualizerRef.current?.scrollToIndex(rowIndex, { align: "auto" });
+      if (colIndex >= 0 && shouldVirtualizeColumns) {
+        columnVirtualizerRef.current?.scrollToIndex(colIndex, { align: "auto" });
+      }
       requestAnimationFrame(() => {
         const cellEl = document.querySelector<HTMLElement>(
           `[data-row-index="${rowIndex}"][data-column-id="${columnId}"]`,
@@ -130,7 +171,7 @@ export function GridView({ tableId, viewId }: GridViewProps) {
         cellEl?.focus();
       });
     });
-  }, []);
+  }, [visibleColumnIds, shouldVirtualizeColumns]);
 
   const handleSelect = useCallback((rowIndex: number, columnId: string) => {
     setCursor({ rowIndex, columnId });
@@ -342,36 +383,6 @@ export function GridView({ tableId, viewId }: GridViewProps) {
     return () => document.removeEventListener("mousedown", handleMouseDown);
   }, [openPanel]);
 
-  const columnDefs = useMemo<ColumnDef<RowData>[]>(() => {
-    if (!columnsData) return [];
-    return columnsData.map((col) => ({
-      id: col.id,
-      header: col.name,
-      accessorFn: (row: RowData) => row.cells[col.id] ?? null,
-      meta: { type: col.type, columnId: col.id, isPrimary: col.isPrimary },
-    }));
-  }, [columnsData]);
-
-  const columnIds = useMemo(
-    () => columnsData?.map((c) => c.id) ?? [],
-    [columnsData],
-  );
-
-  const columnWidths = useMemo(
-    () => Object.fromEntries((columnsData ?? []).map((c) => [c.id, c.isPrimary ? 200 : 180])),
-    [columnsData],
-  );
-
-  // Visible column IDs — excludes hidden columns; used for rendering and keyboard nav
-  const visibleColumnIds = useMemo(
-    () => columnIds.filter((id) => !hiddenColumns.includes(id)),
-    [columnIds, hiddenColumns],
-  );
-
-  // Ordered list of visible column IDs for arrow-key / Tab navigation
-  // Uses visibleColumnIds so cursor never lands on a hidden column
-  const columnOrder = visibleColumnIds;
-
   // --- Client-side search highlighting ---
   const [searchMatchIndex, setSearchMatchIndex] = useState(-1);
 
@@ -565,6 +576,7 @@ export function GridView({ tableId, viewId }: GridViewProps) {
         currentMatchIndex={searchMatchIndex}
         onPrevMatch={handlePrevMatch}
         onNextMatch={handleNextMatch}
+        hasActiveSearch={searchInput.trim().length > 0}
       />
       <div className="flex flex-1 overflow-hidden">
         <ViewsPanel tableId={tableId} activeViewId={viewId} />
@@ -574,7 +586,6 @@ export function GridView({ tableId, viewId }: GridViewProps) {
         </div>
       ) : (
         <GridTable
-          totalCount={totalCount}
           getRow={getRow}
           columnIds={visibleColumnIds}
           columnWidths={columnWidths}
@@ -595,12 +606,14 @@ export function GridView({ tableId, viewId }: GridViewProps) {
           onKeyDown={handleKeyDown}
           initialDraft={initialDraft}
           rowVirtualizerRef={rowVirtualizerRef}
+          columnVirtualizerRef={columnVirtualizerRef}
           selectedRowIds={selectedRowIds}
           onToggleRow={handleToggleRow}
           onSelectAll={handleSelectAll}
           onClearSelection={handleClearSelection}
           allSelected={totalCount > 0 && selectedRowIds.size === totalCount}
           searchQuery={searchQuery}
+          currentSearchMatch={searchMatches[searchMatchIndex] ?? null}
         />
       )}
       </div>
