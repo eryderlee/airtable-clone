@@ -7,8 +7,8 @@ import * as schema from "./schema";
  * Cache the database connection in development. This avoids creating a new connection on every HMR
  * update.
  *
- * prepare: false is required for Supabase Supavisor (transaction pooler, port 6543).
- * @see https://supabase.com/docs/guides/database/connecting-to-postgres#connection-pooler
+ * prepare: false is required for Neon PgBouncer (transaction pooler).
+ * @see https://neon.tech/docs/guides/node-postgres
  */
 const globalForDb = globalThis as unknown as {
   conn: postgres.Sql | undefined;
