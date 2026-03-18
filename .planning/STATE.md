@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 
 ## Current Position
 
-Phase: 10 of 10 (UX Performance) — In Progress
-Plan: 2/3 complete
-Status: 10-01 (sonner + Toaster + HomeContent optimistic base CRUD) and 10-02 (table/view optimistic mutations) done. 10-03 (row optimistic mutations) remaining.
-Last activity: 2026-03-18 — Completed 10-01-PLAN.md (sonner installed, HomeContent migrated to useQuery with optimistic base create/rename/delete)
+Phase: 10 of 10 (UX Performance) — COMPLETE
+Plan: 3/3 complete
+Status: ALL PHASES COMPLETE. 10-01 (sonner + HomeContent optimistic base CRUD), 10-02 (table/view optimistic mutations), and 10-03 (column optimistic mutations + view hover prefetch) all done. Human-verified.
+Last activity: 2026-03-18 — Completed 10-03-PLAN.md (optimistic column CRUD in GridView, hover prefetch in ViewsPanel, human-verified full optimistic UX)
 
-Progress: [█████████████████████████░░] 93% (28 of 30 total plans)
+Progress: [█████████████████████████████] 100% (30 of 30 total plans)
 
 ## Performance Metrics
 
@@ -135,10 +135,13 @@ Recent decisions affecting current work:
 - 10-02: Optimistic pattern established: utils.X.cancel → getData snapshot → setData → return {previous}; onError restores snapshot + toast.error; onSettled invalidates
 - 10-01: initialData type cast required — BaseRecord allows Date|string|null for SSR superjson compat, tRPC return type requires Date; use `as unknown as any` cast, safe because optimistic objects are replaced on invalidation
 - 10-01: handleBaseClick warm-cache navigation — utils.table.getByBaseId.getData() + utils.view.getByTableId.getData() are synchronous React Query cache reads; no network needed if data is warm
+- 10-03: Column delete clears pageCacheRef cell data optimistically across all cached pages, with full snapshot rollback on onError + forceUpdate()
+- 10-03: Hover prefetch scope limited to columns + row count only — row data pages not prefetched (virtualizer loads on demand)
+- 10-03: Post-verification orchestrator fixes: filter/sort race condition via generation counter; column order on add; rename flicker; table tab loading cursor; navigation guard for optimistic non-UUID tab IDs
 
 ### Pending Todos
 
-- 10-03: Row optimistic mutations (GridView) remaining
+None — all 30 plans across 10 phases are complete.
 
 ### Blockers/Concerns
 
@@ -148,5 +151,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-03-18
-Stopped at: Completed 10-01-PLAN.md (sonner installed, HomeContent optimistic base CRUD, instant navigation)
+Stopped at: Completed 10-03-PLAN.md — ALL PHASES COMPLETE (30/30 plans)
 Resume file: None
