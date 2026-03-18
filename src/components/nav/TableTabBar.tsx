@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, usePathname } from "next/navigation";
 import { toast } from "sonner";
 
 import { api } from "~/trpc/react";
@@ -48,6 +48,9 @@ export function TableTabBar({ baseId, initialColor, initialName }: TableTabBarPr
   const router = useRouter();
   const params = useParams<{ tableId?: string }>();
   const activeTableId = params.tableId;
+  const pathname = usePathname();
+  const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
+  useEffect(() => { setNavigatingTo(null); }, [pathname]);
 
   const { data: base } = api.base.getById.useQuery({ id: baseId }, { staleTime: Infinity });
   const { data: tables } = api.table.getByBaseId.useQuery({ baseId });
@@ -119,8 +122,19 @@ export function TableTabBar({ baseId, initialColor, initialName }: TableTabBarPr
       );
       return { previous };
     },
-    onSuccess: async () => {
-      router.push(`/base/${baseId}`);
+    onSuccess: async (_data, { id }) => {
+      if (id !== activeTableId) return;
+      const remaining = utils.table.getByBaseId.getData({ baseId });
+      if (remaining && remaining.length > 0 && remaining[0]) {
+        const views = await utils.view.getByTableId.fetch({ tableId: remaining[0].id });
+        if (views[0]) {
+          router.push(`/base/${baseId}/${remaining[0].id}/view/${views[0].id}`);
+        } else {
+          router.push(`/base/${baseId}/${remaining[0].id}`);
+        }
+      } else {
+        router.push(`/base/${baseId}`);
+      }
     },
     onError: (_err, _vars, context) => {
       if (context?.previous !== undefined) {
@@ -132,6 +146,12 @@ export function TableTabBar({ baseId, initialColor, initialName }: TableTabBarPr
       void utils.table.getByBaseId.invalidate({ baseId });
     },
   });
+
+  const handleTabHover = (tableId: string) => {
+    void utils.column.getByTableId.prefetch({ tableId });
+    void utils.view.getByTableId.prefetch({ tableId });
+    void utils.row.count.prefetch({ tableId, filters: [] });
+  };
 
   return (
     <div className="relative flex h-[30px] flex-shrink-0 items-stretch justify-between" style={{ backgroundColor: bgColor, borderBottom: "1px solid #dfe3ea", overflow: "visible" }}>
@@ -148,6 +168,9 @@ export function TableTabBar({ baseId, initialColor, initialName }: TableTabBarPr
               baseId={baseId}
               bgColor={bgColor}
               isPending={table.id.startsWith("optimistic-")}
+              isNavigating={navigatingTo === table.id}
+              onNavigate={() => setNavigatingTo(table.id)}
+              onHover={() => handleTabHover(table.id)}
               onRename={(name) => renameTable.mutate({ id: table.id, name })}
               onDelete={() => deleteTable.mutate({ id: table.id })}
               showDelete={(tables?.length ?? 0) > 1}
@@ -200,6 +223,9 @@ function TableTab({
   baseId,
   bgColor,
   isPending,
+  isNavigating,
+  onNavigate,
+  onHover,
   onRename,
   onDelete,
   showDelete,
@@ -210,6 +236,9 @@ function TableTab({
   baseId: string;
   bgColor: string;
   isPending?: boolean;
+  isNavigating?: boolean;
+  onNavigate: () => void;
+  onHover: () => void;
   onRename: (name: string) => void;
   onDelete: () => void;
   showDelete: boolean;
@@ -231,9 +260,9 @@ function TableTab({
 
   return (
     <div
-      onMouseEnter={() => setHovered(true)}
+      onMouseEnter={() => { setHovered(true); onHover(); }}
       onMouseLeave={() => setHovered(false)}
-      className={`relative flex flex-shrink-0 cursor-pointer items-center gap-1 px-3 transition-colors ${
+      className={`relative flex flex-shrink-0 ${(isPending ?? isNavigating) ? "cursor-wait" : "cursor-pointer"} items-center gap-1 px-3 transition-colors ${
         isFirst ? "rounded-tr-lg" : "rounded-t-lg"
       } ${
         isActive
@@ -248,7 +277,7 @@ function TableTab({
       }}
     >
       {isPending ? (
-        <span className="flex items-center gap-1 cursor-wait opacity-60">
+        <span className="pointer-events-none flex items-center gap-1 cursor-wait opacity-60">
           <InlineEdit
             value={table.name}
             onSave={onRename}
@@ -262,6 +291,7 @@ function TableTab({
           href={`/base/${baseId}/${table.id}`}
           style={{ textDecoration: "none" }}
           className="flex items-center gap-1"
+          onClick={onNavigate}
         >
           <InlineEdit
             value={table.name}
