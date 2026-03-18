@@ -19,7 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 5: Cell Editing** - Inline editing with full spreadsheet keyboard navigation and optimistic updates
 - [x] **Phase 6: Toolbar** - Search, filter, sort, and hide-columns controls with DB-level execution
 - [x] **Phase 7: Column Virtualization** - Horizontal virtualization for large column counts, column resize
-- [ ] **Phase 8: View Persistence** - Full per-view state saved and restored across sessions
+- [x] **Phase 8: View Persistence** - Full per-view state saved and restored across sessions
 
 ## Standing Deployment Note
 
@@ -181,4 +181,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 | 5. Cell Editing | 2/2 | Complete | 2026-03-17 |
 | 6. Toolbar | 3/3 | Complete | 2026-03-18 |
 | 7. Column Virtualization | 1/1 | Complete | 2026-03-18 |
-| 8. View Persistence | 0/2 | Not started | - |
+| 8. View Persistence | 2/2 | Complete | 2026-03-18 |
