@@ -2,7 +2,7 @@
 
 ## Overview
 
-Eight phases build the Airtable clone from the database outward: schema, auth, and Vercel deployment first (live URL from day one), then the tRPC data layer that every UI component depends on, then layout and navigation, then the virtualized grid core, then cell editing, then the toolbar, then column virtualization, then view persistence. Each phase delivers a complete, verifiable capability and deploys to the same Vercel project. The performance target — 1M rows without lag — is baked into the architecture from Phase 1 and never retrofitted.
+Ten phases build the Airtable clone from the database outward: schema, auth, and Vercel deployment first (live URL from day one), then the tRPC data layer that every UI component depends on, then layout and navigation, then the virtualized grid core, then cell editing, then the toolbar, then column virtualization, then view persistence, then a database migration to Neon, then a UX performance pass making every mutation feel instant via optimistic updates. Each phase delivers a complete, verifiable capability and deploys to the same Vercel project. The performance target — 1M rows without lag — is baked into the architecture from Phase 1 and never retrofitted.
 
 ## Phases
 
@@ -167,10 +167,36 @@ Plans:
 - [ ] 08-01-PLAN.md — SSR-seeded view config persistence (initialConfig prop from page.tsx to GridView, auto-save via 800ms debounced useEffect)
 - [ ] 08-02-PLAN.md — View rename/delete UI in ViewsPanel (InlineEdit + delete button with last-view guard); end-to-end human verification
 
+### Phase 9: Neon Migration
+**Goal**: The database is fully migrated from Supabase to Neon — all data intact, Vercel env vars updated, migrations runnable directly from Vercel build nodes (no more IPv6 workaround), and the live app confirmed healthy post-migration.
+**Depends on**: Phase 8
+**Requirements**: (Infrastructure phase — no direct requirement IDs)
+**Success Criteria** (what must be TRUE):
+  1. The app is live on Vercel pointing to Neon with no errors
+  2. All existing data (tables, columns, rows, views) is present and correct after migration
+  3. `npx drizzle-kit push` runs successfully against Neon from a local machine
+  4. The 1M-row seed is present (either migrated or re-seeded) and cursor-paginated queries complete in under 200ms
+  5. Cold-start behavior is documented (Neon free tier scales to zero after inactivity)
+**Plans**: TBD
+
+### Phase 10: UX Performance — Optimistic Updates
+**Goal**: Every user-facing mutation (create/rename/delete base, table, column, row, view; switch view; open base) feels instant — optimistic updates eliminate visible loading states for all common operations so the UI responds in under 50ms regardless of network latency.
+**Depends on**: Phase 9
+**Requirements**: (UX quality phase — no direct requirement IDs)
+**Success Criteria** (what must be TRUE):
+  1. Creating a base/table/view shows the new item in the UI immediately (before server confirms)
+  2. Renaming a base/table/column/view updates the label immediately on Enter without waiting for the mutation
+  3. Deleting a base/table/column/view removes it from the UI immediately with rollback on error
+  4. Adding a column appears in the grid header immediately
+  5. Switching views renders the cached view config instantly (no loading flash)
+  6. Opening a base navigates immediately to the first table without a loading skeleton
+  7. All operations still show error toasts and roll back UI state if the server returns an error
+**Plans**: TBD
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -182,3 +208,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 | 6. Toolbar | 3/3 | Complete | 2026-03-18 |
 | 7. Column Virtualization | 1/1 | Complete | 2026-03-18 |
 | 8. View Persistence | 2/2 | Complete | 2026-03-18 |
+| 9. Neon Migration | 0/TBD | Not started | - |
+| 10. UX Performance | 0/TBD | Not started | - |

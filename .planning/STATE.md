@@ -5,13 +5,13 @@
 See: .planning/PROJECT.md (updated 2026-03-17)
 
 **Core value:** A table UI that feels exactly like Airtable and never chokes — 1M rows, instant scroll, DB-level filtering.
-**Current focus:** Phase 8 — View Persistence
+**Current focus:** Phase 9 — Neon Migration
 
 ## Current Position
 
 Phase: 8 of 8 (View Persistence) — Complete
 Plan: 2/2 complete
-Status: All plans executed. Phase 8 complete. Human verification passed.
+Status: Phases 1-8 complete. Phase 9 (Neon Migration) next.
 Last activity: 2026-03-18 — Completed 08-02-PLAN.md (view rename/delete UI + human-verified persistence pipeline)
 
 Progress: [████████████████████] 100% (24 of 24 total plans)
