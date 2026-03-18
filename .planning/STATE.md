@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 
 ## Current Position
 
-Phase: 9 of 9 (Neon Migration) — In progress
-Plan: 2/3 complete
-Status: Phases 1-8 complete. Phase 9 Plans 1-2 complete (Neon connected, schema applied, app build verified against Neon).
-Last activity: 2026-03-18 — Completed 09-02-PLAN.md (data migration — Option B chosen, build fix, bulkCreate verified)
+Phase: 9 of 9 (Neon Migration) — Complete
+Plan: 3/3 complete
+Status: ALL PHASES COMPLETE. Phase 9 done: Neon connected (09-01), data migration Option B (09-02), Vercel cutover verified (09-03). Production live at https://airtable-clone-flame.vercel.app on Neon.
+Last activity: 2026-03-18 — Completed 09-03-PLAN.md (Vercel cutover: production verified HTTP 200/307, PROJECT.md updated)
 
-Progress: [█████████████████████░░] ~91% (26 of 27 total plans)
+Progress: [███████████████████████] 100% (27 of 27 total plans)
 
 ## Performance Metrics
 
@@ -127,10 +127,12 @@ Recent decisions affecting current work:
 - 09-01: drizzle-kit push via DIRECT_URL (non-pooled) applied all 9 tables+indexes to fresh Neon DB cleanly
 - 09-02: Option B (re-seed) chosen — pg_dump not available; Neon starts empty, user seeds via +100k button in browser UI
 - 09-02: build failure (react/no-unescaped-entities in ViewsPanel.tsx) found and fixed during verification
+- 09-03: Production verified live: HTTP 307 on root (auth redirect) + HTTP 200 on /sign-in = app healthy on Neon
+- 09-03: Cold-start documented in PROJECT.md — Neon free tier scales to zero after 5 min idle, ~500ms-1s on first request after idle
 
 ### Pending Todos
 
-- None — Phase 9 plan 3 (Vercel env update) next.
+- None — all 27 plans complete. Phase 10 (UX Performance) is the next planned phase but has not been started.
 
 ### Blockers/Concerns
 
@@ -140,5 +142,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-03-18
-Stopped at: Completed 09-02-PLAN.md (data migration: Option B — re-seed path, build fix, bulkCreate verified). Phase 9 plan 2 complete.
+Stopped at: Completed 09-03-PLAN.md (Vercel cutover: production HTTP 200/307 verified, PROJECT.md updated to Neon). Phase 9 complete. All 27 plans done.
 Resume file: None
