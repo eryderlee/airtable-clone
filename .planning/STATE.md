@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 
 ## Current Position
 
-Phase: 8 of 8 (View Persistence) — Complete
-Plan: 2/2 complete
-Status: Phases 1-8 complete. Phase 9 (Neon Migration) next.
-Last activity: 2026-03-18 — Completed 08-02-PLAN.md (view rename/delete UI + human-verified persistence pipeline)
+Phase: 9 of 9 (Neon Migration) — In progress
+Plan: 1/3 complete
+Status: Phases 1-8 complete. Phase 9 Plan 1 complete (Neon connected, schema applied).
+Last activity: 2026-03-18 — Completed 09-01-PLAN.md (Neon setup, schema push, local dev verified)
 
-Progress: [████████████████████] 100% (24 of 24 total plans)
+Progress: [████████████████████░░░] ~88% (25 of 27 total plans)
 
 ## Performance Metrics
 
@@ -122,10 +122,13 @@ Recent decisions affecting current work:
 - 08-01: isFirstConfigRender ref separate from isFirstRender ref — each useEffect guard is independent
 - 08-01: updateViewConfig is fire-and-forget (no optimistic update) — config save failure is silent; acceptable for v1
 - 08-02: ViewsPanel rename via InlineEdit double-click + delete button with last-view guard; active-view deletion redirects to first remaining view
+- 09-01: Neon PgBouncer requires prepare: false same as Supabase Supavisor — no runtime config change needed
+- 09-01: sslmode=require in Neon connection URL is sufficient; no explicit ssl option in postgres() call needed
+- 09-01: drizzle-kit push via DIRECT_URL (non-pooled) applied all 9 tables+indexes to fresh Neon DB cleanly
 
 ### Pending Todos
 
-- None — Phase 8 next.
+- None — Phase 9 plan 2 (data migration) next.
 
 ### Blockers/Concerns
 
@@ -135,5 +138,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-03-18
-Stopped at: Completed 08-02-PLAN.md (view rename/delete UI + human-verified persistence). Phase 8 complete. All 8 phases done.
+Stopped at: Completed 09-01-PLAN.md (Neon setup: schema applied, local dev verified). Phase 9 plan 1 complete.
 Resume file: None
