@@ -16,9 +16,15 @@ const ROW_HEIGHT = 32;
 interface GridViewProps {
   tableId: string;
   viewId: string;
+  initialConfig?: {
+    filters: unknown[];
+    sorts: unknown[];
+    hiddenColumns: string[];
+    searchQuery: string;
+  };
 }
 
-export function GridView({ tableId, viewId }: GridViewProps) {
+export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
   const utils = api.useUtils();
 
   // Column definitions
@@ -41,11 +47,18 @@ export function GridView({ tableId, viewId }: GridViewProps) {
   const [selectedRowIds, setSelectedRowIds] = useState<Set<string>>(new Set());
 
   // Toolbar state — declared before useQuery so count query can close over them
-  const [filters, setFilters] = useState<FilterCondition[]>([]);
-  const [sorts, setSorts] = useState<SortCondition[]>([]);
-  const [searchInput, setSearchInput] = useState(""); // immediate UI value
-  const [searchQuery, setSearchQuery] = useState(""); // debounced, sent to DB
-  const [hiddenColumns, setHiddenColumns] = useState<string[]>([]);
+  // Seeded from SSR-fetched initialConfig; searchInput/searchQuery always start empty (ephemeral)
+  const [filters, setFilters] = useState<FilterCondition[]>(
+    (initialConfig?.filters as FilterCondition[]) ?? [],
+  );
+  const [sorts, setSorts] = useState<SortCondition[]>(
+    (initialConfig?.sorts as SortCondition[]) ?? [],
+  );
+  const [searchInput, setSearchInput] = useState(""); // immediate UI value — never persisted
+  const [searchQuery, setSearchQuery] = useState(""); // debounced, sent to DB — never persisted
+  const [hiddenColumns, setHiddenColumns] = useState<string[]>(
+    initialConfig?.hiddenColumns ?? [],
+  );
   const [openPanel, setOpenPanel] = useState<"search" | "filter" | "sort" | "hideFields" | null>(null);
 
   // 300ms debounce: searchInput -> searchQuery
