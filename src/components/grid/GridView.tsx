@@ -355,9 +355,10 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
   // Bulk create
   const bulkCreate = api.row.bulkCreate.useMutation({
     onSuccess: async () => {
-      // Clear cache first, then refresh count; React 18 batches the totalCount
-      // update with forceUpdate so the [totalCount, fetchPage] effect fires once
-      // with both an empty cache and the new count — fetchPage(0) then runs cleanly.
+      // Invalidate React Query's getByOffset cache first — staleTime:30s would
+      // otherwise return the pre-insert page 0 data, leaving pageCacheRef[0]
+      // partially filled and rows 5-99 permanently stuck as skeletons.
+      await utils.row.getByOffset.invalidate({ tableId });
       pageCacheRef.current = {};
       loadingPagesRef.current = new Set();
       await refetchCount();
