@@ -6,6 +6,17 @@ import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { bases } from "~/server/db/schema";
 
 export const baseRouter = createTRPCRouter({
+  getById: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const [base] = await ctx.db
+        .select()
+        .from(bases)
+        .where(and(eq(bases.id, input.id), eq(bases.userId, ctx.session.user.id)));
+      if (!base) throw new TRPCError({ code: "NOT_FOUND" });
+      return base;
+    }),
+
   getAll: protectedProcedure.query(async ({ ctx }) => {
     return ctx.db
       .select()
@@ -42,6 +53,17 @@ export const baseRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND" });
       }
       return updated;
+    }),
+
+  touch: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db
+        .update(bases)
+        .set({ lastOpenedAt: new Date() })
+        .where(
+          and(eq(bases.id, input.id), eq(bases.userId, ctx.session.user.id)),
+        );
     }),
 
   delete: protectedProcedure

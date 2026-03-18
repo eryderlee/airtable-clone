@@ -373,11 +373,11 @@ export function GridHeader({
     : headers;
 
   return (
-    <thead style={{ display: "grid", position: "sticky", top: 0, zIndex: 1 }}>
+    <thead style={{ display: "grid", position: "sticky", top: 0, zIndex: 3 }}>
       <tr style={{ display: "flex" }}>
-        {/* Checkbox column */}
+        {/* Checkbox column — sticky */}
         <th
-          style={{ display: "flex", width: 100, minWidth: 100, height: 32 }}
+          style={{ display: "flex", width: 100, minWidth: 100, height: 32, position: "sticky", left: 0, zIndex: 4 }}
           className="items-center border-b border-[#e2e0ea] bg-white px-2"
         >
           <input
@@ -413,7 +413,10 @@ export function GridHeader({
           return (
             <th
               key={header.id}
-              style={{ display: "flex", width: colWidth, minWidth: colWidth, height: 32 }}
+              style={{
+                display: "flex", width: colWidth, minWidth: colWidth, height: 32,
+                ...(isPrimary ? { position: "sticky", left: 100, zIndex: 4 } : {}),
+              }}
               className="group relative items-center border-b border-r border-[#e2e0ea] bg-white px-2 py-0 text-left"
             >
               {/* Field type icon — key for primary, text/number otherwise */}
@@ -463,10 +466,10 @@ export function GridHeader({
           />
         )}
 
-        {/* Add column button */}
+        {/* Add column button — sticky right */}
         <th
-          style={{ display: "flex", width: 90, minWidth: 90, height: 32 }}
-          className="border-b border-r border-[#e2e0ea] bg-white p-0"
+          style={{ display: "flex", width: 90, minWidth: 90, height: 32, position: "sticky", right: 0, zIndex: 4 }}
+          className="border-b border-l border-[#e2e0ea] bg-white p-0"
         >
           <AddColumnMenu onAdd={onAddColumn} />
         </th>

@@ -1,0 +1,111 @@
+[  231176ms] [ERROR] ./src/app/(app)/layout.tsx:4:1
+Module not found: Can't resolve '~/components/nav/AppSidebar'
+  2 |
+  3 | import { auth } from "~/server/auth";
+> 4 | import { AppSidebar } from "~/components/nav/AppSidebar";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 | import { AppTopBar } from "~/components/nav/AppTopBar";
+  6 |
+  7 | export default async function AppLayout({
+
+Import map: aliased to relative './src/components/nav/AppSidebar' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_b0daae9a._.js:2359
+[  231422ms] [ERROR] ./src/app/(app)/layout.tsx:4:1
+Module not found: Can't resolve '~/components/nav/AppSidebar'
+  2 |
+  3 | import { auth } from "~/server/auth";
+> 4 | import { AppSidebar } from "~/components/nav/AppSidebar";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 | import { AppTopBar } from "~/components/nav/AppTopBar";
+  6 |
+  7 | export default async function AppLayout({
+
+Import map: aliased to relative './src/components/nav/AppSidebar' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_b0daae9a._.js:2359
+[  236668ms] [ERROR] ./src/app/(app)/layout.tsx:4:1
+Module not found: Can't resolve '~/components/nav/AppSidebar'
+  2 |
+  3 | import { auth } from "~/server/auth";
+> 4 | import { AppSidebar } from "~/components/nav/AppSidebar";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 | import { AppTopBar } from "~/components/nav/AppTopBar";
+  6 |
+  7 | export default async function AppLayout({
+
+Import map: aliased to relative './src/components/nav/AppSidebar' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_b0daae9a._.js:2359
+[  236731ms] [ERROR] ./src/app/(app)/layout.tsx:4:1
+Module not found: Can't resolve '~/components/nav/AppSidebar'
+  2 |
+  3 | import { auth } from "~/server/auth";
+> 4 | import { AppSidebar } from "~/components/nav/AppSidebar";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 | import { AppTopBar } from "~/components/nav/AppTopBar";
+  6 |
+  7 | export default async function AppLayout({
+
+Import map: aliased to relative './src/components/nav/AppSidebar' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_b0daae9a._.js:2359
+[  236774ms] [ERROR] ./src/app/(app)/layout.tsx:4:1
+Module not found: Can't resolve '~/components/nav/AppSidebar'
+  2 |
+  3 | import { auth } from "~/server/auth";
+> 4 | import { AppSidebar } from "~/components/nav/AppSidebar";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 | import { AppTopBar } from "~/components/nav/AppTopBar";
+  6 |
+  7 | export default async function AppLayout({
+
+Import map: aliased to relative './src/components/nav/AppSidebar' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_b0daae9a._.js:2359
+[  250488ms] [ERROR] ./src/app/(app)/layout.tsx:4:1
+Module not found: Can't resolve '~/components/nav/AppSidebar'
+  2 |
+  3 | import { auth } from "~/server/auth";
+> 4 | import { AppSidebar } from "~/components/nav/AppSidebar";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 | import { AppTopBar } from "~/components/nav/AppTopBar";
+  6 |
+  7 | export default async function AppLayout({
+
+Import map: aliased to relative './src/components/nav/AppSidebar' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_b0daae9a._.js:2359
+[  260158ms] [WARNING] [HMR] Invalid message: {"isTrusted":true}
+TypeError: Cannot convert undefined or null to object
+    at Object.keys (<anonymous>)
+    at extractModulesFromTurbopackMessage (http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_cf1d9188._.js:5974:39)
+    at TurbopackHmr.onTurbopackMessage (http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_cf1d9188._.js:5872:32)
+    at processMessage (http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_cf1d9188._.js:6276:30)
+    at WebSocket.handler (http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_cf1d9188._.js:6417:17) @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_cf1d9188._.js:5602
+[  341609ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/:0
+[  342357ms] ReferenceError: HomeIcon is not defined
+    at __TURBOPACK__module__evaluation__ (http://localhost:3000/_next/static/chunks/src_components_nav_e4ab4f51._.js:24:218)
+    at http://localhost:3000/_next/static/chunks/turbopack-_cdba956c._.js:842:13
+    at runModuleExecutionHooks (http://localhost:3000/_next/static/chunks/turbopack-_cdba956c._.js:867:13)
+    at instantiateModule (http://localhost:3000/_next/static/chunks/turbopack-_cdba956c._.js:840:9)
+    at getOrInstantiateModuleFromParent (http://localhost:3000/_next/static/chunks/turbopack-_cdba956c._.js:793:12)
+    at DevContext.commonJsRequire [as r] (http://localhost:3000/_next/static/chunks/turbopack-_cdba956c._.js:246:12)
+    at requireModule (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_5150ccfd._.js:2904:84)
+    at initializeModuleChunk (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_5150ccfd._.js:3616:25)
+    at resolveModuleChunk (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_5150ccfd._.js:3543:35)
+    at http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_5150ccfd._.js:4150:24
+[  358991ms] [WARNING] [Fast Refresh] performing full reload because your application had an unrecoverable error @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_cf1d9188._.js:6282
+[  359090ms] [WARNING] [Fast Refresh] performing full reload because your application had an unrecoverable error @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_cf1d9188._.js:6282
+[  359966ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/:0
+[  360574ms] ReferenceError: HomeIcon is not defined
+    at __TURBOPACK__module__evaluation__ (http://localhost:3000/_next/static/chunks/src_4a8d843f._.js:24:218)
+    at http://localhost:3000/_next/static/chunks/turbopack-_cdba956c._.js:842:13
+    at runModuleExecutionHooks (http://localhost:3000/_next/static/chunks/turbopack-_cdba956c._.js:867:13)
+    at instantiateModule (http://localhost:3000/_next/static/chunks/turbopack-_cdba956c._.js:840:9)
+    at getOrInstantiateModuleFromParent (http://localhost:3000/_next/static/chunks/turbopack-_cdba956c._.js:793:12)
+    at DevContext.commonJsRequire [as r] (http://localhost:3000/_next/static/chunks/turbopack-_cdba956c._.js:246:12)
+    at requireModule (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_5150ccfd._.js:2904:84)
+    at initializeModuleChunk (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_5150ccfd._.js:3616:25)
+    at resolveModuleChunk (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_5150ccfd._.js:3543:35)
+    at http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_5150ccfd._.js:4150:24

@@ -84,8 +84,37 @@ export const GridTable = React.memo(function GridTable({
   allSelected,
 }: GridTableProps) {
   const parentRef = useRef<HTMLDivElement>(null);
+  const scrollbarRef = useRef<HTMLDivElement>(null);
+  const isSyncingRef = useRef(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Sync mirror scrollbar <-> grid scroll
+  useEffect(() => {
+    const grid = parentRef.current;
+    const bar = scrollbarRef.current;
+    if (!grid || !bar) return;
+
+    function onGridScroll() {
+      if (isSyncingRef.current) return;
+      isSyncingRef.current = true;
+      bar!.scrollLeft = grid!.scrollLeft;
+      isSyncingRef.current = false;
+    }
+    function onBarScroll() {
+      if (isSyncingRef.current) return;
+      isSyncingRef.current = true;
+      grid!.scrollLeft = bar!.scrollLeft;
+      isSyncingRef.current = false;
+    }
+
+    grid.addEventListener("scroll", onGridScroll);
+    bar.addEventListener("scroll", onBarScroll);
+    return () => {
+      grid.removeEventListener("scroll", onGridScroll);
+      bar.removeEventListener("scroll", onBarScroll);
+    };
+  }, []);
 
   useEffect(() => {
     if (!contextMenu) return;
@@ -147,35 +176,32 @@ export const GridTable = React.memo(function GridTable({
       })
     : columnIds;
 
+  const primaryColWidth = columnWidths[columnIds[0] ?? ""] ?? 180;
+  const primaryBorderLeft = 100 + primaryColWidth;
+
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
+    <div className="relative flex flex-1 flex-col overflow-hidden">
+      {/* Primary column full-height border line — covers grid + footer */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: primaryBorderLeft,
+          width: 1,
+          bottom: 0,
+          backgroundColor: "#e2e0ea",
+          pointerEvents: "none",
+          zIndex: 5,
+        }}
+      />
       <div
         ref={parentRef}
         onScroll={onScroll}
         onKeyDown={onKeyDown}
         tabIndex={0}
-        className="flex-1 overflow-auto bg-[#f4f5f7] outline-none"
+        className="flex-1 overflow-auto bg-[#f4f5f7] outline-none grid-hide-scrollbar"
         style={{ contain: "strict" }}
       >
-        {/* Primary column full-height border line */}
-        {(() => {
-          const primaryColWidth = columnWidths[columnIds[0] ?? ""] ?? 180;
-          const left = 100 + primaryColWidth;
-          return (
-            <div
-              style={{
-                position: "absolute",
-                top: 0,
-                left,
-                width: 1,
-                height: "100%",
-                backgroundColor: "#e2e0ea",
-                pointerEvents: "none",
-                zIndex: 2,
-              }}
-            />
-          );
-        })()}
         <table style={{ display: "grid", width: "fit-content", minWidth: "100%" }}>
           <GridHeader
             headers={(table.getHeaderGroups()[0]?.headers ?? []).filter((h) => columnIds.includes(h.id))}
@@ -215,8 +241,8 @@ export const GridTable = React.memo(function GridTable({
                     className="border-b border-[#e2e0ea] bg-white"
                   >
                     <td
-                      style={{ display: "flex", width: 100, minWidth: 100 }}
-                      className="h-full items-center px-2 py-0"
+                      style={{ display: "flex", width: 100, minWidth: 100, position: "sticky", left: 0, zIndex: 1 }}
+                      className="h-full items-center bg-white px-2 py-0"
                     >
                       <div className="h-3 w-8 animate-pulse rounded bg-[#ece9f5]" />
                     </td>
@@ -267,10 +293,10 @@ export const GridTable = React.memo(function GridTable({
                     setContextMenu({ x: e.clientX, y: e.clientY });
                   }}
                 >
-                  {/* Checkbox + row number */}
+                  {/* Checkbox + row number — sticky */}
                   <td
-                    style={{ display: "flex", width: 100, minWidth: 100 }}
-                    className="h-full items-center px-2 py-0"
+                    style={{ display: "flex", width: 100, minWidth: 100, position: "sticky", left: 0, zIndex: 1 }}
+                    className="h-full items-center bg-white px-2 py-0 group-hover:bg-[#f5f7fa]"
                   >
                     {/* Checkbox / row number — same position, swap on hover/selected */}
                     <label className="relative flex h-3.5 w-3.5 flex-shrink-0 cursor-pointer items-center justify-center">
@@ -303,9 +329,10 @@ export const GridTable = React.memo(function GridTable({
                   )}
                   {columnsToRender.map((colId) => {
                     const meta = columns.find((c) => c.id === colId)?.meta as
-                      | { type: string; columnId: string }
+                      | { type: string; columnId: string; isPrimary?: boolean }
                       | undefined;
                     const columnType = (meta?.type ?? "text") as "text" | "number";
+                    const isPrimary = meta?.isPrimary ?? colId === columnIds[0];
                     const cellValue = rowData.cells[colId] ?? null;
                     const w = columnWidths[colId] ?? 180;
                     const isFocused = cursor?.rowIndex === virtualRow.index && cursor?.columnId === colId;
@@ -315,8 +342,11 @@ export const GridTable = React.memo(function GridTable({
                     return (
                       <td
                         key={colId}
-                        style={{ display: "flex", width: w, minWidth: w }}
-                        className="border-r border-[#e2e0ea]"
+                        style={{
+                          display: "flex", width: w, minWidth: w,
+                          ...(isPrimary ? { position: "sticky", left: 100, zIndex: 1 } : {}),
+                        }}
+                        className={`border-r border-[#e2e0ea]${isPrimary ? " bg-white group-hover:bg-[#f5f7fa]" : ""}`}
                       >
                         <GridCell
                           rowId={rowData.id}
@@ -352,7 +382,7 @@ export const GridTable = React.memo(function GridTable({
           className="flex h-8 items-center border-b border-[#e2e0ea] bg-white hover:bg-[#f5f7fa]"
           style={{ width: "fit-content" }}
         >
-          <div style={{ width: 100, minWidth: 100 }} className="flex items-center px-2">
+          <div style={{ width: 100, minWidth: 100, position: "sticky", left: 0, zIndex: 1 }} className="flex items-center bg-white px-2 hover:bg-[#f5f7fa]">
             <button
               className="flex h-3.5 w-3.5 flex-shrink-0 items-center justify-center rounded text-[#888] hover:bg-[#e2e0ea]"
               title="Add row"
@@ -367,12 +397,13 @@ export const GridTable = React.memo(function GridTable({
           )}
           {columnsToRender.map((colId) => {
             const w = columnWidths[colId] ?? 180;
+            const isPrimary = colId === columnIds[0];
             return (
-            <div
-              key={colId}
-              style={{ width: w, minWidth: w }}
-              className="h-full border-r border-[#e2e0ea]"
-            />
+              <div
+                key={colId}
+                style={{ width: w, minWidth: w }}
+                className={`h-full${isPrimary ? " border-r border-[#e2e0ea]" : ""}`}
+              />
             );
           })}
           {virtualPaddingRight > 0 && (
@@ -424,6 +455,20 @@ export const GridTable = React.memo(function GridTable({
           {isBulkCreating ? "Inserting… " : ""}
           {displayCount.toLocaleString()} {displayCount === 1 ? "record" : "records"}
         </span>
+      </div>
+
+      {/* Mirror horizontal scrollbar — pinned to very bottom, no arrows */}
+      <div
+        ref={scrollbarRef}
+        className="grid-scrollbar flex-shrink-0 overflow-x-auto overflow-y-hidden"
+        style={{ height: 12 }}
+      >
+        <div
+          style={{
+            height: 1,
+            width: 100 + columnIds.reduce((sum, id) => sum + (columnWidths[id] ?? 180), 0) + 90,
+          }}
+        />
       </div>
     </div>
   );

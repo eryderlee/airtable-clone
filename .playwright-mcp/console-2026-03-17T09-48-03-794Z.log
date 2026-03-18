@@ -1,0 +1,62 @@
+[    3410ms] [ERROR] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+%s%s https://react.dev/link/hydration-mismatch 
+
+  ...
+    <RenderFromTemplateContext>
+      <ScrollAndFocusHandler segmentPath={[...]}>
+        <InnerScrollAndFocusHandler segmentPath={[...]} focusAndScrollRef={{apply:false, ...}}>
+          <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>
+            <LoadingBoundary loading={null}>
+              <HTTPAccessFallbackBoundary notFound={undefined} forbidden={undefined} unauthorized={undefined}>
+                <RedirectBoundary>
+                  <RedirectErrorBoundary router={{...}}>
+                    <InnerLayoutRouter url="/base/1604..." tree={[...]} cacheNode={{lazyData:null, ...}} ...>
+                      <SegmentViewNode type="layout" pagePath="(app)/base...">
+                        <SegmentTrieNode>
+                        <script>
+                        <script>
+                        <BaseLayout>
+                          <div className="flex h-ful...">
+                            <BaseSidebar user={{name:"Eden...", ...}}>
+                              <aside
++                               className="flex h-full w-[56px] flex-shrink-0 flex-col items-center border-r border-[#..."
+-                               className="flex h-full w-[56px] flex-shrink-0 flex-col items-center bg-[#1a1a2e] py-2"
+                              >
+                                <button
+                                  onClick={function onClick}
++                                 className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl hover:bg-[#f3f..."
+-                                 className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl hover:bg-white/10"
+                                  title="Home"
+                                >
+                                  <img
+                                    src="/airtable-black.svg"
+                                    alt="Airtable"
++                                   className="h-6 w-6 object-contain"
+-                                   className="h-6 w-6 object-contain brightness-0 invert"
+                                  >
+                                <div>
+                                <div className="flex flex-...">
+                                  <button
++                                   className="flex h-8 w-8 items-center justify-center rounded-full text-[#6b7280] ho..."
+-                                   className="flex h-8 w-8 items-center justify-center rounded-full text-white/60 hov..."
+                                    title="Help"
+                                  >
+                                  <button
++                                   className="flex h-8 w-8 items-center justify-center rounded-full text-[#6b7280] ho..."
+-                                   className="flex h-8 w-8 items-center justify-center rounded-full text-white/60 hov..."
+                                    title="Notifications"
+                                  >
+                                  ...
+                            ...
+                    ...
+          ...
+ @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_b0daae9a._.js:2359

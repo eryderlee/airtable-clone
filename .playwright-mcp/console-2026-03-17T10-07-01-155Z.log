@@ -1,0 +1,2 @@
+[   12214ms] [WARNING] Image with src "https://lh3.googleusercontent.com/a/ACg8ocKpWifSuRwqul9ys07TvKpk6nI1yX8o7q89Hwm5MSXvzGwKxUGhpg=s96-c" was detected as the Largest Contentful Paint (LCP). Please add the "priority" property if this image is above the fold.
+Read more: https://nextjs.org/docs/api-reference/next/image#priority @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_b0daae9a._.js:968

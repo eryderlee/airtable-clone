@@ -88,6 +88,7 @@ export const columnRouter = createTRPCRouter({
       z.object({
         id: z.string().uuid(),
         name: z.string().min(1).max(255),
+        type: z.enum(["text", "number"]).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -111,7 +112,7 @@ export const columnRouter = createTRPCRouter({
 
       const [updated] = await ctx.db
         .update(columns)
-        .set({ name: input.name })
+        .set({ name: input.name, ...(input.type ? { type: input.type } : {}) })
         .where(eq(columns.id, input.id))
         .returning();
 
@@ -126,7 +127,7 @@ export const columnRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       // 3-level ownership check
       const result = await ctx.db
-        .select({ columnId: columns.id })
+        .select({ columnId: columns.id, isPrimary: columns.isPrimary })
         .from(columns)
         .innerJoin(tables, eq(columns.tableId, tables.id))
         .innerJoin(bases, eq(tables.baseId, bases.id))
@@ -140,6 +141,10 @@ export const columnRouter = createTRPCRouter({
 
       if (result.length === 0) {
         throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
+      if (result[0]?.isPrimary) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Cannot delete the primary field" });
       }
 
       const [deleted] = await ctx.db

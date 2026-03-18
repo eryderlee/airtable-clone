@@ -60,6 +60,17 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
     initialConfig?.hiddenColumns ?? [],
   );
   const [openPanel, setOpenPanel] = useState<"search" | "filter" | "sort" | "hideFields" | null>(null);
+  const [viewsPanelOpen, setViewsPanelOpen] = useState(true);
+  const [viewsPanelHover, setViewsPanelHover] = useState(false);
+  const showViewsPanel = viewsPanelOpen || viewsPanelHover;
+  const hoverCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function startHoverClose() {
+    hoverCloseTimer.current = setTimeout(() => setViewsPanelHover(false), 100);
+  }
+  function cancelHoverClose() {
+    if (hoverCloseTimer.current) clearTimeout(hoverCloseTimer.current);
+  }
 
   // 300ms debounce: searchInput -> searchQuery
   useEffect(() => {
@@ -344,11 +355,13 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
   // Bulk create
   const bulkCreate = api.row.bulkCreate.useMutation({
     onSuccess: async () => {
-      // Clear cache and refresh count; page 0 will reload via the useEffect
+      // Clear cache first, then refresh count; React 18 batches the totalCount
+      // update with forceUpdate so the [totalCount, fetchPage] effect fires once
+      // with both an empty cache and the new count — fetchPage(0) then runs cleanly.
       pageCacheRef.current = {};
       loadingPagesRef.current = new Set();
-      forceUpdate();
       await refetchCount();
+      forceUpdate();
     },
   });
 
@@ -599,6 +612,10 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       <GridToolbar
+        onToggleViewsPanel={() => setViewsPanelOpen((v) => !v)}
+        viewsPanelOpen={viewsPanelOpen}
+        onHamburgerMouseEnter={() => { cancelHoverClose(); if (!viewsPanelOpen) setViewsPanelHover(true); }}
+        onHamburgerMouseLeave={() => { if (!viewsPanelOpen) startHoverClose(); }}
         onBulkCreate={handleBulkCreate}
         isBulkCreating={bulkCreate.isPending}
         onBulkAddColumns={handleBulkAddColumns}
@@ -621,7 +638,18 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
         hasActiveSearch={searchInput.trim().length > 0}
       />
       <div className="flex flex-1 overflow-hidden">
-        <ViewsPanel tableId={tableId} activeViewId={viewId} />
+        <div
+          onMouseEnter={() => { cancelHoverClose(); if (!viewsPanelOpen) setViewsPanelHover(true); }}
+          onMouseLeave={() => { if (!viewsPanelOpen) startHoverClose(); }}
+          style={{
+            width: showViewsPanel ? 275 : 0,
+            flexShrink: 0,
+            overflow: "hidden",
+            transition: "width 200ms ease",
+          }}
+        >
+          <ViewsPanel tableId={tableId} activeViewId={viewId} />
+        </div>
       {isInitialLoading ? (
         <div className="flex flex-1 items-center justify-center">
           <p className="text-sm text-[#aaa]">Loading...</p>

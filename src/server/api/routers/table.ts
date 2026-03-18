@@ -75,7 +75,7 @@ export const tableRouter = createTRPCRouter({
         const [nameCol, notesCol, statusCol] = await ctx.db
           .insert(columns)
           .values([
-            { tableId: table.id, name: "Name", type: "text", order: 0 },
+            { tableId: table.id, name: "Name", type: "text", order: 0, isPrimary: true },
             { tableId: table.id, name: "Notes", type: "text", order: 1 },
             { tableId: table.id, name: "Status", type: "text", order: 2 },
           ])

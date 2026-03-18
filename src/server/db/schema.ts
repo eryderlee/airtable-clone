@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import {
+  boolean,
   index,
   integer,
   jsonb,
@@ -111,6 +112,7 @@ export const bases = createTable(
       .references(() => users.id, { onDelete: "cascade" }),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
+    lastOpenedAt: timestamp("last_opened_at", { mode: "date" }),
   },
   (base) => ({
     userIdIdx: index("base_user_id_idx").on(base.userId),
@@ -158,6 +160,7 @@ export const columns = createTable(
     name: text("name").notNull(),
     type: text("type", { enum: ["text", "number"] }).default("text").notNull(),
     order: integer("order").default(0).notNull(),
+    isPrimary: boolean("is_primary").default(false).notNull(),
   },
   (column) => ({
     tableIdIdx: index("column_table_id_idx").on(column.tableId),

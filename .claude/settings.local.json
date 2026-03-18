@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(claude mcp:*)",
+      "WebFetch(domain:github.com)",
+      "mcp__playwright__browser_install",
+      "mcp__playwright__browser_evaluate",
+      "mcp__playwright__browser_click",
+      "Bash(curl -s http://localhost:3000/)",
+      "Bash(curl -s http://localhost:3000/_next/static/chunks/src_4a8d843f._.js)",
+      "mcp__playwright__browser_hover",
+      "mcp__playwright__browser_snapshot",
+      "Bash(npx tsc:*)",
+      "Bash(curl -s http://localhost:3000/base/160432e6-b825-46de-aa48-a04cafa5f835/7358984a-ae62-46d2-abbd-0b277e4472d0/view/d8d460ce-3e51-4945-8869-8c5403df89ef)",
+      "Bash(npx drizzle-kit:*)"
+    ]
+  }
+}

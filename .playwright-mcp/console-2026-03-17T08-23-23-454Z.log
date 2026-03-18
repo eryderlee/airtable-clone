@@ -1,0 +1,21 @@
+[     449ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/:0
+[     649ms] ReferenceError: HomeIcon is not defined
+    at __TURBOPACK__module__evaluation__ (http://localhost:3000/_next/static/chunks/src_4a8d843f._.js:24:218)
+    at http://localhost:3000/_next/static/chunks/turbopack-_cdba956c._.js:842:13
+    at runModuleExecutionHooks (http://localhost:3000/_next/static/chunks/turbopack-_cdba956c._.js:867:13)
+    at instantiateModule (http://localhost:3000/_next/static/chunks/turbopack-_cdba956c._.js:840:9)
+    at getOrInstantiateModuleFromParent (http://localhost:3000/_next/static/chunks/turbopack-_cdba956c._.js:793:12)
+    at DevContext.commonJsRequire [as r] (http://localhost:3000/_next/static/chunks/turbopack-_cdba956c._.js:246:12)
+    at requireModule (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_5150ccfd._.js:2904:84)
+    at initializeModuleChunk (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_5150ccfd._.js:3616:25)
+    at resolveModuleChunk (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_5150ccfd._.js:3543:35)
+    at http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_5150ccfd._.js:4150:24
+[   59800ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://localhost:3000/_next/static/chunks/%5Bturbopack%5D_browser_dev_hmr-client_hmr-client_ts_c8c997ce._.js:34
+[   59802ms] [WARNING] [Fast Refresh] performing full reload because your application had an unrecoverable error @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_cf1d9188._.js:6282

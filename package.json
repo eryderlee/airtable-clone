@@ -11,7 +11,9 @@
     "db:push": "drizzle-kit push",
     "db:seed": "tsx scripts/seed.ts",
     "db:studio": "drizzle-kit studio",
-    "dev": "next dev --turbo",
+    "dev": "next dev",
+    "dev:turbo": "cross-env TURBOPACK=1 next dev",
+    "dev:playwright": "next dev",
     "lint": "next lint",
     "start": "next start",
     "typecheck": "tsc --noEmit"
@@ -39,10 +41,12 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@playwright/test": "^1.51.1",
     "@types/node": "^20.14.10",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "autoprefixer": "^10.4.27",
+    "cross-env": "^10.1.0",
     "dotenv": "^16.4.5",
     "drizzle-kit": "^0.28.1",
     "eslint": "^8.57.0",

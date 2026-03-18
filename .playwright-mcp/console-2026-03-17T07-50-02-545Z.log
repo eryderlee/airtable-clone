@@ -1,0 +1,228 @@
+[  562864ms] [ERROR] ./src/app/(app)/page.tsx:2:10
+Ecmascript file had an error
+  1 | import Link from "next/link";
+> 2 | import { useState } from "react";
+    |          ^^^^^^^^
+  3 | import type { ReactNode } from "react";
+  4 |
+  5 | import { api } from "~/trpc/server";
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_b0daae9a._.js:2359
+[  576676ms] [ERROR] ./src/app/(app)/page.tsx:2:10
+Ecmascript file had an error
+  1 | import Link from "next/link";
+> 2 | import { useState } from "react";
+    |          ^^^^^^^^
+  3 | import type { ReactNode } from "react";
+  4 |
+  5 | import { api } from "~/trpc/server";
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_b0daae9a._.js:2359
+[  576735ms] [ERROR] ./src/app/(app)/page.tsx:2:10
+Ecmascript file had an error
+  1 | import Link from "next/link";
+> 2 | import { useState } from "react";
+    |          ^^^^^^^^
+  3 | import type { ReactNode } from "react";
+  4 |
+  5 | import { api } from "~/trpc/server";
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_b0daae9a._.js:2359
+[  587907ms] [ERROR] ./src/app/(app)/page.tsx:2:10
+Ecmascript file had an error
+  1 | import Link from "next/link";
+> 2 | import { useState } from "react";
+    |          ^^^^^^^^
+  3 | import type { ReactNode } from "react";
+  4 |
+  5 | import { api } from "~/trpc/server";
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_b0daae9a._.js:2359
+[  587956ms] [ERROR] ./src/app/(app)/page.tsx:2:10
+Ecmascript file had an error
+  1 | import Link from "next/link";
+> 2 | import { useState } from "react";
+    |          ^^^^^^^^
+  3 | import type { ReactNode } from "react";
+  4 |
+  5 | import { api } from "~/trpc/server";
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_b0daae9a._.js:2359
+[  588001ms] [ERROR] ./src/app/(app)/page.tsx:2:10
+Ecmascript file had an error
+  1 | import Link from "next/link";
+> 2 | import { useState } from "react";
+    |          ^^^^^^^^
+  3 | import type { ReactNode } from "react";
+  4 |
+  5 | import { api } from "~/trpc/server";
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_b0daae9a._.js:2359
+[  635018ms] [ERROR] ./src/app/(app)/page.tsx:2:1
+Module not found: Can't resolve '~/components/home/HomeContent'
+  1 | import { api } from "~/trpc/server";
+> 2 | import { HomeContent } from "~/components/home/HomeContent";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  3 |
+  4 | export default async function AppHomePage() {
+  5 |   const bases = (await api.base.getAll()) ?? [];
+
+Import map: aliased to relative './src/components/home/HomeContent' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_b0daae9a._.js:2359
+[  636848ms] [ERROR] ./src/app/(app)/page.tsx:2:1
+Module not found: Can't resolve '~/components/home/HomeContent'
+  1 | import { api } from "~/trpc/server";
+> 2 | import { HomeContent } from "~/components/home/HomeContent";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  3 |
+  4 | export default async function AppHomePage() {
+  5 |   const bases = (await api.base.getAll()) ?? [];
+
+Import map: aliased to relative './src/components/home/HomeContent' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_b0daae9a._.js:2359
+[  637004ms] [ERROR] ./src/app/(app)/page.tsx:2:1
+Module not found: Can't resolve '~/components/home/HomeContent'
+  1 | import { api } from "~/trpc/server";
+> 2 | import { HomeContent } from "~/components/home/HomeContent";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  3 |
+  4 | export default async function AppHomePage() {
+  5 |   const bases = (await api.base.getAll()) ?? [];
+
+Import map: aliased to relative './src/components/home/HomeContent' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_b0daae9a._.js:2359
+[  638705ms] [ERROR] ./src/app/(app)/page.tsx:2:1
+Module not found: Can't resolve '~/components/home/HomeContent'
+  1 | import { api } from "~/trpc/server";
+> 2 | import { HomeContent } from "~/components/home/HomeContent";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  3 |
+  4 | export default async function AppHomePage() {
+  5 |   const bases = (await api.base.getAll()) ?? [];
+
+Import map: aliased to relative './src/components/home/HomeContent' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_b0daae9a._.js:2359
+[  638706ms] [ERROR] ./src/app/(app)/page.tsx:2:1
+Module not found: Can't resolve '~/components/home/HomeContent'
+  1 | import { api } from "~/trpc/server";
+> 2 | import { HomeContent } from "~/components/home/HomeContent";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  3 |
+  4 | export default async function AppHomePage() {
+  5 |   const bases = (await api.base.getAll()) ?? [];
+
+Import map: aliased to relative './src/components/home/HomeContent' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_b0daae9a._.js:2359
+[  639269ms] [ERROR] ./src/app/(app)/page.tsx:2:1
+Module not found: Can't resolve '~/components/home/HomeContent'
+  1 | import { api } from "~/trpc/server";
+> 2 | import { HomeContent } from "~/components/home/HomeContent";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  3 |
+  4 | export default async function AppHomePage() {
+  5 |   const bases = (await api.base.getAll()) ?? [];
+
+Import map: aliased to relative './src/components/home/HomeContent' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_b0daae9a._.js:2359
+[  639317ms] [ERROR] ./src/app/(app)/page.tsx:2:1
+Module not found: Can't resolve '~/components/home/HomeContent'
+  1 | import { api } from "~/trpc/server";
+> 2 | import { HomeContent } from "~/components/home/HomeContent";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  3 |
+  4 | export default async function AppHomePage() {
+  5 |   const bases = (await api.base.getAll()) ?? [];
+
+Import map: aliased to relative './src/components/home/HomeContent' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_b0daae9a._.js:2359
+[  639368ms] [ERROR] ./src/app/(app)/page.tsx:2:1
+Module not found: Can't resolve '~/components/home/HomeContent'
+  1 | import { api } from "~/trpc/server";
+> 2 | import { HomeContent } from "~/components/home/HomeContent";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  3 |
+  4 | export default async function AppHomePage() {
+  5 |   const bases = (await api.base.getAll()) ?? [];
+
+Import map: aliased to relative './src/components/home/HomeContent' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_b0daae9a._.js:2359
+[  639453ms] [ERROR] ./src/app/(app)/page.tsx:2:1
+Module not found: Can't resolve '~/components/home/HomeContent'
+  1 | import { api } from "~/trpc/server";
+> 2 | import { HomeContent } from "~/components/home/HomeContent";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  3 |
+  4 | export default async function AppHomePage() {
+  5 |   const bases = (await api.base.getAll()) ?? [];
+
+Import map: aliased to relative './src/components/home/HomeContent' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_b0daae9a._.js:2359
+[  639623ms] [ERROR] ./src/app/(app)/page.tsx:2:1
+Module not found: Can't resolve '~/components/home/HomeContent'
+  1 | import { api } from "~/trpc/server";
+> 2 | import { HomeContent } from "~/components/home/HomeContent";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  3 |
+  4 | export default async function AppHomePage() {
+  5 |   const bases = (await api.base.getAll()) ?? [];
+
+Import map: aliased to relative './src/components/home/HomeContent' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_b0daae9a._.js:2359
+[  640404ms] [ERROR] ./src/app/(app)/page.tsx:2:1
+Module not found: Can't resolve '~/components/home/HomeContent'
+  1 | import { api } from "~/trpc/server";
+> 2 | import { HomeContent } from "~/components/home/HomeContent";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  3 |
+  4 | export default async function AppHomePage() {
+  5 |   const bases = (await api.base.getAll()) ?? [];
+
+Import map: aliased to relative './src/components/home/HomeContent' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_b0daae9a._.js:2359
+[  640482ms] [ERROR] ./src/app/(app)/page.tsx:2:1
+Module not found: Can't resolve '~/components/home/HomeContent'
+  1 | import { api } from "~/trpc/server";
+> 2 | import { HomeContent } from "~/components/home/HomeContent";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  3 |
+  4 | export default async function AppHomePage() {
+  5 |   const bases = (await api.base.getAll()) ?? [];
+
+Import map: aliased to relative './src/components/home/HomeContent' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_b0daae9a._.js:2359
+[  640527ms] [ERROR] ./src/app/(app)/page.tsx:2:1
+Module not found: Can't resolve '~/components/home/HomeContent'
+  1 | import { api } from "~/trpc/server";
+> 2 | import { HomeContent } from "~/components/home/HomeContent";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  3 |
+  4 | export default async function AppHomePage() {
+  5 |   const bases = (await api.base.getAll()) ?? [];
+
+Import map: aliased to relative './src/components/home/HomeContent' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_b0daae9a._.js:2359

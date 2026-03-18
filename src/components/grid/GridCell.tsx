@@ -13,6 +13,7 @@ interface GridCellProps {
   isEditing: boolean;
   initialDraft?: string; // When set, enter edit mode with this value (for printable char entry)
   searchQuery?: string;
+  isCurrentMatch?: boolean;
   onCommit: (rowId: string, columnId: string, value: string | number | null) => void;
   onRevert: () => void;
   onStartEditing: () => void;
@@ -42,6 +43,7 @@ export function GridCell({
   isEditing,
   initialDraft,
   searchQuery,
+  isCurrentMatch,
   onCommit,
   onRevert,
   onStartEditing,
@@ -116,7 +118,7 @@ export function GridCell({
       onClick={handleClick}
       className={`flex h-full w-full items-center truncate px-2 py-1 text-sm outline-none ${
         isFocused ? "ring-2 ring-inset ring-blue-500" : ""
-      }`}
+      } ${isCurrentMatch ? "bg-yellow-200" : ""}`}
     >
       {isEditing ? (
         <input

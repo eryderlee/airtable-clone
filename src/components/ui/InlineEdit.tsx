@@ -6,12 +6,35 @@ interface InlineEditProps {
   value: string;
   onSave: (newValue: string) => void;
   className?: string;
+  editing?: boolean;
+  onEditingChange?: (editing: boolean) => void;
 }
 
-export function InlineEdit({ value, onSave, className }: InlineEditProps) {
-  const [editing, setEditing] = useState(false);
+export function InlineEdit({ value, onSave, className, editing: editingProp, onEditingChange }: InlineEditProps) {
+  const [editingInternal, setEditingInternal] = useState(false);
+  const editing = editingProp ?? editingInternal;
   const [draft, setDraft] = useState(value);
+  // Optimistic display value — updated immediately on save, before server responds
+  const [optimisticValue, setOptimisticValue] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  function setEditing(v: boolean) {
+    setEditingInternal(v);
+    onEditingChange?.(v);
+  }
+
+  useEffect(() => {
+    if (editingProp) {
+      setDraft(value);
+    }
+  }, [editingProp, value]);
+
+  // Once server value catches up to optimistic, clear it
+  useEffect(() => {
+    if (optimisticValue !== null && value === optimisticValue) {
+      setOptimisticValue(null);
+    }
+  }, [value, optimisticValue]);
 
   useEffect(() => {
     if (editing && inputRef.current) {
@@ -28,6 +51,7 @@ export function InlineEdit({ value, onSave, className }: InlineEditProps) {
   function save() {
     const trimmed = draft.trim();
     if (trimmed.length > 0 && trimmed !== value) {
+      setOptimisticValue(trimmed);
       onSave(trimmed);
     } else {
       setDraft(value);
@@ -52,14 +76,14 @@ export function InlineEdit({ value, onSave, className }: InlineEditProps) {
         onChange={(e) => setDraft(e.target.value)}
         onBlur={save}
         onKeyDown={handleKeyDown}
-        className={`bg-transparent outline-none ${className ?? ""}`}
+        className={`rounded bg-white px-1 ring-2 ring-[#9aa4b6] outline-none ${className ?? ""}`}
       />
     );
   }
 
   return (
     <span onDoubleClick={handleDoubleClick} className={className}>
-      {value}
+      {optimisticValue ?? value}
     </span>
   );
 }

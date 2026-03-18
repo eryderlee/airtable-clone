@@ -3,26 +3,13 @@
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
 
-// Deterministic color palette for base icons (matches Airtable's style)
-const BASE_COLORS = [
-  "#e8384f", // red
-  "#fd612c", // orange
-  "#f1a325", // yellow
-  "#4ab553", // green
-  "#0ebf9a", // teal
-  "#20aee3", // blue
-  "#6e4bec", // purple (default)
-  "#ff4ca1", // pink
-  "#8b46ff", // violet
-  "#ff8c00", // dark orange
-];
-
-function getBaseColor(baseId: string): string {
-  let hash = 0;
-  for (let i = 0; i < baseId.length; i++) {
-    hash = (hash * 31 + baseId.charCodeAt(i)) >>> 0;
-  }
-  return BASE_COLORS[hash % BASE_COLORS.length] ?? "#6e4bec";
+function getBaseColor(name: string): string {
+  const colors = ["#4aa4ff", "#f97316", "#22c55e", "#a855f7", "#ec4899"];
+  const index =
+    name
+      .split("")
+      .reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
+  return colors[index] ?? "#4aa4ff";
 }
 
 type BaseTopBarProps = {
@@ -37,7 +24,7 @@ type BaseTopBarProps = {
 export function BaseTopBar({ baseId }: BaseTopBarProps) {
   const router = useRouter();
   const { data: base } = api.base.getById.useQuery({ id: baseId });
-  const baseColor = getBaseColor(baseId);
+  const baseColor = getBaseColor(base?.name ?? "");
 
   return (
     <header className="flex h-[56px] flex-shrink-0 items-center border-b border-[#e4e7ec] bg-white px-3">
@@ -50,11 +37,11 @@ export function BaseTopBar({ baseId }: BaseTopBarProps) {
           onClick={() => router.push("/")}
         >
           <div style={{ position: "relative", top: 1 }}>
-            <svg width="20" height="17" viewBox="0 0 200 170" style={{ shapeRendering: "geometricPrecision" }} xmlns="http://www.w3.org/2000/svg">
+            <svg width="26" height="22" viewBox="0 0 200 170" style={{ shapeRendering: "geometricPrecision" }} xmlns="http://www.w3.org/2000/svg">
               <g>
-                <path fill="hsla(0, 0%, 100%, 0.95)" d="M90.0389,12.3675 L24.0799,39.6605 C20.4119,41.1785 20.4499,46.3885 24.1409,47.8515 L90.3759,74.1175 C96.1959,76.4255 102.6769,76.4255 108.4959,74.1175 L174.7319,47.8515 C178.4219,46.3885 178.4609,41.1785 174.7919,39.6605 L108.8339,12.3675 C102.8159,9.8775 96.0559,9.8775 90.0389,12.3675" />
-                <path fill="hsla(0, 0%, 100%, 0.95)" d="M105.3122,88.4608 L105.3122,154.0768 C105.3122,157.1978 108.4592,159.3348 111.3602,158.1848 L185.1662,129.5368 C186.8512,128.8688 187.9562,127.2408 187.9562,125.4288 L187.9562,59.8128 C187.9562,56.6918 184.8092,54.5548 181.9082,55.7048 L108.1022,84.3528 C106.4182,85.0208 105.3122,86.6488 105.3122,88.4608" />
-                <path fill="hsla(0, 0%, 100%, 0.95)" d="M88.0781,91.8464 L66.1741,102.4224 L63.9501,103.4974 L17.7121,125.6524 C14.7811,127.0664 11.0401,124.9304 11.0401,121.6744 L11.0401,60.0884 C11.0401,58.9104 11.6441,57.8934 12.4541,57.1274 C12.7921,56.7884 13.1751,56.5094 13.5731,56.2884 C14.6781,55.6254 16.2541,55.4484 17.5941,55.9784 L87.7101,83.7594 C91.2741,85.1734 91.5541,90.1674 88.0781,91.8464" />
+                <path fill="hsla(0, 0%, 0%, 0.85)" d="M90.0389,12.3675 L24.0799,39.6605 C20.4119,41.1785 20.4499,46.3885 24.1409,47.8515 L90.3759,74.1175 C96.1959,76.4255 102.6769,76.4255 108.4959,74.1175 L174.7319,47.8515 C178.4219,46.3885 178.4609,41.1785 174.7919,39.6605 L108.8339,12.3675 C102.8159,9.8775 96.0559,9.8775 90.0389,12.3675" />
+                <path fill="hsla(0, 0%, 0%, 0.85)" d="M105.3122,88.4608 L105.3122,154.0768 C105.3122,157.1978 108.4592,159.3348 111.3602,158.1848 L185.1662,129.5368 C186.8512,128.8688 187.9562,127.2408 187.9562,125.4288 L187.9562,59.8128 C187.9562,56.6918 184.8092,54.5548 181.9082,55.7048 L108.1022,84.3528 C106.4182,85.0208 105.3122,86.6488 105.3122,88.4608" />
+                <path fill="hsla(0, 0%, 0%, 0.85)" d="M88.0781,91.8464 L66.1741,102.4224 L63.9501,103.4974 L17.7121,125.6524 C14.7811,127.0664 11.0401,124.9304 11.0401,121.6744 L11.0401,60.0884 C11.0401,58.9104 11.6441,57.8934 12.4541,57.1274 C12.7921,56.7884 13.1751,56.5094 13.5731,56.2884 C14.6781,55.6254 16.2541,55.4484 17.5941,55.9784 L87.7101,83.7594 C91.2741,85.1734 91.5541,90.1674 88.0781,91.8464" />
               </g>
             </svg>
           </div>
@@ -125,7 +112,10 @@ export function BaseTopBar({ baseId }: BaseTopBarProps) {
         </button>
 
         {/* Share */}
-        <button className="rounded bg-[#1f2328] px-3 py-1.5 text-[13px] font-semibold text-white hover:bg-[#374151]">
+        <button
+          className="rounded px-3 py-1.5 text-[13px] font-semibold text-white"
+          style={{ backgroundColor: baseColor }}
+        >
           Share
         </button>
       </div>

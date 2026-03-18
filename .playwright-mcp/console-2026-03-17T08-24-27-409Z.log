@@ -1,0 +1,64 @@
+[  242818ms] [ERROR] ./src/components/nav/AppShell.tsx:5:1
+Module not found: Can't resolve './AppSidebar'
+  3 | import { useState } from "react";
+  4 |
+> 5 | import { AppSidebar } from "./AppSidebar";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 | import { AppTopBar } from "./AppTopBar";
+  7 |
+  8 | type AppShellProps = {
+
+Import trace:
+  Server Component:
+    ./src/components/nav/AppShell.tsx
+    ./src/app/(app)/layout.tsx
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_b0daae9a._.js:2359
+[  243370ms] [ERROR] ./src/components/nav/AppShell.tsx:5:1
+Module not found: Can't resolve './AppSidebar'
+  3 | import { useState } from "react";
+  4 |
+> 5 | import { AppSidebar } from "./AppSidebar";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 | import { AppTopBar } from "./AppTopBar";
+  7 |
+  8 | type AppShellProps = {
+
+Import trace:
+  Server Component:
+    ./src/components/nav/AppShell.tsx
+    ./src/app/(app)/layout.tsx
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_b0daae9a._.js:2359
+[  247804ms] [ERROR] ./src/components/nav/AppShell.tsx:5:1
+Module not found: Can't resolve './AppSidebar'
+  3 | import { useState } from "react";
+  4 |
+> 5 | import { AppSidebar } from "./AppSidebar";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 | import { AppTopBar } from "./AppTopBar";
+  7 |
+  8 | type AppShellProps = {
+
+Import trace:
+  Server Component:
+    ./src/components/nav/AppShell.tsx
+    ./src/app/(app)/layout.tsx
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_b0daae9a._.js:2359
+[  274138ms] [ERROR] ./src/components/nav/AppShell.tsx:5:1
+Module not found: Can't resolve './AppSidebar'
+  3 | import { useState } from "react";
+  4 |
+> 5 | import { AppSidebar } from "./AppSidebar";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 | import { AppTopBar } from "./AppTopBar";
+  7 |
+  8 | type AppShellProps = {
+
+Import trace:
+  Server Component:
+    ./src/components/nav/AppShell.tsx
+    ./src/app/(app)/layout.tsx
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_b0daae9a._.js:2359

@@ -10,6 +10,10 @@ interface GridToolbarProps {
   onBulkCreate: () => void;
   isBulkCreating: boolean;
   onBulkAddColumns: () => void;
+  onToggleViewsPanel: () => void;
+  viewsPanelOpen: boolean;
+  onHamburgerMouseEnter: () => void;
+  onHamburgerMouseLeave: () => void;
   rowCount: number;
   // Panel state
   openPanel: "search" | "filter" | "sort" | "hideFields" | null;
@@ -39,6 +43,10 @@ export function GridToolbar({
   onBulkCreate,
   isBulkCreating,
   onBulkAddColumns,
+  onToggleViewsPanel,
+  viewsPanelOpen,
+  onHamburgerMouseEnter,
+  onHamburgerMouseLeave,
   filters,
   sorts,
   hiddenColumns,
@@ -62,7 +70,13 @@ export function GridToolbar({
       data-testid="grid-toolbar"
     >
       {/* Left: hamburger + Grid view toggle */}
-      <button className="mr-1 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded text-[#4c5667] hover:bg-[#edf0f4]" title="Toggle views">
+      <button
+        onClick={onToggleViewsPanel}
+        onMouseEnter={onHamburgerMouseEnter}
+        onMouseLeave={onHamburgerMouseLeave}
+        className={`mr-1 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded text-[#4c5667] hover:bg-[#edf0f4] ${viewsPanelOpen ? "bg-[#edf0f4]" : ""}`}
+        title="Toggle views"
+      >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <path d="M2 3.5h10M2 7h10M2 10.5h10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
         </svg>

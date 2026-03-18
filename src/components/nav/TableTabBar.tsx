@@ -1,11 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 
 import { api } from "~/trpc/react";
 import { InlineEdit } from "~/components/ui/InlineEdit";
+
+function getBaseColor(name: string): string {
+  const colors = ["#4aa4ff", "#f97316", "#22c55e", "#a855f7", "#ec4899"];
+  const index =
+    name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
+  return colors[index] ?? "#4aa4ff";
+}
+
+function hexToRgb(hex: string) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return { r, g, b };
+}
+
+function lightTint(hex: string, amount = 0.85): string {
+  const { r, g, b } = hexToRgb(hex);
+  const tr = Math.round(r + (255 - r) * amount);
+  const tg = Math.round(g + (255 - g) * amount);
+  const tb = Math.round(b + (255 - b) * amount);
+  return `rgb(${tr}, ${tg}, ${tb})`;
+}
 
 interface TableTabBarProps {
   baseId: string;
@@ -16,7 +38,9 @@ export function TableTabBar({ baseId }: TableTabBarProps) {
   const params = useParams<{ tableId?: string }>();
   const activeTableId = params.tableId;
 
+  const { data: base } = api.base.getById.useQuery({ id: baseId });
   const { data: tables } = api.table.getByBaseId.useQuery({ baseId });
+  const bgColor = lightTint(getBaseColor(base?.name ?? ""));
   const utils = api.useUtils();
 
   const createTable = api.table.create.useMutation({
@@ -36,52 +60,61 @@ export function TableTabBar({ baseId }: TableTabBarProps) {
   });
 
   const deleteTable = api.table.delete.useMutation({
-    onSuccess: () => {
-      void utils.table.getByBaseId.invalidate({ baseId });
+    onSuccess: async () => {
+      await utils.table.getByBaseId.invalidate({ baseId });
       router.push(`/base/${baseId}`);
+      router.refresh();
     },
   });
 
   return (
-    <div className="flex h-10 flex-shrink-0 items-center justify-between border-b border-[#e4e7ec] bg-white px-2">
+    <div className="relative flex h-[30px] flex-shrink-0 items-stretch justify-between" style={{ backgroundColor: bgColor, borderBottom: "1px solid #dfe3ea", overflow: "visible" }}>
       {/* Tabs + actions */}
-      <div className="flex flex-1 items-end overflow-hidden">
-        {tables?.map((table) => {
+      <div className="flex flex-1 items-stretch" style={{ overflow: "visible" }}>
+        {tables?.map((table, index) => {
           const isActive = activeTableId === table.id;
           return (
             <TableTab
               key={table.id}
               table={table}
               isActive={isActive}
+              isFirst={index === 0}
               baseId={baseId}
+              bgColor={bgColor}
               onRename={(name) => renameTable.mutate({ id: table.id, name })}
-              onDelete={() => {
-                if (window.confirm("Delete this table?")) deleteTable.mutate({ id: table.id });
-              }}
+              onDelete={() => deleteTable.mutate({ id: table.id })}
               showDelete={(tables?.length ?? 0) > 1}
             />
           );
         })}
 
+        {/* Chevron after last tab */}
+        <button className="flex items-center self-center px-1.5 text-[#4c5667] opacity-70 hover:opacity-100">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+
+        {/* Divider */}
+        <div className="mx-1 self-center h-4 w-px bg-[#4c5667] opacity-30" />
+
+        {/* Add or import */}
         <button
           onClick={() => createTable.mutate({ baseId, seed: true })}
           disabled={createTable.isPending}
-          className="ml-1 flex items-center gap-1 rounded border border-transparent px-3 py-1 text-[13px] text-[#4c5667] hover:border-[#dfe3ea] disabled:opacity-40"
+          className="flex items-center gap-1 self-center px-2 py-1 text-[13px] text-[#4c5667] hover:text-[#1f2328] disabled:opacity-40"
           data-testid="add-or-import-button"
         >
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
             <path d="M6 1.5v9M1.5 6h9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
           </svg>
           Add or import
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="text-[#6b7280]">
-            <path d="M2.5 3.75L5 6.25L7.5 3.75" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
         </button>
       </div>
 
       {/* Tools */}
       <button
-        className="ml-3 flex items-center gap-1 rounded border border-transparent px-3 py-1 text-[13px] text-[#4c5667] hover:border-[#dfe3ea]"
+        className="mb-1 ml-3 mr-2 flex flex-shrink-0 items-center gap-1 rounded border border-transparent px-3 py-1 text-[13px] text-[#4c5667] hover:border-[#dfe3ea]"
         data-testid="tools-button"
       >
         Tools
@@ -96,29 +129,53 @@ export function TableTabBar({ baseId }: TableTabBarProps) {
 function TableTab({
   table,
   isActive,
+  isFirst,
   baseId,
+  bgColor,
   onRename,
   onDelete,
   showDelete,
 }: {
   table: { id: string; name: string };
   isActive: boolean;
+  isFirst: boolean;
   baseId: string;
+  bgColor: string;
   onRename: (name: string) => void;
   onDelete: () => void;
   showDelete: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [menuOpen]);
 
   return (
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className={`mb-[-1px] mr-1 flex h-8 flex-shrink-0 cursor-pointer items-center gap-1 rounded-t-lg border px-3 transition-colors ${
-        isActive ? "border-[#dfe3ea] bg-white text-[#1f2328]" : "border-transparent bg-[#f4f5f7] text-[#4c5667]"
-      }`}
+      className={`relative flex flex-shrink-0 cursor-pointer items-center gap-1 px-3 transition-colors ${
+        isFirst ? "rounded-tr-lg" : "rounded-t-lg"
+      } ${
+        isActive
+          ? "border-r border-t border-[#dfe3ea] bg-white text-[#1f2328]"
+          : "h-[22px] self-end border border-transparent text-[#4c5667]"
+      } ${isActive && !isFirst ? "border-l" : ""}`}
       style={{
-        borderBottomColor: isActive ? "#ffffff" : "transparent",
+        marginBottom: isActive ? "-1px" : "0",
+        marginTop: isActive && isFirst ? "-2px" : undefined,
+        zIndex: menuOpen ? 10 : isActive ? 2 : 0,
+        backgroundColor: isActive ? undefined : bgColor,
       }}
     >
       <Link
@@ -133,22 +190,129 @@ function TableTab({
             isActive ? "font-medium text-[#1f2328]" : "text-[#4c5667] hover:text-[#1f2328]"
           }`}
         />
-        {/* Dropdown arrow — shown always on active, on hover otherwise */}
-        <svg
-          width="10" height="10" viewBox="0 0 10 10" fill="none"
-          className={isActive || hovered ? "text-[#6b7280]" : "text-transparent"}
-        >
-          <path d="M2.5 3.75L5 6.25L7.5 3.75" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
       </Link>
-      {hovered && showDelete && (
+
+      {/* Chevron — opens dropdown */}
+      {(isActive || hovered) && (
         <button
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(); }}
-          className="flex h-4 w-4 items-center justify-center rounded text-[#9e9e9e] hover:bg-red-100 hover:text-red-500"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMenuOpen((v) => !v); }}
+          className="flex h-4 w-4 items-center justify-center rounded text-[#6b7280] hover:bg-[#e8eaed]"
         >
-          <span className="text-xs leading-none">&times;</span>
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <path d="M2.5 3.75L5 6.25L7.5 3.75" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
         </button>
+      )}
+
+      {/* Dropdown menu */}
+      {menuOpen && (
+        <div
+          ref={menuRef}
+          className="absolute left-0 top-full z-50 mt-1 w-[240px] overflow-hidden rounded-lg border border-[#e2e0ea] bg-white py-1 shadow-xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <MenuItem icon={<ImportIcon />} label="Import data" chevron disabled />
+          <div className="my-1 h-px bg-[#f0f0f0]" />
+          <MenuItem icon={<RenameIcon />} label="Rename table" disabled />
+          <MenuItem icon={<HideIcon />} label="Hide table" disabled />
+          <MenuItem icon={<FieldsIcon />} label="Manage fields" badge="Team" disabled />
+          <MenuItem icon={<DuplicateIcon />} label="Duplicate table" disabled />
+          <div className="my-1 h-px bg-[#f0f0f0]" />
+          <MenuItem icon={<DepsIcon />} label="Configure date dependencies" badge="Team" disabled />
+          <div className="my-1 h-px bg-[#f0f0f0]" />
+          <MenuItem icon={<DescriptionIcon />} label="Edit table description" disabled />
+          <MenuItem icon={<PermissionsIcon />} label="Edit table permissions" badge="Team" disabled />
+          <div className="my-1 h-px bg-[#f0f0f0]" />
+          <MenuItem icon={<ClearIcon />} label="Clear data" disabled />
+          {showDelete && (
+            <MenuItem
+              icon={<DeleteIcon />}
+              label="Delete table"
+              danger
+              onClick={() => {
+                setMenuOpen(false);
+                onDelete();
+              }}
+            />
+          )}
+        </div>
       )}
     </div>
   );
+}
+
+function MenuItem({
+  icon, label, disabled, danger, chevron, badge, onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  disabled?: boolean;
+  danger?: boolean;
+  chevron?: boolean;
+  badge?: string;
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
+      className={`flex w-full items-center gap-2.5 px-3 py-[7px] text-left text-[13px] transition-colors ${
+        disabled
+          ? "cursor-default text-[#bbb]"
+          : danger
+          ? "text-[#d32f2f] hover:bg-[#fff5f5]"
+          : "text-[#333] hover:bg-[#f5f5f5]"
+      }`}
+    >
+      <span className={`flex h-4 w-4 flex-shrink-0 items-center justify-center ${disabled ? "text-[#ccc]" : danger ? "text-[#d32f2f]" : "text-[#666]"}`}>
+        {icon}
+      </span>
+      <span className="flex-1">{label}</span>
+      {badge && (
+        <span className="flex items-center gap-1 rounded-full bg-[#e8f4ff] px-2 py-0.5 text-[11px] text-[#1a73e8]">
+          <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
+            <circle cx="5" cy="5" r="4" stroke="currentColor" strokeWidth="1" />
+            <path d="M3 5l1.5 1.5L7.5 3.5" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          {badge}
+        </span>
+      )}
+      {chevron && (
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="text-[#aaa]">
+          <path d="M3.5 2L7 5L3.5 8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
+function ImportIcon() {
+  return <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.5v7M4 6l3 3 3-3M2.5 10.5v1.5h9v-1.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /></svg>;
+}
+function RenameIcon() {
+  return <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9.5 2.5l2 2L5 11H3v-2l6.5-6.5z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /></svg>;
+}
+function HideIcon() {
+  return <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1.5 7s2-4 5.5-4 5.5 4 5.5 4-2 4-5.5 4S1.5 7 1.5 7z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /><line x1="2" y1="2" x2="12" y2="12" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /></svg>;
+}
+function FieldsIcon() {
+  return <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="2" width="11" height="2.5" rx="0.75" stroke="currentColor" strokeWidth="1.2" /><rect x="1.5" y="5.75" width="11" height="2.5" rx="0.75" stroke="currentColor" strokeWidth="1.2" /><rect x="1.5" y="9.5" width="11" height="2.5" rx="0.75" stroke="currentColor" strokeWidth="1.2" /></svg>;
+}
+function DuplicateIcon() {
+  return <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="7.5" height="7.5" rx="1" stroke="currentColor" strokeWidth="1.2" /><path d="M2.5 9.5V2.5h7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /></svg>;
+}
+function DepsIcon() {
+  return <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="3" cy="7" r="1.5" stroke="currentColor" strokeWidth="1.2" /><circle cx="11" cy="3.5" r="1.5" stroke="currentColor" strokeWidth="1.2" /><circle cx="11" cy="10.5" r="1.5" stroke="currentColor" strokeWidth="1.2" /><path d="M4.5 7H7l2.5-3M7 7l2.5 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /></svg>;
+}
+function DescriptionIcon() {
+  return <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.2" /><path d="M7 6.5v4M7 4.5v.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" /></svg>;
+}
+function PermissionsIcon() {
+  return <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="3" y="6" width="8" height="6" rx="1" stroke="currentColor" strokeWidth="1.2" /><path d="M5 6V4.5a2 2 0 0 1 4 0V6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /></svg>;
+}
+function ClearIcon() {
+  return <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /></svg>;
+}
+function DeleteIcon() {
+  return <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 4h9M5.5 4V2.5h3V4M6 6.5v4M8 6.5v4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /><path d="M3.5 4l.5 7.5h6L11 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /></svg>;
 }
