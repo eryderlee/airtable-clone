@@ -412,9 +412,17 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
     bulkCreate.mutate({ tableId, count: 100000 });
   }, [tableId, bulkCreate]);
 
-  const handleBulkAddColumns = useCallback(() => {
-    for (let i = 1; i <= 20; i++) {
-      createColumn.mutate({ tableId, name: `Col ${i}`, type: i % 3 === 0 ? "number" : "text" });
+  const [isBulkAddingColumns, setIsBulkAddingColumns] = useState(false);
+  const handleBulkAddColumns = useCallback(async () => {
+    setIsBulkAddingColumns(true);
+    try {
+      await Promise.all(
+        Array.from({ length: 20 }, (_, i) =>
+          createColumn.mutateAsync({ tableId, name: `Col ${i + 1}`, type: i % 3 === 0 ? "number" : "text" }),
+        ),
+      );
+    } finally {
+      setIsBulkAddingColumns(false);
     }
   }, [tableId, createColumn]);
 
@@ -619,6 +627,7 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
         onBulkCreate={handleBulkCreate}
         isBulkCreating={bulkCreate.isPending}
         onBulkAddColumns={handleBulkAddColumns}
+        isBulkAddingColumns={isBulkAddingColumns}
         rowCount={totalCount}
         openPanel={openPanel}
         onTogglePanel={handleTogglePanel}

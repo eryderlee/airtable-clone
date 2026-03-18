@@ -10,6 +10,7 @@ interface GridToolbarProps {
   onBulkCreate: () => void;
   isBulkCreating: boolean;
   onBulkAddColumns: () => void;
+  isBulkAddingColumns: boolean;
   onToggleViewsPanel: () => void;
   viewsPanelOpen: boolean;
   onHamburgerMouseEnter: () => void;
@@ -43,6 +44,7 @@ export function GridToolbar({
   onBulkCreate,
   isBulkCreating,
   onBulkAddColumns,
+  isBulkAddingColumns,
   onToggleViewsPanel,
   viewsPanelOpen,
   onHamburgerMouseEnter,
@@ -155,10 +157,11 @@ export function GridToolbar({
       {/* Dev: bulk add columns for testing column virtualization */}
       <button
         onClick={onBulkAddColumns}
-        className="ml-1 flex-shrink-0 rounded bg-[#7c3aed] px-2 py-1 text-[11px] font-medium text-white hover:bg-[#6d28d9]"
+        disabled={isBulkAddingColumns}
+        className="ml-1 flex-shrink-0 rounded bg-[#7c3aed] px-2 py-1 text-[11px] font-medium text-white hover:bg-[#6d28d9] disabled:opacity-50"
         title="Add 20 columns for testing"
       >
-        +20cols
+        {isBulkAddingColumns ? "…" : "+20cols"}
       </button>
 
       {/* Dropdown panels — absolutely positioned below toolbar */}
