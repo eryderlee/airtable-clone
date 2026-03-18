@@ -14,10 +14,10 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation** - T3 stack scaffolding, schema, auth, Supabase connection, and live Vercel deployment
 - [x] **Phase 2: Data Layer** - All tRPC routers with cursor pagination, dynamic filter/sort builder, and view config merge
-- [ ] **Phase 3: Navigation Shell** - App Router nested layouts, sidebar, table tab bar, views panel, base/table CRUD
-- [ ] **Phase 4: Grid Core** - Virtualized infinite scroll grid wired to live data, column management, 100k row insertion
+- [x] **Phase 3: Navigation Shell** - App Router nested layouts, sidebar, table tab bar, views panel, base/table CRUD
+- [x] **Phase 4: Grid Core** - Virtualized infinite scroll grid wired to live data, column management, 100k row insertion
 - [x] **Phase 5: Cell Editing** - Inline editing with full spreadsheet keyboard navigation and optimistic updates
-- [ ] **Phase 6: Toolbar** - Search, filter, sort, and hide-columns controls with DB-level execution
+- [x] **Phase 6: Toolbar** - Search, filter, sort, and hide-columns controls with DB-level execution
 - [ ] **Phase 7: Column Virtualization** - Horizontal virtualization for large column counts, column resize
 - [ ] **Phase 8: View Persistence** - Full per-view state saved and restored across sessions
 
@@ -147,10 +147,10 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. A table with 30+ columns scrolls horizontally without visible lag or scroll stuttering
   2. Only columns within (or near) the horizontal viewport are present in the DOM when column virtualization is active
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 07-01: TanStack Virtualizer column virtualizer alongside row virtualizer; threshold-based activation (above ~20 columns); incremental horizontal column fetch wired to PERF-04
+- [ ] 07-01-PLAN.md — Column virtualizer with threshold-based activation (>= 20 columns), virtual padding spacers, horizontal scrollToCell
 
 ### Phase 8: View Persistence
 **Goal**: Every view's filter, sort, column visibility, and search configuration is saved to the database and restored exactly on next load — views are the durable, shareable state of a grid.
@@ -176,9 +176,9 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 |-------|----------------|--------|-----------|
 | 1. Foundation | 3/3 | Complete | 2026-03-17 |
 | 2. Data Layer | 2/2 | Complete | 2026-03-17 |
-| 3. Navigation Shell | 0/3 | Not started | - |
+| 3. Navigation Shell | 3/3 | Complete | 2026-03-17 |
 | 4. Grid Core | 3/3 | Complete | 2026-03-17 |
 | 5. Cell Editing | 2/2 | Complete | 2026-03-17 |
-| 6. Toolbar | 0/3 | Not started | - |
+| 6. Toolbar | 3/3 | Complete | 2026-03-18 |
 | 7. Column Virtualization | 0/1 | Not started | - |
 | 8. View Persistence | 0/2 | Not started | - |
