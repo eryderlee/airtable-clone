@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
+import { toast } from "sonner";
 
 import { api } from "~/trpc/react";
 import { InlineEdit } from "~/components/ui/InlineEdit";
@@ -55,26 +56,80 @@ export function TableTabBar({ baseId, initialColor, initialName }: TableTabBarPr
   const utils = api.useUtils();
 
   const createTable = api.table.create.useMutation({
+    onMutate: async ({ baseId: mutBaseId }) => {
+      await utils.table.getByBaseId.cancel({ baseId: mutBaseId });
+      const previous = utils.table.getByBaseId.getData({ baseId: mutBaseId });
+      const optimisticId = `optimistic-${Date.now()}`;
+      utils.table.getByBaseId.setData({ baseId: mutBaseId }, (old) => [
+        ...(old ?? []),
+        {
+          id: optimisticId,
+          name: `Table ${(old?.length ?? 0) + 1}`,
+          baseId: mutBaseId,
+          createdAt: new Date(),
+        },
+      ]);
+      return { previous, optimisticId };
+    },
     onSuccess: async (newTable) => {
-      await utils.table.getByBaseId.invalidate({ baseId });
-      const views = await utils.view.getByTableId.fetch({ tableId: newTable.id });
-      if (views[0]) {
-        router.push(`/base/${baseId}/${newTable.id}/view/${views[0].id}`);
+      const fetchedViews = await utils.view.getByTableId.fetch({ tableId: newTable.id });
+      if (fetchedViews[0]) {
+        router.push(`/base/${baseId}/${newTable.id}/view/${fetchedViews[0].id}`);
       } else {
         router.push(`/base/${baseId}/${newTable.id}`);
       }
     },
+    onError: (_err, { baseId: mutBaseId }, context) => {
+      if (context?.previous !== undefined) {
+        utils.table.getByBaseId.setData({ baseId: mutBaseId }, context.previous);
+      }
+      toast.error("Failed to create table. Changes reverted.");
+    },
+    onSettled: (_data, _err, { baseId: mutBaseId }) => {
+      void utils.table.getByBaseId.invalidate({ baseId: mutBaseId });
+    },
   });
 
   const renameTable = api.table.update.useMutation({
-    onSuccess: () => void utils.table.getByBaseId.invalidate({ baseId }),
+    onMutate: async ({ id, name }) => {
+      await utils.table.getByBaseId.cancel({ baseId });
+      const previous = utils.table.getByBaseId.getData({ baseId });
+      utils.table.getByBaseId.setData({ baseId }, (old) =>
+        old?.map((t) => (t.id === id ? { ...t, name: name ?? t.name } : t)) ?? [],
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous !== undefined) {
+        utils.table.getByBaseId.setData({ baseId }, context.previous);
+      }
+      toast.error("Failed to rename table. Changes reverted.");
+    },
+    onSettled: () => {
+      void utils.table.getByBaseId.invalidate({ baseId });
+    },
   });
 
   const deleteTable = api.table.delete.useMutation({
+    onMutate: async ({ id }) => {
+      await utils.table.getByBaseId.cancel({ baseId });
+      const previous = utils.table.getByBaseId.getData({ baseId });
+      utils.table.getByBaseId.setData({ baseId }, (old) =>
+        old?.filter((t) => t.id !== id) ?? [],
+      );
+      return { previous };
+    },
     onSuccess: async () => {
-      await utils.table.getByBaseId.invalidate({ baseId });
       router.push(`/base/${baseId}`);
-      router.refresh();
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous !== undefined) {
+        utils.table.getByBaseId.setData({ baseId }, context.previous);
+      }
+      toast.error("Failed to delete table. Changes reverted.");
+    },
+    onSettled: () => {
+      void utils.table.getByBaseId.invalidate({ baseId });
     },
   });
 
