@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-17)
 
 **Core value:** A table UI that feels exactly like Airtable and never chokes — 1M rows, instant scroll, DB-level filtering.
-**Current focus:** Phase 9 — Neon Migration
+**Current focus:** Phase 10 — UX Performance (Optimistic Updates)
 
 ## Current Position
 
-Phase: 9 of 9 (Neon Migration) — Complete
-Plan: 3/3 complete
-Status: ALL PHASES COMPLETE. Phase 9 done: Neon connected (09-01), data migration Option B (09-02), Vercel cutover verified (09-03). Production live at https://airtable-clone-flame.vercel.app on Neon.
-Last activity: 2026-03-18 — Completed 09-03-PLAN.md (Vercel cutover: production verified HTTP 200/307, PROJECT.md updated)
+Phase: 10 of 10 (UX Performance) — In Progress
+Plan: 2/3 complete
+Status: 10-01 (sonner install + Toaster) and 10-02 (table/view optimistic mutations) done. 10-03 (row optimistic mutations) remaining.
+Last activity: 2026-03-18 — Completed 10-02-PLAN.md (optimistic table/view CRUD with rollback and error toasts)
 
-Progress: [███████████████████████] 100% (27 of 27 total plans)
+Progress: [█████████████████████████░░] 93% (28 of 30 total plans)
 
 ## Performance Metrics
 
@@ -129,10 +129,14 @@ Recent decisions affecting current work:
 - 09-02: build failure (react/no-unescaped-entities in ViewsPanel.tsx) found and fixed during verification
 - 09-03: Production verified live: HTTP 307 on root (auth redirect) + HTTP 200 on /sign-in = app healthy on Neon
 - 09-03: Cold-start documented in PROJECT.md — Neon free tier scales to zero after 5 min idle, ~500ms-1s on first request after idle
+- 10-02: tables schema has no updatedAt — optimistic table object uses {id, name, baseId, createdAt} only
+- 10-02: views schema has no createdAt/updatedAt — optimistic view object uses {id, name, tableId, config} only
+- 10-02: deleteView onSuccess reads getData() (not fetch) — cache already updated by onMutate at that point
+- 10-02: Optimistic pattern established: utils.X.cancel → getData snapshot → setData → return {previous}; onError restores snapshot + toast.error; onSettled invalidates
 
 ### Pending Todos
 
-- None — all 27 plans complete. Phase 10 (UX Performance) is the next planned phase but has not been started.
+- 10-03: Row optimistic mutations (GridView) remaining
 
 ### Blockers/Concerns
 
@@ -142,5 +146,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-03-18
-Stopped at: Completed 09-03-PLAN.md (Vercel cutover: production HTTP 200/307 verified, PROJECT.md updated to Neon). Phase 9 complete. All 27 plans done.
+Stopped at: Completed 10-02-PLAN.md (optimistic table/view CRUD with rollback and error toasts in TableTabBar + ViewsPanel)
 Resume file: None
