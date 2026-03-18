@@ -4,6 +4,8 @@ import type { ColumnDef } from "@tanstack/react-table";
 import type { Virtualizer } from "@tanstack/react-virtual";
 import { useMemo, useCallback, useRef, useReducer, useEffect, useState } from "react";
 
+import { toast } from "sonner";
+
 import { api } from "~/trpc/react";
 import { GridTable, type RowData, COLUMN_VIRTUALIZATION_THRESHOLD } from "./GridTable";
 import { GridToolbar } from "./GridToolbar";
@@ -355,33 +357,93 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
 
   // Column mutations
   const createColumn = api.column.create.useMutation({
-    onSuccess: () => {
+    onMutate: async ({ tableId: mutTableId, name, type }) => {
+      await utils.column.getByTableId.cancel({ tableId: mutTableId });
+      const previous = utils.column.getByTableId.getData({ tableId: mutTableId });
+      const optimisticId = `optimistic-${Date.now()}`;
+      utils.column.getByTableId.setData({ tableId: mutTableId }, (old) => [
+        ...(old ?? []),
+        {
+          id: optimisticId,
+          name,
+          type: type ?? "text",
+          tableId: mutTableId,
+          isPrimary: false,
+          order: old?.length ?? 0,
+        },
+      ]);
+      return { previous };
+    },
+    onError: (_err, { tableId: mutTableId }, context) => {
+      if (context?.previous !== undefined) {
+        utils.column.getByTableId.setData({ tableId: mutTableId }, context.previous);
+      }
+      toast.error("Failed to add column. Changes reverted.");
+    },
+    onSettled: () => {
       void refetchColumns();
     },
   });
 
   const renameColumn = api.column.update.useMutation({
-    onMutate: ({ id, name, type }) => {
+    onMutate: async ({ id, name, type }) => {
+      await utils.column.getByTableId.cancel({ tableId });
+      const previous = utils.column.getByTableId.getData({ tableId });
       utils.column.getByTableId.setData({ tableId }, (old) =>
         old?.map((col) =>
           col.id === id
-            ? { ...col, name, ...(type ? { type } : {}) }
+            ? { ...col, name: name ?? col.name, ...(type ? { type } : {}) }
             : col,
-        ),
+        ) ?? [],
       );
+      return { previous };
     },
-    onSuccess: () => {
+    onError: (_err, _vars, context) => {
+      if (context?.previous !== undefined) {
+        utils.column.getByTableId.setData({ tableId }, context.previous);
+      }
+      toast.error("Failed to rename column. Changes reverted.");
+    },
+    onSettled: () => {
       void utils.column.getByTableId.invalidate({ tableId });
     },
   });
 
   const deleteColumn = api.column.delete.useMutation({
-    onSuccess: () => {
+    onMutate: async ({ id }) => {
+      await utils.column.getByTableId.cancel({ tableId });
+      const previous = utils.column.getByTableId.getData({ tableId });
+      utils.column.getByTableId.setData({ tableId }, (old) =>
+        old?.filter((col) => col.id !== id) ?? [],
+      );
+      // Also remove the column's cells from all cached rows
+      const prevPageCache = { ...pageCacheRef.current };
+      for (const key of Object.keys(pageCacheRef.current)) {
+        const pageRows = pageCacheRef.current[Number(key)];
+        if (pageRows) {
+          pageCacheRef.current[Number(key)] = pageRows.map((row) => {
+            const remainingCells = Object.fromEntries(
+              Object.entries(row.cells).filter(([k]) => k !== id),
+            );
+            return { ...row, cells: remainingCells };
+          });
+        }
+      }
+      forceUpdate();
+      return { previous, prevPageCache };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous !== undefined) {
+        utils.column.getByTableId.setData({ tableId }, context.previous);
+      }
+      if (context?.prevPageCache !== undefined) {
+        pageCacheRef.current = context.prevPageCache;
+        forceUpdate();
+      }
+      toast.error("Failed to delete column. Changes reverted.");
+    },
+    onSettled: () => {
       void utils.column.getByTableId.invalidate({ tableId });
-      // Clear cache — cell structure changed
-      pageCacheRef.current = {};
-      loadingPagesRef.current = new Set();
-      void fetchPage(0);
     },
   });
 
