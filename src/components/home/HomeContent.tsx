@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { api } from "~/trpc/react";
 
 type BaseRecord = {
@@ -11,6 +11,8 @@ type BaseRecord = {
   createdAt: Date | string | null;
   updatedAt: Date | string | null;
   lastOpenedAt: Date | string | null;
+  color: string | null;
+  userId: string;
 };
 
 type Props = {
@@ -20,18 +22,110 @@ type Props = {
 export function HomeContent({ bases: initialBases }: Props) {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const router = useRouter();
+  const utils = api.useUtils();
+
+  // Seed the React Query cache with SSR data so optimistic updates work
+  const { data: bases = initialBases } = api.base.getAll.useQuery(undefined, {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+    initialData: initialBases as unknown as any,
+  });
+
+  const createBase = api.base.create.useMutation({
+    onMutate: async ({ name }) => {
+      await utils.base.getAll.cancel();
+      const previous = utils.base.getAll.getData();
+      utils.base.getAll.setData(undefined, (old) => [
+        ...(old ?? []),
+        {
+          id: `optimistic-${Date.now()}`,
+          name,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          lastOpenedAt: new Date(),
+          color: null,
+          userId: "",
+        },
+      ]);
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous !== undefined) {
+        utils.base.getAll.setData(undefined, context.previous);
+      }
+      toast.error("Failed to create base. Changes reverted.");
+    },
+    onSettled: () => {
+      void utils.base.getAll.invalidate();
+    },
+  });
 
   const renameBase = api.base.update.useMutation({
-    onSuccess: () => router.refresh(),
-  });
-  const deleteBase = api.base.delete.useMutation({
-    onSuccess: () => router.refresh(),
+    onMutate: async ({ id, name }) => {
+      await utils.base.getAll.cancel();
+      const previous = utils.base.getAll.getData();
+      utils.base.getAll.setData(undefined, (old) =>
+        old?.map((b) => (b.id === id ? { ...b, name: name ?? b.name } : b)) ?? [],
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous !== undefined) {
+        utils.base.getAll.setData(undefined, context.previous);
+      }
+      toast.error("Failed to rename base. Changes reverted.");
+    },
+    onSettled: () => {
+      void utils.base.getAll.invalidate();
+    },
   });
 
-  const bases = initialBases;
+  const deleteBase = api.base.delete.useMutation({
+    onMutate: async ({ id }) => {
+      await utils.base.getAll.cancel();
+      const previous = utils.base.getAll.getData();
+      utils.base.getAll.setData(undefined, (old) =>
+        old?.filter((b) => b.id !== id) ?? [],
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous !== undefined) {
+        utils.base.getAll.setData(undefined, context.previous);
+      }
+      toast.error("Failed to delete base. Changes reverted.");
+    },
+    onSettled: () => {
+      void utils.base.getAll.invalidate();
+    },
+  });
+
+  const handleCreateBase = () => {
+    createBase.mutate({ name: "Untitled base" });
+  };
+
+  const handleBaseClick = (baseId: string) => {
+    const tables = utils.table.getByBaseId.getData({ baseId });
+    if (tables && tables.length > 0) {
+      const firstTable = tables[0];
+      if (firstTable) {
+        const views = utils.view.getByTableId.getData({ tableId: firstTable.id });
+        if (views && views.length > 0 && views[0]) {
+          router.push(`/base/${baseId}/${firstTable.id}/${views[0].id}`);
+          return;
+        }
+      }
+    }
+    // Fallback: SSR redirect (first visit or cold cache)
+    router.push(`/base/${baseId}`);
+  };
+
   const sorted = [...bases].sort((a, b) => {
-    const aTime = new Date(a.lastOpenedAt ?? a.updatedAt ?? a.createdAt ?? Date.now()).getTime();
-    const bTime = new Date(b.lastOpenedAt ?? b.updatedAt ?? b.createdAt ?? Date.now()).getTime();
+    const aTime = new Date(
+      a.lastOpenedAt ?? a.updatedAt ?? a.createdAt ?? Date.now(),
+    ).getTime();
+    const bTime = new Date(
+      b.lastOpenedAt ?? b.updatedAt ?? b.createdAt ?? Date.now(),
+    ).getTime();
     return bTime - aTime;
   });
   const { today, earlier } = groupBasesByRecency(sorted);
@@ -41,8 +135,8 @@ export function HomeContent({ bases: initialBases }: Props) {
       <main className="flex w-full flex-1 flex-col gap-8 px-12 pb-16 pt-8">
         <header className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-[2rem] font-semibold tracking-tight">Home</h1>
-            <button className="mt-1 inline-flex items-center gap-2 rounded-full border border-transparent px-0 py-1 text-sm text-[#6a7385] transition hover:text-[#1f2328]">
+            <h1 className="text-[1.5rem] font-bold tracking-tight">Home</h1>
+            <button className="mt-6 inline-flex items-center gap-2 rounded-full border border-transparent px-0 py-1 text-sm text-[#6a7385] transition hover:text-[#1f2328]">
               Opened anytime <ChevronDownIcon />
             </button>
           </div>
@@ -59,11 +153,31 @@ export function HomeContent({ bases: initialBases }: Props) {
               icon={<GridIcon />}
               onClick={() => setViewMode("grid")}
             />
+            <button
+              onClick={handleCreateBase}
+              className="ml-2 inline-flex items-center gap-1.5 rounded-full bg-[#1c64e4] px-4 py-2 text-sm font-medium text-white hover:bg-[#154dbc]"
+            >
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 12 12"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M6 2v8M2 6h8"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                />
+              </svg>
+              Create base
+            </button>
           </div>
         </header>
 
         {bases.length === 0 ? (
-          <EmptyState />
+          <EmptyState onCreateBase={handleCreateBase} />
         ) : (
           <section>
             {viewMode === "list" && (
@@ -73,12 +187,26 @@ export function HomeContent({ bases: initialBases }: Props) {
                 <span>Workspace</span>
               </div>
             )}
-            <div className={viewMode === "grid" ? "space-y-10" : "space-y-0"}>
+            <div className={`${viewMode === "grid" ? "space-y-10" : "space-y-0"}`}>
               {today.length > 0 && (
-                <BaseSection title="Today" bases={today} viewMode={viewMode} onRename={(id, name) => renameBase.mutate({ id, name })} onDelete={(id) => deleteBase.mutate({ id })} />
+                <BaseSection
+                  title="Today"
+                  bases={today}
+                  viewMode={viewMode}
+                  onRename={(id, name) => renameBase.mutate({ id, name })}
+                  onDelete={(id) => deleteBase.mutate({ id })}
+                  onBaseClick={handleBaseClick}
+                />
               )}
               {earlier.length > 0 && (
-                <BaseSection title="Earlier" bases={earlier} viewMode={viewMode} onRename={(id, name) => renameBase.mutate({ id, name })} onDelete={(id) => deleteBase.mutate({ id })} />
+                <BaseSection
+                  title="Earlier"
+                  bases={earlier}
+                  viewMode={viewMode}
+                  onRename={(id, name) => renameBase.mutate({ id, name })}
+                  onDelete={(id) => deleteBase.mutate({ id })}
+                  onBaseClick={handleBaseClick}
+                />
               )}
             </div>
           </section>
@@ -94,21 +222,31 @@ function BaseSection({
   viewMode,
   onRename,
   onDelete,
+  onBaseClick,
 }: {
   title: string;
   bases: BaseRecord[];
   viewMode: "grid" | "list";
   onRename: (id: string, name: string) => void;
   onDelete: (id: string) => void;
+  onBaseClick: (id: string) => void;
 }) {
   return (
-    <div className={viewMode === "grid" ? "space-y-3" : ""}>
+    <div className={`${viewMode === "grid" ? "space-y-3" : ""}`}>
       {viewMode === "grid" ? (
         <>
-          <h2 className="text-sm tracking-wide text-[#98a1b3]">{title}</h2>
+          <h2 className="text-xs font-medium tracking-wide text-[#6a7385]">
+            {title}
+          </h2>
           <div className="mt-1 flex flex-wrap gap-4">
             {bases.map((base) => (
-              <BaseGridCard key={base.id} base={base} onRename={onRename} onDelete={onDelete} />
+              <BaseGridCard
+                key={base.id}
+                base={base}
+                onRename={onRename}
+                onDelete={onDelete}
+                onBaseClick={onBaseClick}
+              />
             ))}
           </div>
         </>
@@ -117,7 +255,7 @@ function BaseSection({
           <div className="px-2 pt-4 pb-1 text-xs text-[#98a1b3]">{title}</div>
           <div>
             {bases.map((base) => (
-              <BaseListRow key={base.id} base={base} />
+              <BaseListRow key={base.id} base={base} onBaseClick={onBaseClick} />
             ))}
           </div>
         </>
@@ -126,7 +264,17 @@ function BaseSection({
   );
 }
 
-function BaseGridCard({ base, onRename, onDelete }: { base: BaseRecord; onRename: (id: string, name: string) => void; onDelete: (id: string) => void }) {
+function BaseGridCard({
+  base,
+  onRename,
+  onDelete,
+  onBaseClick,
+}: {
+  base: BaseRecord;
+  onRename: (id: string, name: string) => void;
+  onDelete: (id: string) => void;
+  onBaseClick: (id: string) => void;
+}) {
   const color = colorFromString(base.name);
   const [menuOpen, setMenuOpen] = useState(false);
   const [starred, setStarred] = useState(false);
@@ -156,57 +304,89 @@ function BaseGridCard({ base, onRename, onDelete }: { base: BaseRecord; onRename
   }
 
   return (
-    <div className="group relative flex h-24 w-[280px] items-center gap-3 rounded-[0.3rem] border border-[#e2e7f0] bg-white px-4 transition hover:-translate-y-0.5 hover:border-[#cad1e0] hover:shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
-      <Link href={`/base/${base.id}`} className="flex flex-1 items-center gap-3 overflow-hidden">
+    <div className="group relative flex h-24 w-[390px] items-center gap-3 rounded-[0.4rem] border-[1.5px] border-[#d9dadb] bg-white px-4 transition hover:-translate-y-0.5 hover:border-[#cad1e0] hover:shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
+      <button
+        onClick={() => onBaseClick(base.id)}
+        className="flex flex-1 items-center gap-5 overflow-hidden text-left"
+      >
         <div
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] text-[14px] font-normal text-white"
+          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[10px] text-[20px] font-normal text-white"
           style={{ backgroundColor: color }}
         >
           {base.name.slice(0, 2)}
         </div>
         <div className="flex min-w-0 flex-col">
-          <span className="truncate text-[15px] text-[#1f2328]">{base.name}</span>
-          <span className="text-sm text-[#6a7385] group-hover:hidden">
-            Opened {formatRelativeTime(base.lastOpenedAt ?? base.updatedAt ?? base.createdAt)}
+          <span className="truncate text-[13px] font-semibold text-[#1f2328]">
+            {base.name}
           </span>
-          <span className="hidden items-center gap-1 text-sm text-[#6a7385] group-hover:flex">
+          <span className="text-[12px] text-[#6a7385] group-hover:hidden">
+            Opened{" "}
+            {formatRelativeTime(
+              base.lastOpenedAt ?? base.updatedAt ?? base.createdAt,
+            )}
+          </span>
+          <span className="hidden items-center gap-1 text-[12px] text-[#6a7385] group-hover:flex">
             <DataIcon />
             Open data
           </span>
         </div>
-      </Link>
+      </button>
 
       {/* Hover action buttons */}
       <div className="absolute right-2 top-2 hidden items-center gap-1 group-hover:flex">
         <button
-          onClick={(e) => { e.preventDefault(); setStarred(v => !v); }}
+          onClick={(e) => {
+            e.preventDefault();
+            setStarred((v) => !v);
+          }}
           className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-[#f0f2f7]"
           aria-label="Star"
         >
-          <svg viewBox="0 0 16 16" className={`h-4 w-4 ${starred ? "fill-yellow-400 stroke-yellow-400" : "fill-none stroke-[#6a7385]"}`} strokeWidth="1.3">
-            <path d="M8 1.5l1.8 3.6 4 .6-2.9 2.8.7 4L8 10.4l-3.6 1.9.7-4L2.2 5.7l4-.6L8 1.5Z" strokeLinejoin="round" />
+          <svg
+            viewBox="0 0 16 16"
+            className={`h-4 w-4 ${starred ? "fill-yellow-400 stroke-yellow-400" : "fill-none stroke-[#6a7385]"}`}
+            strokeWidth="1.3"
+          >
+            <path
+              d="M8 1.5l1.8 3.6 4 .6-2.9 2.8.7 4L8 10.4l-3.6 1.9.7-4L2.2 5.7l4-.6L8 1.5Z"
+              strokeLinejoin="round"
+            />
           </svg>
         </button>
         <div className="relative" ref={menuRef}>
           <button
-            onClick={(e) => { e.preventDefault(); setMenuOpen(v => !v); }}
+            onClick={(e) => {
+              e.preventDefault();
+              setMenuOpen((v) => !v);
+            }}
             className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-[#f0f2f7]"
             aria-label="More options"
           >
             <svg viewBox="0 0 16 16" className="h-4 w-4 fill-[#6a7385]">
-              <circle cx="3" cy="8" r="1.2" /><circle cx="8" cy="8" r="1.2" /><circle cx="13" cy="8" r="1.2" />
+              <circle cx="3" cy="8" r="1.2" />
+              <circle cx="8" cy="8" r="1.2" />
+              <circle cx="13" cy="8" r="1.2" />
             </svg>
           </button>
           {menuOpen && (
             <div className="absolute right-0 top-8 z-50 w-48 rounded-xl border border-[#e4e7ec] bg-white py-1 shadow-lg">
               <button
-                onClick={(e) => { e.preventDefault(); setMenuOpen(false); setRenaming(true); setRenameValue(base.name); }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setMenuOpen(false);
+                  setRenaming(true);
+                  setRenameValue(base.name);
+                }}
                 className="flex w-full items-center gap-2 px-4 py-2 text-sm text-[#1f2328] hover:bg-[#f4f6fb]"
               >
                 Rename
               </button>
               <button
-                onClick={(e) => { e.preventDefault(); setMenuOpen(false); if (confirm(`Delete "${base.name}"?`)) onDelete(base.id); }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setMenuOpen(false);
+                  if (confirm(`Delete "${base.name}"?`)) onDelete(base.id);
+                }}
                 className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-[#f4f6fb]"
               >
                 Delete
@@ -218,19 +398,40 @@ function BaseGridCard({ base, onRename, onDelete }: { base: BaseRecord; onRename
 
       {/* Rename modal */}
       {renaming && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onClick={() => setRenaming(false)}>
-          <div className="w-80 rounded-xl border border-[#e4e7ec] bg-white p-5 shadow-xl" onClick={e => e.stopPropagation()}>
-            <h3 className="mb-3 text-sm font-semibold text-[#1f2328]">Rename base</h3>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
+          onClick={() => setRenaming(false)}
+        >
+          <div
+            className="w-80 rounded-xl border border-[#e4e7ec] bg-white p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="mb-3 text-sm font-semibold text-[#1f2328]">
+              Rename base
+            </h3>
             <input
               ref={renameRef}
               value={renameValue}
-              onChange={e => setRenameValue(e.target.value)}
-              onKeyDown={e => { if (e.key === "Enter") handleRenameSubmit(); if (e.key === "Escape") setRenaming(false); }}
+              onChange={(e) => setRenameValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleRenameSubmit();
+                if (e.key === "Escape") setRenaming(false);
+              }}
               className="w-full rounded-lg border border-[#dfe3ea] px-3 py-2 text-sm outline-none focus:border-[#1c64e4]"
             />
             <div className="mt-3 flex justify-end gap-2">
-              <button onClick={() => setRenaming(false)} className="rounded-lg px-3 py-1.5 text-sm text-[#6a7385] hover:bg-[#f4f6fb]">Cancel</button>
-              <button onClick={handleRenameSubmit} className="rounded-lg bg-[#1c64e4] px-3 py-1.5 text-sm text-white hover:bg-[#1550b6]">Save</button>
+              <button
+                onClick={() => setRenaming(false)}
+                className="rounded-lg px-3 py-1.5 text-sm text-[#6a7385] hover:bg-[#f4f6fb]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRenameSubmit}
+                className="rounded-lg bg-[#1c64e4] px-3 py-1.5 text-sm text-white hover:bg-[#1550b6]"
+              >
+                Save
+              </button>
             </div>
           </div>
         </div>
@@ -239,12 +440,18 @@ function BaseGridCard({ base, onRename, onDelete }: { base: BaseRecord; onRename
   );
 }
 
-function BaseListRow({ base }: { base: BaseRecord }) {
+function BaseListRow({
+  base,
+  onBaseClick,
+}: {
+  base: BaseRecord;
+  onBaseClick: (id: string) => void;
+}) {
   const color = colorFromString(base.name);
   return (
-    <Link
-      href={`/base/${base.id}`}
-      className="grid gap-4 rounded-xl px-2 py-3 text-sm text-[#1f2328] hover:bg-white md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]"
+    <button
+      onClick={() => onBaseClick(base.id)}
+      className="grid w-full gap-4 rounded-xl px-2 py-3 text-left text-sm text-[#1f2328] hover:bg-white md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]"
     >
       <span className="flex items-center gap-2 font-normal">
         <span
@@ -256,10 +463,13 @@ function BaseListRow({ base }: { base: BaseRecord }) {
         {base.name}
       </span>
       <span className="text-[#6a7385]">
-        Opened {formatRelativeTime(base.lastOpenedAt ?? base.updatedAt ?? base.createdAt)}
+        Opened{" "}
+        {formatRelativeTime(
+          base.lastOpenedAt ?? base.updatedAt ?? base.createdAt,
+        )}
       </span>
       <span className="text-[#6a7385]">Workspace</span>
-    </Link>
+    </button>
   );
 }
 
@@ -290,7 +500,7 @@ function ViewIconButton({
   );
 }
 
-function EmptyState() {
+function EmptyState({ onCreateBase }: { onCreateBase: () => void }) {
   return (
     <div className="rounded-3xl border border-dashed border-[#c5ccda] bg-white/50 px-8 py-12 text-center">
       <h2 className="text-xl font-semibold text-[#1f2328]">
@@ -300,7 +510,10 @@ function EmptyState() {
         Create a base to organize your work or import an existing spreadsheet.
       </p>
       <div className="mt-6 flex items-center justify-center gap-3">
-        <button className="rounded-full bg-[#1c64e4] px-6 py-2 text-sm font-medium text-white hover:bg-[#154dbc]">
+        <button
+          onClick={onCreateBase}
+          className="rounded-full bg-[#1c64e4] px-6 py-2 text-sm font-medium text-white hover:bg-[#154dbc]"
+        >
           Create base
         </button>
         <button className="rounded-full border border-[#dfe3ea] px-6 py-2 text-sm font-medium text-[#1f2328] hover:border-[#c8cedd]">
@@ -313,7 +526,13 @@ function EmptyState() {
 
 function ChevronDownIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden="true"
+    >
       <path
         d="m4 6 4 4 4-4"
         stroke="currentColor"
@@ -331,7 +550,9 @@ function groupBasesByRecency(bases: BaseRecord[]) {
   const earlier: BaseRecord[] = [];
 
   bases.forEach((base) => {
-    const updatedAt = new Date(base.lastOpenedAt ?? base.updatedAt ?? base.createdAt ?? Date.now());
+    const updatedAt = new Date(
+      base.lastOpenedAt ?? base.updatedAt ?? base.createdAt ?? Date.now(),
+    );
     const diff = now - updatedAt.getTime();
     if (diff <= 1000 * 60 * 60 * 24) {
       today.push(base);
@@ -424,7 +645,6 @@ function GridIcon() {
     </svg>
   );
 }
-
 
 function DataIcon() {
   return (
