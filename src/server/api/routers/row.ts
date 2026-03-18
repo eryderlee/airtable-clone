@@ -339,7 +339,7 @@ export const rowRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
-      const row = result[0]!;
+      const row = result[0];
 
       await ctx.db.delete(rows).where(eq(rows.id, input.id));
 

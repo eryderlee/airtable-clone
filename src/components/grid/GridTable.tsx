@@ -82,7 +82,7 @@ export const GridTable = React.memo(function GridTable({
   selectedRowIds,
   onToggleRow,
   onSelectAll,
-  onClearSelection,
+  onClearSelection: _onClearSelection,
   onDeleteSelectedRows,
   allSelected,
   onAddRow,

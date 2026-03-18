@@ -157,7 +157,7 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
     for (let i = 0; i < allRows.length; i++) {
       const page = Math.floor(i / PAGE_SIZE);
       if (!pageCacheRef.current[page]) pageCacheRef.current[page] = [];
-      pageCacheRef.current[page]!.push(allRows[i]!);
+      pageCacheRef.current[page]?.push(allRows[i]);
     }
     setSelectedRowIds(new Set());
     setCursor(null);
@@ -454,11 +454,11 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
     const primaryColId = columnsData?.find((c) => c.isPrimary)?.id ?? columnsData?.[0]?.id;
     const created = await createRow.mutateAsync({ tableId, cells: {} });
     // Append to cache and bump total count
-    const newRowData: RowData = { id: created.id, cells: created.cells as Record<string, string | number | null> };
+    const newRowData: RowData = { id: created.id, cells: created.cells };
     const newIndex = totalCount; // 0-based index of the new row
     const pageIndex = Math.floor(newIndex / PAGE_SIZE);
     if (pageCacheRef.current[pageIndex]) {
-      pageCacheRef.current[pageIndex]!.push(newRowData);
+      pageCacheRef.current[pageIndex]?.push(newRowData);
     } else {
       pageCacheRef.current[pageIndex] = [newRowData];
     }
