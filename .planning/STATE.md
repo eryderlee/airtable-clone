@@ -11,8 +11,8 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 
 Phase: 10 of 10 (UX Performance) — In Progress
 Plan: 2/3 complete
-Status: 10-01 (sonner install + Toaster) and 10-02 (table/view optimistic mutations) done. 10-03 (row optimistic mutations) remaining.
-Last activity: 2026-03-18 — Completed 10-02-PLAN.md (optimistic table/view CRUD with rollback and error toasts)
+Status: 10-01 (sonner + Toaster + HomeContent optimistic base CRUD) and 10-02 (table/view optimistic mutations) done. 10-03 (row optimistic mutations) remaining.
+Last activity: 2026-03-18 — Completed 10-01-PLAN.md (sonner installed, HomeContent migrated to useQuery with optimistic base create/rename/delete)
 
 Progress: [█████████████████████████░░] 93% (28 of 30 total plans)
 
@@ -133,6 +133,8 @@ Recent decisions affecting current work:
 - 10-02: views schema has no createdAt/updatedAt — optimistic view object uses {id, name, tableId, config} only
 - 10-02: deleteView onSuccess reads getData() (not fetch) — cache already updated by onMutate at that point
 - 10-02: Optimistic pattern established: utils.X.cancel → getData snapshot → setData → return {previous}; onError restores snapshot + toast.error; onSettled invalidates
+- 10-01: initialData type cast required — BaseRecord allows Date|string|null for SSR superjson compat, tRPC return type requires Date; use `as unknown as any` cast, safe because optimistic objects are replaced on invalidation
+- 10-01: handleBaseClick warm-cache navigation — utils.table.getByBaseId.getData() + utils.view.getByTableId.getData() are synchronous React Query cache reads; no network needed if data is warm
 
 ### Pending Todos
 
@@ -146,5 +148,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-03-18
-Stopped at: Completed 10-02-PLAN.md (optimistic table/view CRUD with rollback and error toasts in TableTabBar + ViewsPanel)
+Stopped at: Completed 10-01-PLAN.md (sonner installed, HomeContent optimistic base CRUD, instant navigation)
 Resume file: None
