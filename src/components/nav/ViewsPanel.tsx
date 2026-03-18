@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
+import { toast } from "sonner";
 
 import { InlineEdit } from "~/components/ui/InlineEdit";
 import { api } from "~/trpc/react";
@@ -166,27 +167,80 @@ export function ViewsPanel({ tableId, activeViewId }: ViewsPanelProps) {
   const utils = api.useUtils();
 
   const createView = api.view.create.useMutation({
+    onMutate: async ({ tableId: mutTableId, name }) => {
+      await utils.view.getByTableId.cancel({ tableId: mutTableId });
+      const previous = utils.view.getByTableId.getData({ tableId: mutTableId });
+      const optimisticId = `optimistic-${Date.now()}`;
+      utils.view.getByTableId.setData({ tableId: mutTableId }, (old) => [
+        ...(old ?? []),
+        {
+          id: optimisticId,
+          name,
+          tableId: mutTableId,
+          config: { filters: [], sorts: [], hiddenColumns: [], searchQuery: "" },
+        },
+      ]);
+      return { previous, optimisticId };
+    },
     onSuccess: async (newView) => {
-      await utils.view.getByTableId.invalidate({ tableId });
       router.push(`/base/${baseId}/${tableId}/view/${newView.id}`);
+    },
+    onError: (_err, { tableId: mutTableId }, context) => {
+      if (context?.previous !== undefined) {
+        utils.view.getByTableId.setData({ tableId: mutTableId }, context.previous);
+      }
+      toast.error("Failed to create view. Changes reverted.");
+    },
+    onSettled: (_data, _err, { tableId: mutTableId }) => {
+      void utils.view.getByTableId.invalidate({ tableId: mutTableId });
     },
   });
 
   const renameView = api.view.update.useMutation({
-    onSuccess: () => {
+    onMutate: async ({ id, name }) => {
+      await utils.view.getByTableId.cancel({ tableId });
+      const previous = utils.view.getByTableId.getData({ tableId });
+      utils.view.getByTableId.setData({ tableId }, (old) =>
+        old?.map((v) => (v.id === id ? { ...v, name: name ?? v.name } : v)) ?? [],
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous !== undefined) {
+        utils.view.getByTableId.setData({ tableId }, context.previous);
+      }
+      toast.error("Failed to rename view. Changes reverted.");
+    },
+    onSettled: () => {
       void utils.view.getByTableId.invalidate({ tableId });
     },
   });
 
   const deleteView = api.view.delete.useMutation({
+    onMutate: async ({ id }) => {
+      await utils.view.getByTableId.cancel({ tableId });
+      const previous = utils.view.getByTableId.getData({ tableId });
+      utils.view.getByTableId.setData({ tableId }, (old) =>
+        old?.filter((v) => v.id !== id) ?? [],
+      );
+      return { previous };
+    },
     onSuccess: async (deleted) => {
-      await utils.view.getByTableId.invalidate({ tableId });
       if (deleted.id === activeViewId) {
-        const remaining = await utils.view.getByTableId.fetch({ tableId });
-        if (remaining.length > 0 && remaining[0]) {
+        const remaining = utils.view.getByTableId.getData({ tableId });
+        if (remaining && remaining.length > 0 && remaining[0]) {
           router.push(`/base/${baseId}/${tableId}/view/${remaining[0].id}`);
         }
       }
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous !== undefined) {
+        utils.view.getByTableId.setData({ tableId }, context.previous);
+      }
+      toast.error("Failed to delete view. Changes reverted.");
+    },
+    onSettled: () => {
+      void utils.view.getByTableId.invalidate({ tableId });
     },
   });
 
