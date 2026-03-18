@@ -161,11 +161,11 @@ Plans:
   2. User can switch between views and each view restores its own filter, sort, column visibility, and search query
   3. A view's configuration survives a full page reload — filter, sort, hide, and search are all restored exactly
   4. The URL reflects the active view ID — sharing the URL opens the same view with the same configuration
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 08-01: Full view config persistence to views table (filters, sorts, column visibility, search query); updatedAt conflict detection for multi-tab scenarios
-- [ ] 08-02: View creation, renaming, deletion UI; URL reflects active view ID; end-to-end verification that config round-trips correctly through page reload
+- [ ] 08-01-PLAN.md — SSR-seeded view config persistence (initialConfig prop from page.tsx to GridView, auto-save via 800ms debounced useEffect)
+- [ ] 08-02-PLAN.md — View rename/delete UI in ViewsPanel (InlineEdit + delete button with last-view guard); end-to-end human verification
 
 ## Progress
 
