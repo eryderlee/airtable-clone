@@ -331,6 +331,10 @@ export function ViewsPanel({ tableId, activeViewId }: ViewsPanelProps) {
                 className={`group relative flex items-center gap-2 px-3 py-[7px] transition-colors ${
                   isActive ? "bg-[#e8ebf2]" : "hover:bg-[#f4f5f7]"
                 }`}
+                onMouseEnter={() => {
+                  void utils.column.getByTableId.prefetch({ tableId });
+                  void utils.row.count.prefetch({ tableId, filters: [], searchQuery: "" });
+                }}
               >
                 {/* Grid icon */}
                 <Link href={`/base/${baseId}/${tableId}/view/${view.id}`} style={{ textDecoration: "none" }} tabIndex={-1}>
