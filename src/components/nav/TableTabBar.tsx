@@ -147,6 +147,7 @@ export function TableTabBar({ baseId, initialColor, initialName }: TableTabBarPr
               isFirst={index === 0}
               baseId={baseId}
               bgColor={bgColor}
+              isPending={table.id.startsWith("optimistic-")}
               onRename={(name) => renameTable.mutate({ id: table.id, name })}
               onDelete={() => deleteTable.mutate({ id: table.id })}
               showDelete={(tables?.length ?? 0) > 1}
@@ -198,6 +199,7 @@ function TableTab({
   isFirst,
   baseId,
   bgColor,
+  isPending,
   onRename,
   onDelete,
   showDelete,
@@ -207,6 +209,7 @@ function TableTab({
   isFirst: boolean;
   baseId: string;
   bgColor: string;
+  isPending?: boolean;
   onRename: (name: string) => void;
   onDelete: () => void;
   showDelete: boolean;
@@ -244,19 +247,31 @@ function TableTab({
         backgroundColor: isActive ? undefined : bgColor,
       }}
     >
-      <Link
-        href={`/base/${baseId}/${table.id}`}
-        style={{ textDecoration: "none" }}
-        className="flex items-center gap-1"
-      >
-        <InlineEdit
-          value={table.name}
-          onSave={onRename}
-          className={`whitespace-nowrap text-[13px] ${
-            isActive ? "font-medium text-[#1f2328]" : "text-[#4c5667] hover:text-[#1f2328]"
-          }`}
-        />
-      </Link>
+      {isPending ? (
+        <span className="flex items-center gap-1 cursor-wait opacity-60">
+          <InlineEdit
+            value={table.name}
+            onSave={onRename}
+            className={`whitespace-nowrap text-[13px] ${
+              isActive ? "font-medium text-[#1f2328]" : "text-[#4c5667]"
+            }`}
+          />
+        </span>
+      ) : (
+        <Link
+          href={`/base/${baseId}/${table.id}`}
+          style={{ textDecoration: "none" }}
+          className="flex items-center gap-1"
+        >
+          <InlineEdit
+            value={table.name}
+            onSave={onRename}
+            className={`whitespace-nowrap text-[13px] ${
+              isActive ? "font-medium text-[#1f2328]" : "text-[#4c5667] hover:text-[#1f2328]"
+            }`}
+          />
+        </Link>
+      )}
 
       {/* Chevron — opens dropdown */}
       {(isActive || hovered) && (
