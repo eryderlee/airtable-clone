@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 
 ## Current Position
 
-Phase: 8 of 8 (View Persistence) — Not started
-Plan: 0/2 complete
-Status: Phase 7 approved 2026-03-18. Phase 8 pending plan.
-Last activity: 2026-03-18 — Completed Phase 7 (Column Virtualization). Human verified and approved.
+Phase: 8 of 8 (View Persistence) — In progress
+Plan: 1/2 complete
+Status: Phase 8 plan 1 complete. Plan 2 (view switching UX) pending.
+Last activity: 2026-03-18 — Completed 08-01-PLAN.md (SSR-seeded view config persistence)
 
-Progress: [█████████████████░] ~88% (21 of ~24 total plans)
+Progress: [██████████████████░] ~92% (22 of ~24 total plans)
 
 ## Performance Metrics
 
@@ -118,6 +118,9 @@ Recent decisions affecting current work:
 - 07-01: Virtual padding spacer pattern for column virtualization — left/right <td>/<th> spacers instead of translateX per cell; integrates with display:grid table layout
 - 07-01: columnsToRender uses flatMap+undefined guard not non-null assertion — required by @typescript-eslint/no-unnecessary-type-assertion
 - 07-01: Column defs/visibleColumnIds moved before scrollToCell in GridView — TypeScript block-scoped use-before-declare error
+- 08-01: key={viewId} on GridView forces React unmount/remount on view switch — eliminates stale state without manual cleanup
+- 08-01: isFirstConfigRender ref separate from isFirstRender ref — each useEffect guard is independent
+- 08-01: updateViewConfig is fire-and-forget (no optimistic update) — config save failure is silent; acceptable for v1
 
 ### Pending Todos
 
@@ -131,5 +134,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-03-18
-Stopped at: Phase 7 complete and human-approved. Ready to plan Phase 8 (View Persistence).
+Stopped at: Completed 08-01-PLAN.md (SSR-seeded view config persistence). Phase 8 plan 2 pending.
 Resume file: None
