@@ -107,6 +107,7 @@ export const bases = createTable(
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
     name: text("name").notNull(),
+    color: text("color"),
     userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),

@@ -1,19 +1,28 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
 import { api } from "~/trpc/react";
+import { useBaseColor } from "./BaseColorContext";
 
-function getBaseColor(name: string): string {
-  const colors = ["#4aa4ff", "#f97316", "#22c55e", "#a855f7", "#ec4899"];
-  const index =
-    name
-      .split("")
-      .reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
-  return colors[index] ?? "#4aa4ff";
+const COLOR_PALETTE = [
+  // Row 1 — light pastels
+  ["#ffc9d4","#ffd4b8","#ffedb8","#c8edc8","#b8e8e8","#c8dcf5","#d8cef5","#d8d8d8"],
+  // Row 2 — dark/saturated
+  ["#e8384f","#f06a00","#f1bc00","#20a84a","#00b2b2","#1264a3","#b144c0","#666666"],
+];
+
+function getBaseColor(color: string | null | undefined, name: string): string {
+  if (color) return color;
+  const defaults = ["#4aa4ff", "#f97316", "#22c55e", "#a855f7", "#ec4899"];
+  const index = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) % defaults.length;
+  return defaults[index] ?? "#4aa4ff";
 }
 
 type BaseTopBarProps = {
   baseId: string;
+  initialColor?: string | null;
+  initialName?: string | null;
   user?: {
     name?: string | null;
     email?: string | null;
@@ -21,13 +30,66 @@ type BaseTopBarProps = {
   };
 };
 
-export function BaseTopBar({ baseId }: BaseTopBarProps) {
+export function BaseTopBar({ baseId, initialColor, initialName }: BaseTopBarProps) {
   const router = useRouter();
-  const { data: base } = api.base.getById.useQuery({ id: baseId });
-  const baseColor = getBaseColor(base?.name ?? "");
+  const utils = api.useUtils();
+  const { data: base } = api.base.getById.useQuery({ id: baseId }, { staleTime: Infinity });
+  const { liveColor, setLiveColor } = useBaseColor();
+  const baseColor = liveColor ?? getBaseColor(base?.color ?? initialColor, base?.name ?? initialName ?? "");
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const [appearanceTab, setAppearanceTab] = useState<"color" | "icon">("color");
+  const [renamingBase, setRenamingBase] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
+  const [optimisticName, setOptimisticName] = useState<string | null>(null);
+  const renameInputRef = useRef<HTMLInputElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const updateBase = api.base.update.useMutation({
+    onSuccess: (updated) => {
+      utils.base.getById.setData({ id: baseId }, updated);
+      void utils.base.getAll.invalidate();
+      setOptimisticName(null);
+    },
+  });
+
+  function handleColorSelect(color: string) {
+    setLiveColor(color);
+    updateBase.mutate({ id: baseId, color });
+  }
+
+  useEffect(() => {
+    if (renamingBase) renameInputRef.current?.select();
+  }, [renamingBase]);
+
+  function handleRenameStart() {
+    setRenameValue(base?.name ?? "");
+    setRenamingBase(true);
+  }
+
+  function handleRenameCommit() {
+    const trimmed = renameValue.trim();
+    if (trimmed && trimmed !== base?.name) {
+      setOptimisticName(trimmed);
+      updateBase.mutate({ id: baseId, name: trimmed });
+    }
+    setRenamingBase(false);
+  }
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+        setExpandedSection(null);
+      }
+    }
+    if (menuOpen) document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [menuOpen]);
 
   return (
-    <header className="flex h-[56px] flex-shrink-0 items-center border-b border-[#e4e7ec] bg-white px-3">
+    <header className="relative flex h-[56px] flex-shrink-0 items-center border-b border-[#e4e7ec] bg-white px-3">
       {/* Left: base icon + base name */}
       <div className="flex items-center gap-2">
         {/* Base icon — the Airtable-style 3D box SVG */}
@@ -47,17 +109,142 @@ export function BaseTopBar({ baseId }: BaseTopBarProps) {
           </div>
         </div>
 
-        {/* Base name */}
-        <button className="flex items-center gap-1 rounded px-1 py-0.5 text-[15px] font-semibold text-[#1f2328] hover:bg-[#f3f4f6]">
-          {base?.name ?? "Untitled Base"}
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
+        {/* Base name + dropdown */}
+        <div className="relative">
+          <button
+            onClick={() => { setMenuOpen((v) => !v); setExpandedSection(null); }}
+            className="flex items-center gap-1 rounded px-1 py-0.5 text-[15px] font-semibold text-[#1f2328] hover:bg-[#f3f4f6]"
+          >
+            {optimisticName ?? base?.name ?? initialName ?? "Untitled Base"}
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+
+          {menuOpen && (
+            <div
+              ref={menuRef}
+              className="absolute left-0 top-full z-50 mt-1 w-[280px] rounded-xl border border-[#e4e7ec] bg-white shadow-xl"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-[#f0f0f0] px-4 py-3">
+                {renamingBase ? (
+                  <input
+                    ref={renameInputRef}
+                    value={renameValue}
+                    onChange={(e) => setRenameValue(e.target.value)}
+                    onBlur={handleRenameCommit}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleRenameCommit();
+                      if (e.key === "Escape") setRenamingBase(false);
+                    }}
+                    className="flex-1 rounded bg-[#f3f4f6] px-1.5 py-0.5 text-[15px] font-semibold text-[#1f2328] outline-none ring-2 ring-[#2563eb]"
+                  />
+                ) : (
+                  <span
+                    onClick={handleRenameStart}
+                    className="cursor-text text-[15px] font-semibold text-[#1f2328] hover:text-[#2563eb]"
+                    title="Click to rename"
+                  >
+                    {optimisticName ?? base?.name ?? "Untitled Base"}
+                  </span>
+                )}
+                <div className="flex items-center gap-2">
+                  <button className="text-[#9aa4b6] hover:text-[#1f2328]" title="Favourite">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4">
+                      <path d="M8 2l1.8 3.6 4 .6-2.9 2.8.7 4L8 11l-3.6 2 .7-4L2.2 6.2l4-.6L8 2z" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                  <button className="text-[#9aa4b6] hover:text-[#1f2328]" title="More options">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                      <circle cx="3" cy="8" r="1.4" />
+                      <circle cx="8" cy="8" r="1.4" />
+                      <circle cx="13" cy="8" r="1.4" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              {/* Appearance section */}
+              <button
+                onClick={() => setExpandedSection(expandedSection === "appearance" ? null : "appearance")}
+                className="flex w-full items-center gap-2 px-4 py-3 text-[14px] font-medium text-[#1f2328] hover:bg-[#f4f6fb]"
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+                  <path d={expandedSection === "appearance" ? "M2 4.5L6 8L10 4.5" : "M4.5 2L8 6L4.5 10"} strokeLinejoin="round" />
+                </svg>
+                Appearance
+              </button>
+              {expandedSection === "appearance" && (
+                <div className="border-t border-[#f0f0f0] px-4 py-3">
+                  {/* Tabs */}
+                  <div className="mb-3 flex gap-4 border-b border-[#f0f0f0]">
+                    {(["color", "icon"] as const).map((tab) => (
+                      <button
+                        key={tab}
+                        onClick={() => setAppearanceTab(tab)}
+                        className={`pb-2 text-[13px] font-medium capitalize transition-colors ${appearanceTab === tab ? "border-b-2 border-[#2563eb] text-[#2563eb]" : "text-[#6b7280] hover:text-[#1f2328]"}`}
+                      >
+                        {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                  {appearanceTab === "color" && (
+                    <div className="space-y-1.5">
+                      {COLOR_PALETTE.map((row, rowIdx) => (
+                        <div key={rowIdx} className="flex gap-1.5">
+                          {row.map((c) => {
+                            const isActive = baseColor === c;
+                            const isDark = rowIdx === 1;
+                            return (
+                              <button
+                                key={c}
+                                onClick={() => handleColorSelect(c)}
+                                style={{ backgroundColor: c }}
+                                className="flex h-6 w-6 items-center justify-center rounded-full transition-transform hover:scale-110"
+                                title={c}
+                              >
+                                {isActive && (
+                                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                    <path d="M2 6l3 3 5-5" stroke={isDark ? "white" : "#1f2328"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                  </svg>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {appearanceTab === "icon" && (
+                    <p className="text-[13px] text-[#6b7280]">Icon picker coming soon.</p>
+                  )}
+                </div>
+              )}
+
+              {/* Base guide section */}
+              <button
+                onClick={() => setExpandedSection(expandedSection === "guide" ? null : "guide")}
+                className="flex w-full items-center gap-2 border-t border-[#f0f0f0] px-4 py-3 text-[14px] font-medium text-[#1f2328] hover:bg-[#f4f6fb]"
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+                  <path d={expandedSection === "guide" ? "M2 4.5L6 8L10 4.5" : "M4.5 2L8 6L4.5 10"} strokeLinejoin="round" />
+                </svg>
+                Base guide
+              </button>
+              {expandedSection === "guide" && (
+                <div className="border-t border-[#f0f0f0] px-4 py-3 text-[13px] text-[#6b7280]">
+                  Base guide coming soon.
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Center: nav tabs */}
-      <nav className="flex flex-1 items-end justify-center self-stretch">
+      {/* Center: nav tabs — absolutely centered across the full bar */}
+      <nav className="absolute inset-x-0 flex items-end justify-center self-stretch" style={{ bottom: 0, top: 0, pointerEvents: "none" }}>
+        <div style={{ pointerEvents: "auto" }} className="flex h-full items-end">
         {[
           { label: "Data", active: true },
           { label: "Automations", active: false },
@@ -66,7 +253,7 @@ export function BaseTopBar({ baseId }: BaseTopBarProps) {
         ].map(({ label, active }) => (
           <button
             key={label}
-            className={`relative flex h-full items-center px-4 text-[14px] font-medium transition-colors ${
+            className={`relative flex h-full items-center px-3 text-[13px] font-medium transition-colors ${
               active ? "text-[#1f2328]" : "text-[#6b7280] hover:text-[#1f2328]"
             }`}
           >
@@ -76,9 +263,11 @@ export function BaseTopBar({ baseId }: BaseTopBarProps) {
             )}
           </button>
         ))}
+        </div>
       </nav>
 
-      {/* Right: action buttons */}
+      {/* Right: action buttons — pushed to the right */}
+      <div className="ml-auto flex items-center gap-1.5">
       <div className="flex items-center gap-1.5">
         {/* History */}
         <button className="flex h-7 w-7 items-center justify-center rounded text-[#6b7280] hover:bg-[#f3f4f6]" title="History">
@@ -118,6 +307,7 @@ export function BaseTopBar({ baseId }: BaseTopBarProps) {
         >
           Share
         </button>
+      </div>
       </div>
     </header>
   );

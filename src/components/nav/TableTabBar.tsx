@@ -6,8 +6,10 @@ import { useRouter, useParams } from "next/navigation";
 
 import { api } from "~/trpc/react";
 import { InlineEdit } from "~/components/ui/InlineEdit";
+import { useBaseColor } from "./BaseColorContext";
 
-function getBaseColor(name: string): string {
+function getBaseColor(color: string | null | undefined, name: string): string {
+  if (color) return color;
   const colors = ["#4aa4ff", "#f97316", "#22c55e", "#a855f7", "#ec4899"];
   const index =
     name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
@@ -21,26 +23,35 @@ function hexToRgb(hex: string) {
   return { r, g, b };
 }
 
+function luminance({ r, g, b }: { r: number; g: number; b: number }): number {
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+}
+
 function lightTint(hex: string, amount = 0.85): string {
-  const { r, g, b } = hexToRgb(hex);
-  const tr = Math.round(r + (255 - r) * amount);
-  const tg = Math.round(g + (255 - g) * amount);
-  const tb = Math.round(b + (255 - b) * amount);
+  const rgb = hexToRgb(hex);
+  // If the color is already light (luminance > 0.75), return it directly
+  if (luminance(rgb) > 0.75) return hex;
+  const tr = Math.round(rgb.r + (255 - rgb.r) * amount);
+  const tg = Math.round(rgb.g + (255 - rgb.g) * amount);
+  const tb = Math.round(rgb.b + (255 - rgb.b) * amount);
   return `rgb(${tr}, ${tg}, ${tb})`;
 }
 
 interface TableTabBarProps {
   baseId: string;
+  initialColor?: string | null;
+  initialName?: string | null;
 }
 
-export function TableTabBar({ baseId }: TableTabBarProps) {
+export function TableTabBar({ baseId, initialColor, initialName }: TableTabBarProps) {
   const router = useRouter();
   const params = useParams<{ tableId?: string }>();
   const activeTableId = params.tableId;
 
-  const { data: base } = api.base.getById.useQuery({ id: baseId });
+  const { data: base } = api.base.getById.useQuery({ id: baseId }, { staleTime: Infinity });
   const { data: tables } = api.table.getByBaseId.useQuery({ baseId });
-  const bgColor = lightTint(getBaseColor(base?.name ?? ""));
+  const { liveColor } = useBaseColor();
+  const bgColor = lightTint(getBaseColor(liveColor ?? base?.color ?? initialColor, base?.name ?? initialName ?? ""));
   const utils = api.useUtils();
 
   const createTable = api.table.create.useMutation({

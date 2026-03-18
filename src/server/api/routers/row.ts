@@ -1,4 +1,4 @@
-import { and, asc, count, eq, max, sql } from "drizzle-orm";
+import { and, asc, count, eq, inArray, max, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
@@ -319,14 +319,14 @@ export const rowRouter = createTRPCRouter({
     }),
 
   // -------------------------------------------------------------------------
-  // delete: remove a row after ownership verification
+  // delete: remove a row and recompact row_order to close the gap
   // -------------------------------------------------------------------------
   delete: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      // 3-level ownership check
+      // 3-level ownership check — also grab tableId and rowOrder for recompaction
       const result = await ctx.db
-        .select({ rowId: rows.id })
+        .select({ rowId: rows.id, tableId: rows.tableId, rowOrder: rows.rowOrder })
         .from(rows)
         .innerJoin(tables, eq(rows.tableId, tables.id))
         .innerJoin(bases, eq(tables.baseId, bases.id))
@@ -339,15 +339,76 @@ export const rowRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
-      const [deleted] = await ctx.db
-        .delete(rows)
-        .where(eq(rows.id, input.id))
-        .returning();
+      const row = result[0]!;
 
-      if (!deleted) {
+      await ctx.db.delete(rows).where(eq(rows.id, input.id));
+
+      // Recompact: decrement row_order for all rows after the deleted one
+      // so the sequence stays dense (required for the O(log n) fast-path seek).
+      await ctx.db
+        .update(rows)
+        .set({ rowOrder: sql`${rows.rowOrder} - 1` })
+        .where(
+          and(
+            eq(rows.tableId, row.tableId),
+            sql`${rows.rowOrder} > ${row.rowOrder}`,
+          ),
+        );
+
+      return { id: input.id };
+    }),
+
+  // -------------------------------------------------------------------------
+  // deleteMany: remove multiple rows and fully recompact row_order
+  // -------------------------------------------------------------------------
+  deleteMany: protectedProcedure
+    .input(
+      z.object({
+        ids: z.array(z.string().uuid()).min(1).max(10000),
+        tableId: z.string().uuid(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Verify table ownership
+      const ownership = await ctx.db
+        .select({ tableId: tables.id })
+        .from(tables)
+        .innerJoin(bases, eq(tables.baseId, bases.id))
+        .where(
+          and(
+            eq(tables.id, input.tableId),
+            eq(bases.userId, ctx.session.user.id),
+          ),
+        )
+        .limit(1);
+
+      if (ownership.length === 0) {
         throw new TRPCError({ code: "NOT_FOUND" });
       }
-      return deleted;
+
+      // Delete all rows (scoped to tableId for safety)
+      await ctx.db
+        .delete(rows)
+        .where(
+          and(eq(rows.tableId, input.tableId), inArray(rows.id, input.ids)),
+        );
+
+      // Full recompaction: renumber all remaining rows from 0 in row_order order.
+      // O(n) write, but runs once for the whole batch — correct for any deletion pattern.
+      await ctx.db.execute(sql`
+        UPDATE "airtable_row" r
+        SET row_order = sub.rn
+        FROM (
+          SELECT id,
+                 (ROW_NUMBER() OVER (ORDER BY row_order ASC, id ASC) - 1) AS rn
+          FROM "airtable_row"
+          WHERE table_id = ${input.tableId}
+        ) sub
+        WHERE r.id = sub.id
+          AND r.table_id = ${input.tableId}
+      `);
+
+      return { count: input.ids.length };
     }),
 
   // -------------------------------------------------------------------------

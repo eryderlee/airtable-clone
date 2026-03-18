@@ -145,6 +145,7 @@ export function ViewsPanel({ tableId, activeViewId }: ViewsPanelProps) {
   const baseId = params.baseId;
   const [search, setSearch] = useState("");
   const [showCreateMenu, setShowCreateMenu] = useState(false);
+  const [createMenuAnchor, setCreateMenuAnchor] = useState<HTMLElement | null>(null);
   const [openMenuViewId, setOpenMenuViewId] = useState<string | null>(null);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const [renamingViewId, setRenamingViewId] = useState<string | null>(null);
@@ -194,10 +195,10 @@ export function ViewsPanel({ tableId, activeViewId }: ViewsPanelProps) {
   );
 
   return (
-    <aside className="relative flex w-[275px] flex-shrink-0 flex-col border-r border-[#e2e0ea] bg-white">
+    <aside className="relative flex h-full w-[275px] flex-shrink-0 flex-col border-r border-[#e2e0ea] bg-white">
       {/* Create new */}
       <button
-        onClick={() => setShowCreateMenu((v) => !v)}
+        onClick={(e) => { setCreateMenuAnchor(e.currentTarget); setShowCreateMenu((v) => !v); }}
         className="flex items-center gap-2 px-3 py-2 text-[13px] text-[#4c5667] hover:bg-[#eceff4]"
         data-testid="create-view-button"
       >
@@ -208,8 +209,14 @@ export function ViewsPanel({ tableId, activeViewId }: ViewsPanelProps) {
       </button>
 
       {/* Create view type menu */}
-      {showCreateMenu && (
-        <div ref={createMenuRef} className="absolute left-full top-0 z-50 w-[220px] rounded-lg border border-[#e2e0ea] bg-white py-2 shadow-xl">
+      {showCreateMenu && (() => {
+        const rect = createMenuAnchor?.getBoundingClientRect();
+        return (
+        <div
+          ref={createMenuRef}
+          style={{ position: "fixed", top: rect?.top ?? 0, left: (rect?.right ?? 0) + 4, zIndex: 1000 }}
+          className="w-[220px] rounded-lg border border-[#e2e0ea] bg-white py-2 shadow-xl"
+        >
           <p className="px-4 pb-1 pt-1 text-[11px] font-semibold uppercase tracking-wide text-[#9aa4b6]">View type</p>
           {VIEW_TYPES.map((vt) => (
             <button
@@ -236,7 +243,8 @@ export function ViewsPanel({ tableId, activeViewId }: ViewsPanelProps) {
             </button>
           ))}
         </div>
-      )}
+        );
+      })()}
 
 
       {/* Find a view */}

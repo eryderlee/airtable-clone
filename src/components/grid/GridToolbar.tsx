@@ -106,43 +106,94 @@ export function GridToolbar({
 
       {/* Right-side toolbar buttons */}
       <div className="flex items-center">
-        <ToolbarButton
-          icon={<HideFieldsIcon />}
-          label="Hide fields"
-          badgeCount={hiddenColumns.length}
-          isActive={openPanel === "hideFields"}
-          onClick={() => onTogglePanel("hideFields")}
-        />
-        <ToolbarButton
-          icon={<FilterIcon />}
-          label="Filter"
-          badgeCount={filters.length}
-          isActive={openPanel === "filter"}
-          onClick={() => onTogglePanel("filter")}
-        />
+        <div className="relative" data-toolbar-panel>
+          <ToolbarButton
+            icon={<HideFieldsIcon />}
+            label="Hide fields"
+            badgeCount={hiddenColumns.length}
+            isActive={openPanel === "hideFields"}
+            onClick={() => onTogglePanel("hideFields")}
+          />
+          {openPanel === "hideFields" && (
+            <div className="absolute left-0 top-full z-50 mt-1" data-toolbar-panel>
+              <HideFieldsPanel
+                columnsData={columnsData}
+                hiddenColumns={hiddenColumns}
+                onHiddenColumnsChange={onHiddenColumnsChange}
+                onClose={() => onTogglePanel("hideFields")}
+              />
+            </div>
+          )}
+        </div>
+        <div className="relative" data-toolbar-panel>
+          <ToolbarButton
+            icon={<FilterIcon />}
+            label="Filter"
+            badgeCount={filters.length}
+            isActive={openPanel === "filter"}
+            onClick={() => onTogglePanel("filter")}
+          />
+          {openPanel === "filter" && (
+            <div className="absolute left-0 top-full z-50 mt-1" data-toolbar-panel>
+              <FilterPanel
+                filters={filters}
+                onFiltersChange={onFiltersChange}
+                columnsData={columnsData}
+                onClose={() => onTogglePanel("filter")}
+              />
+            </div>
+          )}
+        </div>
         <ToolbarButton icon={<GroupIcon />} label="Group" />
-        <ToolbarButton
-          icon={<SortIcon />}
-          label="Sort"
-          badgeCount={sorts.length}
-          isActive={openPanel === "sort"}
-          onClick={() => onTogglePanel("sort")}
-        />
+        <div className="relative" data-toolbar-panel>
+          <ToolbarButton
+            icon={<SortIcon />}
+            label="Sort"
+            badgeCount={sorts.length}
+            isActive={openPanel === "sort"}
+            onClick={() => onTogglePanel("sort")}
+          />
+          {openPanel === "sort" && (
+            <div className="absolute left-0 top-full z-50 mt-1" data-toolbar-panel>
+              <SortPanel
+                sorts={sorts}
+                onSortsChange={onSortsChange}
+                columnsData={columnsData}
+                onClose={() => onTogglePanel("sort")}
+              />
+            </div>
+          )}
+        </div>
         <ToolbarButton icon={<ColorIcon />} label="Color" />
         <button className="flex flex-shrink-0 items-center justify-center rounded px-2 py-1.5 text-[#4c5667] hover:bg-[#edf0f4]" title="Row height">
           <RowHeightIcon />
         </button>
         <ToolbarButton icon={<ShareSyncIcon />} label="Share and sync" />
-        <button
-          className={`relative flex h-7 w-7 flex-shrink-0 items-center justify-center rounded text-[#4c5667] hover:bg-[#edf0f4] ${openPanel === "search" || hasActiveSearch ? "text-[#166ee1]" : ""} ${openPanel === "search" ? "bg-[#edf0f4]" : ""}`}
-          title="Search"
-          onClick={() => onTogglePanel("search")}
-        >
-          <SearchIcon />
-          {hasActiveSearch && openPanel !== "search" && (
-            <span className="absolute right-0.5 top-0.5 h-1.5 w-1.5 rounded-full bg-[#166ee1]" />
+        <div className="relative" data-toolbar-panel>
+          <button
+            className={`relative flex h-7 w-7 flex-shrink-0 items-center justify-center rounded text-[#4c5667] hover:bg-[#edf0f4] ${openPanel === "search" || hasActiveSearch ? "text-[#166ee1]" : ""} ${openPanel === "search" ? "bg-[#edf0f4]" : ""}`}
+            title="Search"
+            onClick={() => onTogglePanel("search")}
+          >
+            <SearchIcon />
+            {hasActiveSearch && openPanel !== "search" && (
+              <span className="absolute right-0.5 top-0.5 h-1.5 w-1.5 rounded-full bg-[#166ee1]" />
+            )}
+          </button>
+          {openPanel === "search" && (
+            <div className="absolute right-0 top-full z-50 mt-1" data-toolbar-panel>
+              <SearchBar
+                searchInput={searchInput}
+                onSearchChange={onSearchChange}
+                onClose={() => onTogglePanel("search")}
+                matchCount={matchCount}
+                currentMatchIndex={currentMatchIndex}
+                onPrevMatch={onPrevMatch}
+                onNextMatch={onNextMatch}
+              />
+            </div>
           )}
-        </button>
+        </div>
       </div>
 
       {/* Dev: bulk insert — small icon-only button */}
@@ -164,50 +215,6 @@ export function GridToolbar({
         {isBulkAddingColumns ? "…" : "+20cols"}
       </button>
 
-      {/* Dropdown panels — absolutely positioned below toolbar */}
-      {openPanel === "search" && (
-        <div className="absolute right-0 top-full z-50 mt-1" data-toolbar-panel>
-          <SearchBar
-            searchInput={searchInput}
-            onSearchChange={onSearchChange}
-            onClose={() => onTogglePanel("search")}
-            matchCount={matchCount}
-            currentMatchIndex={currentMatchIndex}
-            onPrevMatch={onPrevMatch}
-            onNextMatch={onNextMatch}
-          />
-        </div>
-      )}
-      {openPanel === "filter" && (
-        <div className="absolute right-0 top-full z-50 mt-1" data-toolbar-panel>
-          <FilterPanel
-            filters={filters}
-            onFiltersChange={onFiltersChange}
-            columnsData={columnsData}
-            onClose={() => onTogglePanel("filter")}
-          />
-        </div>
-      )}
-      {openPanel === "sort" && (
-        <div className="absolute right-0 top-full z-50 mt-1" data-toolbar-panel>
-          <SortPanel
-            sorts={sorts}
-            onSortsChange={onSortsChange}
-            columnsData={columnsData}
-            onClose={() => onTogglePanel("sort")}
-          />
-        </div>
-      )}
-      {openPanel === "hideFields" && (
-        <div className="absolute right-0 top-full z-50 mt-1" data-toolbar-panel>
-          <HideFieldsPanel
-            columnsData={columnsData}
-            hiddenColumns={hiddenColumns}
-            onHiddenColumnsChange={onHiddenColumnsChange}
-            onClose={() => onTogglePanel("hideFields")}
-          />
-        </div>
-      )}
     </div>
   );
 }

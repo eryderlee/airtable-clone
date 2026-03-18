@@ -4,6 +4,7 @@ import { type Header } from "@tanstack/react-table";
 import { useState, useRef, useEffect } from "react";
 
 import type { RowData } from "./GridTable";
+import { PrimaryKeyIcon, TextIcon, NumberIcon } from "./ColumnIcons";
 
 interface GridHeaderProps {
   headers: Header<RowData, unknown>[];
@@ -469,7 +470,7 @@ export function GridHeader({
         {/* Add column button — sticky right */}
         <th
           style={{ display: "flex", width: 90, minWidth: 90, height: 32, position: "sticky", right: 0, zIndex: 4 }}
-          className="border-b border-l border-[#e2e0ea] bg-white p-0"
+          className="border-b border-l border-r border-[#e2e0ea] bg-white p-0"
         >
           <AddColumnMenu onAdd={onAddColumn} />
         </th>
@@ -483,30 +484,6 @@ export function GridHeader({
 // Icons
 // ---------------------------------------------------------------------------
 
-function PrimaryKeyIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-      <circle cx="4.5" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.2" />
-      <path d="M6.5 5h3M8 3.5V5M9.5 3.5V5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function TextIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-      <path d="M2 3h8M6 3v6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function NumberIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-      <path d="M4.5 2l-1 8M8.5 2l-1 8M2 4.5h8M1.5 7.5h8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-    </svg>
-  );
-}
 
 function EditIcon() {
   return (

@@ -28,7 +28,7 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
   const utils = api.useUtils();
 
   // Column definitions
-  const { data: columnsData } = api.column.getByTableId.useQuery({ tableId });
+  const { data: columnsData, refetch: refetchColumns } = api.column.getByTableId.useQuery({ tableId });
 
   // Page cache — refs so reads/writes don't trigger re-renders
   const pageCacheRef = useRef<Record<number, RowData[]>>({});
@@ -142,6 +142,39 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
   const handleClearSelection = useCallback(() => {
     setSelectedRowIds(new Set());
   }, []);
+
+  const deleteRows = api.row.deleteMany.useMutation();
+
+  const handleDeleteSelectedRows = useCallback(async () => {
+    if (selectedRowIds.size === 0) return;
+    const ids = [...selectedRowIds];
+
+    // Optimistic: rebuild pageCacheRef without the deleted rows
+    const allRows = Object.values(pageCacheRef.current)
+      .flat()
+      .filter((r) => !selectedRowIds.has(r.id));
+    pageCacheRef.current = {};
+    for (let i = 0; i < allRows.length; i++) {
+      const page = Math.floor(i / PAGE_SIZE);
+      if (!pageCacheRef.current[page]) pageCacheRef.current[page] = [];
+      pageCacheRef.current[page]!.push(allRows[i]!);
+    }
+    setSelectedRowIds(new Set());
+    setCursor(null);
+    forceUpdate();
+
+    try {
+      await deleteRows.mutateAsync({ ids, tableId });
+      await utils.row.getByOffset.invalidate({ tableId });
+      void refetchCount();
+    } catch {
+      // On error: clear cache and reload so we don't show stale optimistic state
+      pageCacheRef.current = {};
+      loadingPagesRef.current = new Set();
+      void refetchCount();
+      forceUpdate();
+    }
+  }, [selectedRowIds, deleteRows, tableId, refetchCount, utils.row.getByOffset]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Refs for virtualizers — lets GridView call scrollToIndex / scrollToCell
   const rowVirtualizerRef = useRef<Virtualizer<HTMLDivElement, Element> | null>(null);
@@ -323,7 +356,7 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
   // Column mutations
   const createColumn = api.column.create.useMutation({
     onSuccess: () => {
-      void utils.column.getByTableId.invalidate({ tableId });
+      void refetchColumns();
     },
   });
 
@@ -352,31 +385,9 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
     },
   });
 
-  // Bulk create
-  const bulkCreate = api.row.bulkCreate.useMutation({
-    onSuccess: async () => {
-      // Invalidate React Query's getByOffset cache first — staleTime:30s would
-      // otherwise return the pre-insert page 0 data, leaving pageCacheRef[0]
-      // partially filled and rows 5-99 permanently stuck as skeletons.
-      await utils.row.getByOffset.invalidate({ tableId });
-      pageCacheRef.current = {};
-      loadingPagesRef.current = new Set();
-      await refetchCount();
-      forceUpdate();
-    },
-  });
-
-  // Poll live count while inserting
-  const { data: liveCountData } = api.row.count.useQuery(
-    { tableId },
-    {
-      enabled: bulkCreate.isPending,
-      refetchInterval: bulkCreate.isPending ? 800 : false,
-    },
-  );
-  const displayCount = bulkCreate.isPending && liveCountData
-    ? liveCountData.count
-    : totalCount;
+  // Bulk create — no onSuccess; all logic lives in handleBulkCreate
+  const bulkCreate = api.row.bulkCreate.useMutation();
+  const [isBulkCreating, setIsBulkCreating] = useState(false);
 
   const handleAddColumn = useCallback(
     (type: "text" | "number") => {
@@ -409,9 +420,59 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
     [deleteColumn],
   );
 
-  const handleBulkCreate = useCallback(() => {
-    bulkCreate.mutate({ tableId, count: 100000 });
-  }, [tableId, bulkCreate]);
+  const handleBulkCreate = useCallback(async () => {
+    const CHUNK = 1000;
+    const TOTAL = 100_000;
+    setIsBulkCreating(true);
+    try {
+      for (let i = 0; i < TOTAL / CHUNK; i++) {
+        await bulkCreate.mutateAsync({ tableId, count: CHUNK });
+        void refetchCount(); // count grows after each chunk → virtualizer expands
+      }
+    } finally {
+      // Full cache refresh after all chunks so stale pages are replaced
+      await utils.row.getByOffset.invalidate({ tableId });
+      pageCacheRef.current = {};
+      loadingPagesRef.current = new Set();
+      const [, page0] = await Promise.all([
+        refetchCount(),
+        utils.row.getByOffset
+          .fetch({ tableId, offset: 0, limit: PAGE_SIZE, filters, sorts }, { staleTime: 0 })
+          .catch(() => null),
+      ]);
+      if (page0) {
+        pageCacheRef.current[0] = page0.items.map((r) => ({ id: r.id, cells: r.cells }));
+      }
+      forceUpdate();
+      setIsBulkCreating(false);
+    }
+  }, [tableId, bulkCreate, refetchCount, utils.row.getByOffset, filters, sorts]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const createRow = api.row.create.useMutation();
+
+  const handleAddRow = useCallback(async () => {
+    const primaryColId = columnsData?.find((c) => c.isPrimary)?.id ?? columnsData?.[0]?.id;
+    const created = await createRow.mutateAsync({ tableId, cells: {} });
+    // Append to cache and bump total count
+    const newRowData: RowData = { id: created.id, cells: created.cells as Record<string, string | number | null> };
+    const newIndex = totalCount; // 0-based index of the new row
+    const pageIndex = Math.floor(newIndex / PAGE_SIZE);
+    if (pageCacheRef.current[pageIndex]) {
+      pageCacheRef.current[pageIndex]!.push(newRowData);
+    } else {
+      pageCacheRef.current[pageIndex] = [newRowData];
+    }
+    void refetchCount();
+    forceUpdate();
+    // Scroll to and start editing the new row's primary cell
+    if (primaryColId) {
+      requestAnimationFrame(() => {
+        rowVirtualizerRef.current?.scrollToIndex(newIndex, { align: "end" });
+        setCursor({ rowIndex: newIndex, columnId: primaryColId });
+        setEditingCell({ rowIndex: newIndex, columnId: primaryColId });
+      });
+    }
+  }, [tableId, createRow, columnsData, totalCount, refetchCount, forceUpdate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [isBulkAddingColumns, setIsBulkAddingColumns] = useState(false);
   const handleBulkAddColumns = useCallback(async () => {
@@ -619,14 +680,14 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
   const isInitialLoading = !columnsData || countData === undefined;
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
+    <div className="relative flex flex-1 flex-col overflow-hidden">
       <GridToolbar
         onToggleViewsPanel={() => setViewsPanelOpen((v) => !v)}
         viewsPanelOpen={viewsPanelOpen}
         onHamburgerMouseEnter={() => { cancelHoverClose(); if (!viewsPanelOpen) setViewsPanelHover(true); }}
         onHamburgerMouseLeave={() => { if (!viewsPanelOpen) startHoverClose(); }}
         onBulkCreate={handleBulkCreate}
-        isBulkCreating={bulkCreate.isPending}
+        isBulkCreating={isBulkCreating}
         onBulkAddColumns={handleBulkAddColumns}
         isBulkAddingColumns={isBulkAddingColumns}
         rowCount={totalCount}
@@ -656,6 +717,7 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
             flexShrink: 0,
             overflow: "hidden",
             transition: "width 200ms ease",
+            height: "100%",
           }}
         >
           <ViewsPanel tableId={tableId} activeViewId={viewId} />
@@ -671,12 +733,12 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
           columnWidths={columnWidths}
           columns={columnDefs}
           onScroll={handleScroll}
-          isBulkCreating={bulkCreate.isPending}
+          isBulkCreating={isBulkCreating}
           onRenameColumn={handleRenameColumn}
           onUpdateColumn={handleUpdateColumn}
           onDeleteColumn={handleDeleteColumn}
           onAddColumn={handleAddColumn}
-          displayCount={displayCount}
+          displayCount={totalCount}
           cursor={cursor}
           editingCell={editingCell}
           onSelect={handleSelect}
@@ -691,12 +753,15 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
           onToggleRow={handleToggleRow}
           onSelectAll={handleSelectAll}
           onClearSelection={handleClearSelection}
+          onDeleteSelectedRows={handleDeleteSelectedRows}
           allSelected={totalCount > 0 && selectedRowIds.size === totalCount}
+          onAddRow={handleAddRow}
           searchQuery={searchQuery}
           currentSearchMatch={searchMatches[searchMatchIndex] ?? null}
         />
       )}
       </div>
+
     </div>
   );
 }

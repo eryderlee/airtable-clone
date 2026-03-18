@@ -50,7 +50,9 @@ interface GridTableProps {
   onToggleRow: (rowId: string) => void;
   onSelectAll: () => void | Promise<void>;
   onClearSelection: () => void;
+  onDeleteSelectedRows: () => void;
   allSelected: boolean;
+  onAddRow: () => void;
 }
 
 export const GridTable = React.memo(function GridTable({
@@ -81,24 +83,29 @@ export const GridTable = React.memo(function GridTable({
   onToggleRow,
   onSelectAll,
   onClearSelection,
+  onDeleteSelectedRows,
   allSelected,
+  onAddRow,
 }: GridTableProps) {
   const parentRef = useRef<HTMLDivElement>(null);
   const scrollbarRef = useRef<HTMLDivElement>(null);
+  const vScrollbarRef = useRef<HTMLDivElement>(null);
   const isSyncingRef = useRef(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Sync mirror scrollbar <-> grid scroll
+  // Sync mirror scrollbars <-> grid scroll
   useEffect(() => {
     const grid = parentRef.current;
     const bar = scrollbarRef.current;
-    if (!grid || !bar) return;
+    const vBar = vScrollbarRef.current;
+    if (!grid || !bar || !vBar) return;
 
     function onGridScroll() {
       if (isSyncingRef.current) return;
       isSyncingRef.current = true;
       bar!.scrollLeft = grid!.scrollLeft;
+      vBar!.scrollTop = grid!.scrollTop;
       isSyncingRef.current = false;
     }
     function onBarScroll() {
@@ -107,12 +114,20 @@ export const GridTable = React.memo(function GridTable({
       grid!.scrollLeft = bar!.scrollLeft;
       isSyncingRef.current = false;
     }
+    function onVBarScroll() {
+      if (isSyncingRef.current) return;
+      isSyncingRef.current = true;
+      grid!.scrollTop = vBar!.scrollTop;
+      isSyncingRef.current = false;
+    }
 
     grid.addEventListener("scroll", onGridScroll);
     bar.addEventListener("scroll", onBarScroll);
+    vBar.addEventListener("scroll", onVBarScroll);
     return () => {
       grid.removeEventListener("scroll", onGridScroll);
       bar.removeEventListener("scroll", onBarScroll);
+      vBar.removeEventListener("scroll", onVBarScroll);
     };
   }, []);
 
@@ -165,15 +180,34 @@ export const GridTable = React.memo(function GridTable({
 
   // Derived values for column virtualization rendering
   const virtualColumns = shouldVirtualizeColumns ? columnVirtualizer.getVirtualItems() : null;
-  const virtualPaddingLeft = virtualColumns ? (virtualColumns[0]?.start ?? 0) : 0;
+  const virtualPaddingLeft = virtualColumns
+    ? (() => {
+        const firstVcStart = virtualColumns[0]?.start ?? 0;
+        const primaryId = columnIds[0];
+        const primaryWidth = primaryId ? (columnWidths[primaryId] ?? 180) : 0;
+        // If primary column is outside the virtual window (prepended manually),
+        // subtract its width from the left spacer to avoid double-counting
+        const firstVcId = columnIds[virtualColumns[0]?.index ?? 0];
+        const primaryOutside = primaryId && firstVcId !== primaryId;
+        return primaryOutside ? Math.max(0, firstVcStart - primaryWidth) : firstVcStart;
+      })()
+    : 0;
   const virtualPaddingRight = virtualColumns
     ? columnVirtualizer.getTotalSize() - (virtualColumns[virtualColumns.length - 1]?.end ?? 0)
     : 0;
   const columnsToRender: string[] = virtualColumns
-    ? virtualColumns.flatMap((vc) => {
-        const id = columnIds[vc.index];
-        return id !== undefined ? [id] : [];
-      })
+    ? (() => {
+        const ids = virtualColumns.flatMap((vc) => {
+          const id = columnIds[vc.index];
+          return id !== undefined ? [id] : [];
+        });
+        // Always include the primary column (index 0) so it stays sticky-visible
+        const primaryId = columnIds[0];
+        if (primaryId && !ids.includes(primaryId)) {
+          ids.unshift(primaryId);
+        }
+        return ids;
+      })()
     : columnIds;
 
   const primaryColWidth = columnWidths[columnIds[0] ?? ""] ?? 180;
@@ -194,14 +228,15 @@ export const GridTable = React.memo(function GridTable({
           zIndex: 5,
         }}
       />
-      <div
-        ref={parentRef}
-        onScroll={onScroll}
-        onKeyDown={onKeyDown}
-        tabIndex={0}
-        className="flex-1 overflow-auto bg-[#f4f5f7] outline-none grid-hide-scrollbar"
-        style={{ contain: "strict" }}
-      >
+      <div className="flex flex-1 overflow-hidden">
+        <div
+          ref={parentRef}
+          onScroll={onScroll}
+          onKeyDown={onKeyDown}
+          tabIndex={0}
+          className="flex-1 overflow-auto bg-[#f6f8fc] outline-none grid-hide-scrollbar"
+          style={{ contain: "strict" }}
+        >
         <table style={{ display: "grid", width: "fit-content", minWidth: "100%" }}>
           <GridHeader
             headers={(table.getHeaderGroups()[0]?.headers ?? []).filter((h) => columnIds.includes(h.id))}
@@ -288,7 +323,7 @@ export const GridTable = React.memo(function GridTable({
                   }}
                   className="group border-b border-[#e2e0ea] bg-white hover:bg-[#f5f7fa]"
                   onContextMenu={(e) => {
-                    if (selectedRowIds.size === 0) return;
+                    if (!selectedRowIds.has(rowData.id)) return;
                     e.preventDefault();
                     setContextMenu({ x: e.clientX, y: e.clientY });
                   }}
@@ -307,7 +342,7 @@ export const GridTable = React.memo(function GridTable({
                         className="absolute inset-0 h-3.5 w-3.5 cursor-pointer accent-[#2563eb] opacity-0 group-hover:opacity-100"
                         style={{ opacity: selectedRowIds.has(rowData.id) ? 1 : undefined }}
                       />
-                      <span className={`select-none text-xs text-[#aaa] group-hover:hidden ${selectedRowIds.has(rowData.id) ? "hidden" : ""}`}>
+                      <span className={`absolute left-0 select-none whitespace-nowrap text-xs text-[#aaa] group-hover:hidden ${selectedRowIds.has(rowData.id) ? "hidden" : ""}`}>
                         {virtualRow.index + 1}
                       </span>
                     </label>
@@ -379,11 +414,12 @@ export const GridTable = React.memo(function GridTable({
 
         {/* Add row button */}
         <div
-          className="flex h-8 items-center border-b border-[#e2e0ea] bg-white hover:bg-[#f5f7fa]"
+          className="group flex h-8 items-center border-b border-[#e2e0ea] bg-white hover:bg-[#f5f7fa]"
           style={{ width: "fit-content" }}
         >
-          <div style={{ width: 100, minWidth: 100, position: "sticky", left: 0, zIndex: 1 }} className="flex items-center bg-white px-2 hover:bg-[#f5f7fa]">
+          <div style={{ width: 100, minWidth: 100, position: "sticky", left: 0, zIndex: 1 }} className="flex items-center bg-white px-2 group-hover:bg-[#f5f7fa]">
             <button
+              onClick={onAddRow}
               className="flex h-3.5 w-3.5 flex-shrink-0 items-center justify-center rounded text-[#888] hover:bg-[#e2e0ea]"
               title="Add row"
             >
@@ -410,6 +446,16 @@ export const GridTable = React.memo(function GridTable({
             <div style={{ width: virtualPaddingRight, minWidth: virtualPaddingRight }} className="h-full" />
           )}
         </div>
+        </div>{/* end parentRef */}
+
+        {/* Vertical mirror scrollbar */}
+        <div
+          ref={vScrollbarRef}
+          className="grid-scrollbar-v flex-shrink-0 overflow-y-auto overflow-x-hidden"
+          style={{ width: 12 }}
+        >
+          <div style={{ width: 1, height: rowVirtualizer.getTotalSize() }} />
+        </div>
       </div>
 
       {/* Right-click context menu */}
@@ -427,15 +473,15 @@ export const GridTable = React.memo(function GridTable({
           <ContextMenuItem icon={<RunAgentIcon />} label="Run field agent" chevron onClick={() => setContextMenu(null)} />
           <ContextMenuItem icon={<SendIcon />} label="Send all selected records" onClick={() => setContextMenu(null)} />
           <div className="my-1 h-px bg-[#f0f0f0]" />
-          <ContextMenuItem icon={<DeleteSelectedIcon />} label="Delete all selected records" danger onClick={() => { setContextMenu(null); onClearSelection(); }} />
+          <ContextMenuItem icon={<DeleteSelectedIcon />} label={selectedRowIds.size === 1 ? "Delete record" : "Delete all selected records"} danger onClick={() => { setContextMenu(null); onDeleteSelectedRows(); }} />
         </div>
       )}
 
       {/* Footer: record count */}
-      <div className="relative flex h-[36px] flex-shrink-0 items-center border-t border-[#e2e0ea] bg-white px-3">
+      <div className="relative flex h-[23px] flex-shrink-0 items-center border-t border-[#e2e0ea] bg-white px-3">
         {/* Floating pill — sits above the footer bar */}
         <div className="absolute left-3 z-20 flex items-center overflow-hidden rounded-full border border-[#d1d5db] bg-white" style={{ bottom: "80%" }}>
-          <button className="flex h-7 w-7 items-center justify-center text-[#4c5667] hover:bg-[#f3f4f6]" title="Add row">
+          <button onClick={onAddRow} className="flex h-7 w-7 items-center justify-center text-[#4c5667] hover:bg-[#f3f4f6]" title="Add row">
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <path d="M6 2v8M2 6h8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
             </svg>

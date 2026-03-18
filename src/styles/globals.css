@@ -8,7 +8,8 @@ html, body {
 }
 
 /* Hide native horizontal scrollbar on grid — replaced by mirror scrollbar.
-   Vertical scrollbar is kept visible (height controls horizontal, width controls vertical). */
+   Webkit: height:0 hides horizontal, width:8px keeps vertical visible.
+   Firefox: scrollbar-width:none hides all native bars (mirror handles horizontal). */
 .grid-hide-scrollbar::-webkit-scrollbar {
   height: 0;
   width: 8px;
@@ -21,9 +22,8 @@ html, body {
   border-radius: 4px;
 }
 .grid-hide-scrollbar {
-  /* Firefox: thin shows both; horizontal duplication with mirror is minor */
-  scrollbar-width: thin;
-  scrollbar-color: #c1c7d0 transparent;
+  /* Firefox: none hides both native bars; mirror scrollbar handles horizontal */
+  scrollbar-width: none;
 }
 
 /* Mirror scrollbar — thin, no arrows */
@@ -41,4 +41,25 @@ html, body {
   display: none;
   width: 0;
   height: 0;
+}
+
+/* Vertical mirror scrollbar */
+.grid-scrollbar-v::-webkit-scrollbar {
+  width: 12px;
+}
+.grid-scrollbar-v::-webkit-scrollbar-track {
+  background: #f4f5f7;
+}
+.grid-scrollbar-v::-webkit-scrollbar-thumb {
+  background: #c1c7d0;
+  border-radius: 4px;
+}
+.grid-scrollbar-v::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+.grid-scrollbar-v {
+  scrollbar-width: thin;
+  scrollbar-color: #c1c7d0 #f4f5f7;
 }
