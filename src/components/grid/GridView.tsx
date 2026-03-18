@@ -35,6 +35,7 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
   // Page cache — refs so reads/writes don't trigger re-renders
   const pageCacheRef = useRef<Record<number, RowData[]>>({});
   const loadingPagesRef = useRef<Set<number>>(new Set());
+  const cacheGenerationRef = useRef(0);
 
   // Single dispatch to force a re-render after cache updates; cacheVersion used by searchMatches memo
   const [cacheVersion, forceUpdate] = useReducer((x: number) => x + 1, 0);
@@ -269,6 +270,7 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
 
       loadingPagesRef.current.add(pageIndex);
       forceUpdate(); // re-render to show skeletons
+      const gen = cacheGenerationRef.current;
 
       try {
         const data = await utils.row.getByOffset.fetch({
@@ -278,13 +280,17 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
           filters,
           sorts,
         });
+        // Discard if cache was reset by a newer filter/sort since this fetch started
+        if (cacheGenerationRef.current !== gen) return;
         pageCacheRef.current[pageIndex] = data.items.map((r) => ({
           id: r.id,
           cells: r.cells,
         }));
       } finally {
-        loadingPagesRef.current.delete(pageIndex);
-        forceUpdate(); // re-render to show real data
+        if (cacheGenerationRef.current === gen) {
+          loadingPagesRef.current.delete(pageIndex);
+          forceUpdate(); // re-render to show real data
+        }
       }
     },
     [tableId, utils.row.getByOffset, filters, sorts],
@@ -292,6 +298,7 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
 
   // Reset page cache — clears all cached pages and loading state
   const resetCache = useCallback(() => {
+    cacheGenerationRef.current += 1;
     pageCacheRef.current = {};
     loadingPagesRef.current = new Set();
     forceUpdate();
@@ -369,7 +376,7 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
           type: type ?? "text",
           tableId: mutTableId,
           isPrimary: false,
-          order: old?.length ?? 0,
+          order: Math.max(...(old?.map((col) => col.order) ?? []), -1) + 1,
         },
       ]);
       return { previous };
@@ -405,7 +412,8 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
       toast.error("Failed to rename column. Changes reverted.");
     },
     onSettled: () => {
-      void utils.column.getByTableId.invalidate({ tableId });
+      // Intentionally no invalidate: onMutate already set the correct name;
+      // re-fetching causes a flicker as stale cache is briefly shown during revalidation.
     },
   });
 
