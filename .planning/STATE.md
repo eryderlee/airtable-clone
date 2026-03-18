@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-17)
 
 **Core value:** A table UI that feels exactly like Airtable and never chokes — 1M rows, instant scroll, DB-level filtering.
-**Current focus:** Phase 6 — Toolbar
+**Current focus:** Phase 7 — Column Virtualization
 
 ## Current Position
 
-Phase: 6 of 8 (Toolbar) — Complete
-Plan: 3/3 complete
-Status: 06-03 complete. Filter/sort SQL parameterization, client-side search highlight mode, hidden-column header fix, SearchBar navigation, GridCell highlight.
-Last activity: 2026-03-18 — Completed 06-03.
+Phase: 7 of 8 (Column Virtualization) — In progress
+Plan: 0/1 complete (07-01 tasks done, awaiting human-verify checkpoint)
+Status: 07-01 tasks 1 & 2 complete, build verified. Stopped at checkpoint:human-verify.
+Last activity: 2026-03-18 — Completed 07-01 tasks. Awaiting human verification of column virtualization.
 
-Progress: [██████████████░] ~75% (18 of ~24 total plans)
+Progress: [████████████████░] ~83% (20 of ~24 total plans)
 
 ## Performance Metrics
 
@@ -111,10 +111,14 @@ Recent decisions affecting current work:
 - 06-03: Search changed to client-side highlight mode — rows are not hidden, matching cells get yellow highlight, navigation via prev/next arrows in search bar. searchQuery removed from row.count and getByOffset calls.
 - 06-03: GridHeader hidden column fix — table.getHeaderGroups()[0]?.headers returns all columns; must filter by columnIds (visibleColumnIds from GridView) before passing to GridHeader
 - 06-03: cacheVersion exposed from useReducer (was [, forceUpdate]) — drives searchMatches useMemo recompute when pages load into pageCacheRef
+- 07-01: COLUMN_VIRTUALIZATION_THRESHOLD=20 — avoids GitHub #685 bi-directional scroll lag for tables under threshold; enabled: false on virtualizer skips all overhead
+- 07-01: Virtual padding spacer pattern for column virtualization — left/right <td>/<th> spacers instead of translateX per cell; integrates with display:grid table layout
+- 07-01: columnsToRender uses flatMap+undefined guard not non-null assertion — required by @typescript-eslint/no-unnecessary-type-assertion
+- 07-01: Column defs/visibleColumnIds moved before scrollToCell in GridView — TypeScript block-scoped use-before-declare error from scrollToCell referencing visibleColumnIds which was defined after handleSelect
 
 ### Pending Todos
 
-- None — Phase 6 complete. Phase 7 next.
+- None — Phase 7 next.
 
 ### Blockers/Concerns
 
@@ -124,5 +128,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-03-18
-Stopped at: Completed 06-03 — filter/sort SQL parameterization, client-side search highlight, header visibility fix, SearchBar navigation, GridCell highlighting.
+Stopped at: 07-01 checkpoint:human-verify. Tasks 1+2 committed (51f29b9). Awaiting user verification of column virtualization behavior with 25+ columns.
 Resume file: None
