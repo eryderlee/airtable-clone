@@ -329,9 +329,10 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
       return;
     }
     const timer = setTimeout(() => {
+      const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       updateViewConfig.mutate({
         id: viewId,
-        config: { filters, sorts, hiddenColumns },
+        config: { filters, sorts, hiddenColumns: hiddenColumns.filter((id) => uuidRe.test(id)) },
       });
     }, 800);
     return () => clearTimeout(timer);
@@ -494,10 +495,17 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
     const CHUNK = 1000;
     const TOTAL = 100_000;
     setIsBulkCreating(true);
+    // Clear page 0 so it reloads after the first chunk fills it with new rows.
+    // Without this, fetchPage(0) returns early because the pre-bulk-create cache entry is still "defined".
+    delete pageCacheRef.current[0];
+    loadingPagesRef.current.delete(0);
     try {
       for (let i = 0; i < TOTAL / CHUNK; i++) {
         await bulkCreate.mutateAsync({ tableId, count: CHUNK });
         void refetchCount(); // count grows after each chunk → virtualizer expands
+        // After first chunk there are enough rows to fill page 0 — fetch it immediately
+        // so the top rows show without waiting for all 100 chunks to complete.
+        if (i === 0) void fetchPage(0);
       }
     } finally {
       // Full cache refresh after all chunks so stale pages are replaced
@@ -516,7 +524,7 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
       forceUpdate();
       setIsBulkCreating(false);
     }
-  }, [tableId, bulkCreate, refetchCount, utils.row.getByOffset, filters, sorts]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tableId, bulkCreate, refetchCount, utils.row.getByOffset, filters, sorts, fetchPage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const createRow = api.row.create.useMutation();
 
@@ -548,11 +556,9 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
   const handleBulkAddColumns = useCallback(async () => {
     setIsBulkAddingColumns(true);
     try {
-      await Promise.all(
-        Array.from({ length: 20 }, (_, i) =>
-          createColumn.mutateAsync({ tableId, name: `Col ${i + 1}`, type: i % 3 === 0 ? "number" : "text" }),
-        ),
-      );
+      for (let i = 0; i < 20; i++) {
+        await createColumn.mutateAsync({ tableId, name: `Col ${i + 1}`, type: i % 3 === 0 ? "number" : "text" });
+      }
     } finally {
       setIsBulkAddingColumns(false);
     }
@@ -828,6 +834,8 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
           onAddRow={handleAddRow}
           searchQuery={searchQuery}
           currentSearchMatch={searchMatches[searchMatchIndex] ?? null}
+          sortedColumnIds={sorts.map((s) => s.columnId)}
+          filteredColumnIds={filters.map((f) => f.columnId)}
         />
       )}
       </div>

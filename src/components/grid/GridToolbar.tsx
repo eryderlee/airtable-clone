@@ -105,12 +105,13 @@ export function GridToolbar({
       <div className="flex-1" />
 
       {/* Right-side toolbar buttons */}
-      <div className="flex items-center">
+      <div className="flex items-center gap-2">
         <div className="relative" data-toolbar-panel>
           <ToolbarButton
             icon={<HideFieldsIcon />}
             label="Hide fields"
             badgeCount={hiddenColumns.length}
+            badgeLabel={(n) => `${n} hidden ${n === 1 ? "field" : "fields"}`}
             isActive={openPanel === "hideFields"}
             onClick={() => onTogglePanel("hideFields")}
           />
@@ -130,6 +131,11 @@ export function GridToolbar({
             icon={<FilterIcon />}
             label="Filter"
             badgeCount={filters.length}
+            badgeLabel={() => {
+              const names = filters.map((f) => columnsData.find((c) => c.id === f.columnId)?.name ?? "").filter(Boolean);
+              return `Filtered by ${names.join(", ")}`;
+            }}
+            activeColor="green"
             isActive={openPanel === "filter"}
             onClick={() => onTogglePanel("filter")}
           />
@@ -146,13 +152,24 @@ export function GridToolbar({
         </div>
         <ToolbarButton icon={<GroupIcon />} label="Group" />
         <div className="relative" data-toolbar-panel>
-          <ToolbarButton
-            icon={<SortIcon />}
-            label="Sort"
-            badgeCount={sorts.length}
-            isActive={openPanel === "sort"}
-            onClick={() => onTogglePanel("sort")}
-          />
+          {sorts.length > 0 ? (
+            <button
+              onClick={() => onTogglePanel("sort")}
+              className={`flex flex-shrink-0 items-center rounded px-2 py-1 text-[13px] font-medium text-black transition ${openPanel === "sort" ? "bg-[#ffd0b0]" : "bg-[#FFE0CC]"} hover:bg-[#ffd0b0]`}
+            >
+              <SortIcon />
+              <span className="ml-1 max-w-[120px] truncate">
+                Sorted by {sorts.length} {sorts.length === 1 ? "field" : "fields"}
+              </span>
+            </button>
+          ) : (
+            <ToolbarButton
+              icon={<SortIcon />}
+              label="Sort"
+              isActive={openPanel === "sort"}
+              onClick={() => onTogglePanel("sort")}
+            />
+          )}
           {openPanel === "sort" && (
             <div className="absolute left-0 top-full z-50 mt-1" data-toolbar-panel>
               <SortPanel
@@ -223,27 +240,35 @@ function ToolbarButton({
   icon,
   label,
   badgeCount = 0,
+  badgeLabel,
+  activeColor = "cyan",
   isActive = false,
   onClick,
 }: {
   icon: React.ReactNode;
   label: string;
   badgeCount?: number;
+  badgeLabel?: (n: number) => string;
+  activeColor?: "cyan" | "green";
   isActive?: boolean;
   onClick?: () => void;
 }) {
+  const hasCount = badgeCount > 0;
+  const displayLabel = hasCount && badgeLabel ? badgeLabel(badgeCount) : label;
+  const activeCls = hasCount
+    ? activeColor === "green"
+      ? "bg-[#d1f5d3] text-[#0a1929] hover:bg-[#b8eabc]"
+      : "bg-[#d0f0f5] text-[#0a1929] hover:bg-[#b8e8f0]"
+    : isActive
+    ? "bg-[#edf0f4] text-[#166ee1] hover:bg-[#edf0f4]"
+    : "text-[#4c5667] hover:bg-[#edf0f4]";
   return (
     <button
       onClick={onClick}
-      className={`flex flex-shrink-0 items-center gap-1 rounded px-2 py-1.5 text-[13px] hover:bg-[#edf0f4] ${isActive ? "bg-[#edf0f4] text-[#166ee1]" : "text-[#4c5667]"}`}
+      className={`flex flex-shrink-0 items-center rounded px-2 py-1 text-[13px] font-light transition-colors ${activeCls}`}
     >
       {icon}
-      {label}
-      {badgeCount > 0 && (
-        <span className="ml-0.5 rounded-full bg-[#166ee1] px-1.5 py-0.5 text-[10px] font-medium text-white">
-          {badgeCount}
-        </span>
-      )}
+      <span className="ml-1 max-w-[160px] truncate">{displayLabel}</span>
     </button>
   );
 }

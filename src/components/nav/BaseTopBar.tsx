@@ -12,10 +12,10 @@ const COLOR_PALETTE = [
   ["#e8384f","#f06a00","#f1bc00","#20a84a","#00b2b2","#1264a3","#b144c0","#666666"],
 ];
 
-function getBaseColor(color: string | null | undefined, name: string): string {
+function getBaseColor(color: string | null | undefined, id: string): string {
   if (color) return color;
   const defaults = ["#4aa4ff", "#f97316", "#22c55e", "#a855f7", "#ec4899"];
-  const index = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) % defaults.length;
+  const index = id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) % defaults.length;
   return defaults[index] ?? "#4aa4ff";
 }
 
@@ -35,7 +35,7 @@ export function BaseTopBar({ baseId, initialColor, initialName }: BaseTopBarProp
   const utils = api.useUtils();
   const { data: base } = api.base.getById.useQuery({ id: baseId }, { staleTime: Infinity });
   const { liveColor, setLiveColor } = useBaseColor();
-  const baseColor = liveColor ?? getBaseColor(base?.color ?? initialColor, base?.name ?? initialName ?? "");
+  const baseColor = liveColor ?? getBaseColor(base?.color ?? initialColor, baseId);
   const [menuOpen, setMenuOpen] = useState(false);
 
   const [expandedSection, setExpandedSection] = useState<string | null>(null);

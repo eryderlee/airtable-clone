@@ -116,7 +116,7 @@ export function GridCell({
       data-column-id={columnId}
       tabIndex={-1}
       onClick={handleClick}
-      className={`flex h-full w-full items-center truncate px-2 py-1 text-sm outline-none ${
+      className={`flex h-full w-full items-center truncate px-[6px] py-[6px] text-[13px] leading-4 outline-none ${
         isFocused ? "ring-2 ring-inset ring-blue-500" : ""
       } ${isCurrentMatch ? "bg-yellow-200" : ""}`}
     >

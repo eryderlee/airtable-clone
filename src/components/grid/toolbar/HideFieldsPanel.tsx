@@ -39,7 +39,7 @@ export function HideFieldsPanel({
         <input
           type="text"
           placeholder="Find a field"
-          className="flex-1 bg-transparent text-[13px] text-[#1f2328] outline-none placeholder:text-[#9ca3af]"
+          className="flex-1 bg-transparent text-[11px] text-[#1f2328] outline-none placeholder:text-[#9ca3af]"
         />
         <button className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[#9ca3af] hover:bg-[#f3f4f6]" title="Help">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -52,7 +52,7 @@ export function HideFieldsPanel({
 
       {/* Column list */}
       <div className="max-h-[320px] overflow-y-auto py-1">
-        {columnsData.map((col) => {
+        {columnsData.filter((col) => !col.isPrimary).map((col) => {
           const isVisible = !hiddenColumns.includes(col.id);
           return (
             <div
@@ -63,15 +63,12 @@ export function HideFieldsPanel({
               <button
                 role="switch"
                 aria-checked={isVisible}
-                disabled={col.isPrimary}
-                onClick={() => !col.isPrimary && toggleColumn(col.id)}
-                className={`relative flex h-[18px] w-8 flex-shrink-0 items-center rounded-full transition-colors ${
-                  col.isPrimary ? "cursor-not-allowed opacity-40" : "cursor-pointer"
-                } ${isVisible ? "bg-[#2563eb]" : "bg-[#d1d5db]"}`}
+                onClick={() => toggleColumn(col.id)}
+                className={`relative flex h-[8px] w-[14px] flex-shrink-0 cursor-pointer items-center rounded-full transition-colors ${isVisible ? "bg-[#2563eb]" : "bg-[#d1d5db]"}`}
               >
                 <span
-                  className={`absolute h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform ${
-                    isVisible ? "translate-x-[14px]" : "translate-x-[2px]"
+                  className={`absolute h-[5px] w-[5px] rounded-full bg-white shadow-sm transition-transform ${
+                    isVisible ? "translate-x-[7px]" : "translate-x-[1.5px]"
                   }`}
                 />
               </button>
@@ -102,13 +99,13 @@ export function HideFieldsPanel({
       <div className="flex gap-2 border-t border-[#e2e0ea] px-3 py-2">
         <button
           onClick={handleHideAll}
-          className="flex-1 rounded bg-[#f0f1f3] py-1.5 text-[13px] text-[#4c5667] hover:bg-[#e8eaed]"
+          className="flex-1 rounded bg-[#f0f1f3] py-1.5 text-[10px] font-medium text-[#4c5667] hover:bg-[#e8eaed]"
         >
           Hide all
         </button>
         <button
           onClick={handleShowAll}
-          className="flex-1 rounded bg-[#f0f1f3] py-1.5 text-[13px] text-[#4c5667] hover:bg-[#e8eaed]"
+          className="flex-1 rounded bg-[#f0f1f3] py-1.5 text-[10px] font-medium text-[#4c5667] hover:bg-[#e8eaed]"
         >
           Show all
         </button>

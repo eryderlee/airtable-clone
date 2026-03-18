@@ -53,6 +53,8 @@ interface GridTableProps {
   onDeleteSelectedRows: () => void;
   allSelected: boolean;
   onAddRow: () => void;
+  sortedColumnIds?: string[];
+  filteredColumnIds?: string[];
 }
 
 export const GridTable = React.memo(function GridTable({
@@ -86,6 +88,8 @@ export const GridTable = React.memo(function GridTable({
   onDeleteSelectedRows,
   allSelected,
   onAddRow,
+  sortedColumnIds = [],
+  filteredColumnIds = [],
 }: GridTableProps) {
   const parentRef = useRef<HTMLDivElement>(null);
   const scrollbarRef = useRef<HTMLDivElement>(null);
@@ -249,6 +253,8 @@ export const GridTable = React.memo(function GridTable({
             columnsToRender={columnsToRender}
             virtualPaddingLeft={virtualPaddingLeft}
             virtualPaddingRight={virtualPaddingRight}
+            sortedColumnIds={sortedColumnIds}
+            filteredColumnIds={filteredColumnIds}
           />
 
           <tbody
@@ -380,8 +386,9 @@ export const GridTable = React.memo(function GridTable({
                         style={{
                           display: "flex", width: w, minWidth: w,
                           ...(isPrimary ? { position: "sticky", left: 100, zIndex: 1 } : {}),
+                          ...(filteredColumnIds.includes(colId) ? { backgroundColor: "#d1f5d3" } : sortedColumnIds.includes(colId) ? { backgroundColor: "#FFF5EE" } : {}),
                         }}
-                        className={`border-r border-[#e2e0ea]${isPrimary ? " bg-white group-hover:bg-[#f5f7fa]" : ""}`}
+                        className={`border-r border-[#e2e0ea]${isPrimary && !filteredColumnIds.includes(colId) && !sortedColumnIds.includes(colId) ? " bg-white group-hover:bg-[#f5f7fa]" : ""}`}
                       >
                         <GridCell
                           rowId={rowData.id}
@@ -507,7 +514,7 @@ export const GridTable = React.memo(function GridTable({
       <div
         ref={scrollbarRef}
         className="grid-scrollbar flex-shrink-0 overflow-x-auto overflow-y-hidden"
-        style={{ height: 12 }}
+        style={{ height: 12, marginRight: 12 }}
       >
         <div
           style={{

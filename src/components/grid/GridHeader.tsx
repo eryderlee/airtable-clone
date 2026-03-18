@@ -14,9 +14,11 @@ interface GridHeaderProps {
   onAddColumn: (type: "text" | "number") => void;
   allSelected: boolean;
   onSelectAll: () => void | Promise<void>;
-  columnsToRender?: string[];       // column IDs to actually render (when virtualized)
+  columnsToRender?: string[];
   virtualPaddingLeft?: number;
   virtualPaddingRight?: number;
+  sortedColumnIds?: string[];
+  filteredColumnIds?: string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -364,6 +366,8 @@ export function GridHeader({
   columnsToRender,
   virtualPaddingLeft = 0,
   virtualPaddingRight = 0,
+  sortedColumnIds = [],
+  filteredColumnIds = [],
 }: GridHeaderProps) {
   // Track which column has its edit modal open
   const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
@@ -411,12 +415,15 @@ export function GridHeader({
               : header.id;
           const isEditing = editingColumnId === columnId;
 
+          const isSorted = sortedColumnIds.includes(columnId);
+          const isFiltered = filteredColumnIds.includes(columnId);
           return (
             <th
               key={header.id}
               style={{
                 display: "flex", width: colWidth, minWidth: colWidth, height: 32,
                 ...(isPrimary ? { position: "sticky", left: 100, zIndex: 4 } : {}),
+                backgroundColor: isFiltered ? "#eafaeb" : isSorted ? "#FFF8F3" : undefined,
               }}
               className="group relative items-center border-b border-r border-[#e2e0ea] bg-white px-2 py-0 text-left"
             >
@@ -467,9 +474,9 @@ export function GridHeader({
           />
         )}
 
-        {/* Add column button — sticky right */}
+        {/* Add column button — sits after last column */}
         <th
-          style={{ display: "flex", width: 90, minWidth: 90, height: 32, position: "sticky", right: 0, zIndex: 4 }}
+          style={{ display: "flex", width: 90, minWidth: 90, height: 32 }}
           className="border-b border-l border-r border-[#e2e0ea] bg-white p-0"
         >
           <AddColumnMenu onAdd={onAddColumn} />

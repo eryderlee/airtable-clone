@@ -153,26 +153,6 @@ export function HomeContent({ bases: initialBases }: Props) {
               icon={<GridIcon />}
               onClick={() => setViewMode("grid")}
             />
-            <button
-              onClick={handleCreateBase}
-              className="ml-2 inline-flex items-center gap-1.5 rounded-full bg-[#1c64e4] px-4 py-2 text-sm font-medium text-white hover:bg-[#154dbc]"
-            >
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 12 12"
-                fill="none"
-                aria-hidden="true"
-              >
-                <path
-                  d="M6 2v8M2 6h8"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                />
-              </svg>
-              Create base
-            </button>
           </div>
         </header>
 
@@ -275,7 +255,7 @@ function BaseGridCard({
   onDelete: (id: string) => void;
   onBaseClick: (id: string) => void;
 }) {
-  const color = colorFromString(base.name);
+  const color = colorFromString(base.id);
   const [menuOpen, setMenuOpen] = useState(false);
   const [starred, setStarred] = useState(false);
   const [renaming, setRenaming] = useState(false);
@@ -447,7 +427,7 @@ function BaseListRow({
   base: BaseRecord;
   onBaseClick: (id: string) => void;
 }) {
-  const color = colorFromString(base.name);
+  const color = colorFromString(base.id);
   return (
     <button
       onClick={() => onBaseClick(base.id)}

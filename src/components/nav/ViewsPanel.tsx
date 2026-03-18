@@ -328,14 +328,13 @@ export function ViewsPanel({ tableId, activeViewId }: ViewsPanelProps) {
             return (
               <div
                 key={view.id}
-                className={`group relative flex items-center gap-2 px-3 py-[7px] transition-colors ${
-                  isActive ? "bg-[#e8ebf2]" : "hover:bg-[#f4f5f7]"
-                }`}
+                className="group relative px-2 py-[3px] transition-colors"
                 onMouseEnter={() => {
                   void utils.column.getByTableId.prefetch({ tableId });
                   void utils.row.count.prefetch({ tableId, filters: [], searchQuery: "" });
                 }}
               >
+                <div className={`relative flex items-center gap-2 rounded px-2 py-[6px] transition-colors ${isActive ? "bg-[#e8ebf2]" : "hover:bg-[#f0f2f5]"}`}>
                 {/* Grid icon */}
                 <Link href={`/base/${baseId}/${tableId}/view/${view.id}`} style={{ textDecoration: "none" }} tabIndex={-1}>
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0">
@@ -386,6 +385,7 @@ export function ViewsPanel({ tableId, activeViewId }: ViewsPanelProps) {
                     </svg>
                   </button>
                 </div>
+                </div>{/* end rounded highlight */}
 
                 {/* Options dropdown */}
                 {menuOpen && (

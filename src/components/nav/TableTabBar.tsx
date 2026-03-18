@@ -6,14 +6,13 @@ import { useRouter, useParams, usePathname } from "next/navigation";
 import { toast } from "sonner";
 
 import { api } from "~/trpc/react";
-import { InlineEdit } from "~/components/ui/InlineEdit";
 import { useBaseColor } from "./BaseColorContext";
 
-function getBaseColor(color: string | null | undefined, name: string): string {
+function getBaseColor(color: string | null | undefined, id: string): string {
   if (color) return color;
   const colors = ["#4aa4ff", "#f97316", "#22c55e", "#a855f7", "#ec4899"];
   const index =
-    name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
+    id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
   return colors[index] ?? "#4aa4ff";
 }
 
@@ -55,7 +54,7 @@ export function TableTabBar({ baseId, initialColor, initialName }: TableTabBarPr
   const { data: base } = api.base.getById.useQuery({ id: baseId }, { staleTime: Infinity });
   const { data: tables } = api.table.getByBaseId.useQuery({ baseId });
   const { liveColor } = useBaseColor();
-  const bgColor = lightTint(getBaseColor(liveColor ?? base?.color ?? initialColor, base?.name ?? initialName ?? ""));
+  const bgColor = lightTint(getBaseColor(liveColor ?? base?.color ?? initialColor, baseId));
   const utils = api.useUtils();
 
   const createTable = api.table.create.useMutation({
@@ -159,6 +158,7 @@ export function TableTabBar({ baseId, initialColor, initialName }: TableTabBarPr
       <div className="flex flex-1 items-stretch" style={{ overflow: "visible" }}>
         {tables?.map((table, index) => {
           const isActive = activeTableId === table.id;
+          const nextActive = index < tables.length - 1 && activeTableId === tables[index + 1]?.id;
           return (
             <TableTab
               key={table.id}
@@ -174,6 +174,7 @@ export function TableTabBar({ baseId, initialColor, initialName }: TableTabBarPr
               onRename={(name) => renameTable.mutate({ id: table.id, name })}
               onDelete={() => deleteTable.mutate({ id: table.id })}
               showDelete={(tables?.length ?? 0) > 1}
+              showRightDivider={!isActive && !nextActive}
             />
           );
         })}
@@ -186,7 +187,7 @@ export function TableTabBar({ baseId, initialColor, initialName }: TableTabBarPr
         </button>
 
         {/* Divider */}
-        <div className="mx-1 self-center h-4 w-px bg-[#4c5667] opacity-30" />
+        <div className="mx-1 self-center h-3 w-px bg-[#4c5667] opacity-30" />
 
         {/* Add or import */}
         <button
@@ -229,6 +230,7 @@ function TableTab({
   onRename,
   onDelete,
   showDelete,
+  showRightDivider,
 }: {
   table: { id: string; name: string };
   isActive: boolean;
@@ -242,9 +244,11 @@ function TableTab({
   onRename: (name: string) => void;
   onDelete: () => void;
   showDelete: boolean;
+  showRightDivider?: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [renameOpen, setRenameOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -259,15 +263,24 @@ function TableTab({
   }, [menuOpen]);
 
   return (
+    <>
+      {renameOpen && (
+        <TableRenameModal
+          name={table.name}
+          onSave={(name) => { onRename(name); setRenameOpen(false); }}
+          onCancel={() => setRenameOpen(false)}
+        />
+      )}
     <div
       onMouseEnter={() => { setHovered(true); onHover(); }}
       onMouseLeave={() => setHovered(false)}
+      onDoubleClick={(e) => { e.preventDefault(); setRenameOpen(true); }}
       className={`relative flex flex-shrink-0 ${(isPending ?? isNavigating) ? "cursor-wait" : "cursor-pointer"} items-center gap-1 px-3 transition-colors ${
-        isFirst ? "rounded-tr-lg" : "rounded-t-lg"
+        isFirst ? "rounded-tr-md" : "rounded-t-md"
       } ${
         isActive
           ? "border-r border-t border-[#dfe3ea] bg-white text-[#1f2328]"
-          : "h-[22px] self-end border border-transparent text-[#4c5667]"
+          : "h-[22px] self-center border border-transparent text-[#4c5667]"
       } ${isActive && !isFirst ? "border-l" : ""}`}
       style={{
         marginBottom: isActive ? "-1px" : "0",
@@ -276,15 +289,12 @@ function TableTab({
         backgroundColor: isActive ? undefined : bgColor,
       }}
     >
+      {showRightDivider && (
+        <div className="absolute right-0 top-1/2 h-3 w-px -translate-y-1/2 bg-[#4c5667] opacity-30" />
+      )}
       {isPending ? (
-        <span className="pointer-events-none flex items-center gap-1 cursor-wait opacity-60">
-          <InlineEdit
-            value={table.name}
-            onSave={onRename}
-            className={`whitespace-nowrap text-[13px] ${
-              isActive ? "font-medium text-[#1f2328]" : "text-[#4c5667]"
-            }`}
-          />
+        <span className="pointer-events-none cursor-wait opacity-60 whitespace-nowrap text-[13px] text-[#4c5667]">
+          {table.name}
         </span>
       ) : (
         <Link
@@ -293,13 +303,9 @@ function TableTab({
           className="flex items-center gap-1"
           onClick={onNavigate}
         >
-          <InlineEdit
-            value={table.name}
-            onSave={onRename}
-            className={`whitespace-nowrap text-[13px] ${
-              isActive ? "font-medium text-[#1f2328]" : "text-[#4c5667] hover:text-[#1f2328]"
-            }`}
-          />
+          <span className={`whitespace-nowrap text-[13px] ${isActive ? "font-medium text-[#1f2328]" : "text-[#4c5667] hover:text-[#1f2328]"}`}>
+            {table.name}
+          </span>
         </Link>
       )}
 
@@ -348,6 +354,102 @@ function TableTab({
           )}
         </div>
       )}
+    </div>
+    </>
+  );
+}
+
+function TableRenameModal({
+  name,
+  onSave,
+  onCancel,
+}: {
+  name: string;
+  onSave: (name: string) => void;
+  onCancel: () => void;
+}) {
+  const [draft, setDraft] = useState(name);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+    inputRef.current?.select();
+  }, []);
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Enter") { const t = draft.trim(); if (t) onSave(t); }
+    if (e.key === "Escape") onCancel();
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-[10004] flex items-start justify-start"
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onCancel(); }}
+    >
+      <div
+        className="mt-24 ml-2 w-[299px] rounded-lg border border-[#e2e0ea] bg-white p-4 shadow-xl"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        {/* Name input */}
+        <input
+          ref={inputRef}
+          aria-label="Table name editor"
+          type="text"
+          maxLength={255}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={handleKeyDown}
+          className="mb-3 w-full rounded-md border-2 border-[#1471e8] px-2 py-1.5 text-[15px] outline-none"
+        />
+
+        {/* Record terminology row */}
+        <div className="mb-2 flex items-center justify-between">
+          <h5 className="text-[13px] text-[#666]">What should each record be called?</h5>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-[#999]">
+            <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.2" />
+            <path d="M8 7v5M8 5v.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+          </svg>
+        </div>
+
+        {/* Record dropdown */}
+        <div className="mb-2 flex cursor-pointer items-center justify-between rounded-md bg-[#f5f5f5] px-2 py-1.5">
+          <span className="truncate text-[13px] text-[#333]">Record</span>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="flex-none text-[#666]">
+            <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+
+        {/* Examples */}
+        <div className="mb-4 flex text-[12px] text-[#999]">
+          <span className="mr-2 shrink-0">Examples:</span>
+          <div className="flex flex-wrap gap-x-3">
+            <span className="flex items-center gap-1">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1.5v9M1.5 6h9" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" /></svg>
+              Add record
+            </span>
+            <span className="flex items-center gap-1">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1" y="3" width="10" height="7" rx="1" stroke="currentColor" strokeWidth="1.1" /><path d="M4 3V2a2 2 0 0 1 4 0v1" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" /></svg>
+              Send records
+            </span>
+          </div>
+        </div>
+
+        {/* Buttons */}
+        <div className="flex items-center justify-end gap-2">
+          <button
+            onClick={onCancel}
+            className="rounded-md px-3 py-1.5 text-[13px] text-[#333] hover:bg-[#f0f0f0]"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => { const t = draft.trim(); if (t) onSave(t); }}
+            className="rounded-md bg-[#1471e8] px-3 py-1.5 text-[13px] font-medium text-white hover:bg-[#1260cc]"
+          >
+            Save
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

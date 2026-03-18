@@ -1,37 +1,37 @@
 "use client";
 
+import { useState } from "react";
 import type { SortCondition } from "~/server/api/routers/row";
+import { ColumnTypeIcon } from "../ColumnIcons";
 
 interface SortPanelProps {
   sorts: SortCondition[];
   onSortsChange: (sorts: SortCondition[]) => void;
-  columnsData: { id: string; name: string; type: string }[];
+  columnsData: { id: string; name: string; type: string; isPrimary?: boolean }[];
   onClose: () => void;
 }
 
 function getDirectionOptions(colType: string) {
   if (colType === "number") {
     return [
-      { value: "asc", label: "1 to 9" },
-      { value: "desc", label: "9 to 1" },
+      { value: "asc", label: "1 → 9" },
+      { value: "desc", label: "9 → 1" },
     ];
   }
   return [
-    { value: "asc", label: "A to Z" },
-    { value: "desc", label: "Z to A" },
+    { value: "asc", label: "A → Z" },
+    { value: "desc", label: "Z → A" },
   ];
 }
 
-export function SortPanel({ sorts, onSortsChange, columnsData, onClose }: SortPanelProps) {
-  const firstColumn = columnsData[0];
+export function SortPanel({ sorts, onSortsChange, columnsData }: SortPanelProps) {
+  const [search, setSearch] = useState("");
+  const [autoSort, setAutoSort] = useState(true);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
-  const handleAddSort = () => {
-    if (!firstColumn) return;
-    const newSort: SortCondition = {
-      columnId: firstColumn.id,
-      direction: "asc",
-    };
-    onSortsChange([...sorts, newSort]);
+  const handleAddSort = (columnId: string) => {
+    if (sorts.some((s) => s.columnId === columnId)) return;
+    onSortsChange([...sorts, { columnId, direction: "asc" }]);
   };
 
   const handleRemove = (index: number) => {
@@ -39,101 +39,191 @@ export function SortPanel({ sorts, onSortsChange, columnsData, onClose }: SortPa
   };
 
   const handleColumnChange = (index: number, columnId: string) => {
-    const updated = sorts.map((s, i) => {
-      if (i !== index) return s;
-      return { columnId, direction: s.direction };
-    });
-    onSortsChange(updated);
+    onSortsChange(sorts.map((s, i) => i !== index ? s : { ...s, columnId }));
   };
 
   const handleDirectionChange = (index: number, direction: "asc" | "desc") => {
-    const updated = sorts.map((s, i) => {
-      if (i !== index) return s;
-      return { ...s, direction };
-    });
-    onSortsChange(updated);
+    onSortsChange(sorts.map((s, i) => i !== index ? s : { ...s, direction }));
   };
 
+  const filteredColumns = columnsData.filter((c) =>
+    c.name.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
-    <div className="w-[400px] rounded-lg border border-[#e2e0ea] bg-white p-3 shadow-lg">
-      {/* Header row */}
-      <div className="mb-2 flex items-center justify-between">
-        {sorts.length > 0 && (
-          <span className="text-[13px] text-[#6b7280]">Sort by</span>
-        )}
-        <div className="ml-auto">
-          <button
-            onClick={onClose}
-            className="rounded p-1 text-[#9ca3af] hover:bg-[#f3f4f6] hover:text-[#374151]"
-            title="Close sort panel"
-          >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    <div className="overflow-hidden rounded-lg border border-[#e2e0ea] bg-white shadow-lg" style={{ minWidth: 320 }}>
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 pt-3 pb-2">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[13px] font-semibold text-[#6b7280]">Sort by</span>
+          <button className="flex h-4 w-4 items-center justify-center text-[#9ca3af] hover:text-[#6b7280]">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+              <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.3" />
+              <path d="M6.5 6.5a1.5 1.5 0 1 1 2.6 1.5c-.5.4-.9.9-.9 1.5v.3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+              <circle cx="8" cy="12" r="0.7" fill="currentColor" />
             </svg>
           </button>
         </div>
       </div>
 
-      {/* Sort rules */}
-      <div className="flex flex-col gap-2">
-        {sorts.map((s, i) => {
-          const col = columnsData.find((c) => c.id === s.columnId);
-          const colType = col?.type ?? "text";
-          const directionOptions = getDirectionOptions(colType);
+      <div className="mx-4 border-b border-[#e2e0ea]" />
 
-          return (
-            <div key={i} className="flex items-center gap-2">
-              {/* Column picker */}
-              <select
-                value={s.columnId}
-                onChange={(e) => handleColumnChange(i, e.target.value)}
-                className="rounded border border-[#ddd] px-2 py-1 text-[13px]"
-              >
-                {columnsData.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+      {/* Active sort rules */}
+      {sorts.length > 0 && (
+        <div className="overflow-auto px-4 pt-3" style={{ minHeight: 70, maxHeight: "calc(100vh - 380px)" }}>
+          <ul className="flex flex-col gap-2">
+            {sorts.map((s, i) => {
+              const col = columnsData.find((c) => c.id === s.columnId);
+              const colType = col?.type ?? "text";
+              const directionOptions = getDirectionOptions(colType);
+              return (
+                <li key={i} className="flex items-center gap-2">
+                  {/* Column dropdown */}
+                  <div className="flex items-center rounded border border-[#e2e0ea] bg-white hover:bg-[#f5f7fa]" style={{ width: 240, height: 28 }}>
+                    <select
+                      value={s.columnId}
+                      onChange={(e) => handleColumnChange(i, e.target.value)}
+                      className="w-full appearance-none bg-transparent px-2 text-[13px] text-[#1f2328] outline-none"
+                    >
+                      {columnsData.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="mr-2 flex-shrink-0 text-[#6b7280]">
+                      <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                  {/* Direction dropdown */}
+                  <div className="flex items-center rounded border border-[#e2e0ea] bg-white hover:bg-[#f5f7fa]" style={{ width: 120, height: 28 }}>
+                    <select
+                      value={s.direction}
+                      onChange={(e) => handleDirectionChange(i, e.target.value as "asc" | "desc")}
+                      className="w-full appearance-none bg-transparent px-2 text-[13px] text-[#1f2328] outline-none"
+                    >
+                      {directionOptions.map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="mr-2 flex-shrink-0 text-[#6b7280]">
+                      <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                  {/* Remove */}
+                  <button
+                    onClick={() => handleRemove(i)}
+                    className="flex h-7 w-7 items-center justify-center rounded text-[#9ca3af] hover:bg-[#f5f7fa] hover:text-[#374151]"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                      <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                    </svg>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
 
-              {/* Direction picker */}
-              <select
-                value={s.direction}
-                onChange={(e) => handleDirectionChange(i, e.target.value as "asc" | "desc")}
-                className="rounded border border-[#ddd] px-2 py-1 text-[13px]"
-              >
-                {directionOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+          {/* Add another sort — field picker trigger */}
+          <div className="relative mt-1 mb-1">
+            <button
+              className="flex items-center gap-2 px-1 py-1 text-[13px] text-[#6b7280] hover:text-[#1f2328]"
+              onClick={() => setPickerOpen((v) => !v)}
+            >
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+              Add another sort
+            </button>
+            {pickerOpen && (
+              <div className="absolute left-0 bottom-0 z-50 w-[240px] overflow-hidden rounded-lg border border-[#e2e0ea] bg-white shadow-xl">
+                <div className="flex items-center gap-2 border-b border-[#e2e0ea] px-3 py-1.5">
+                  <svg width="13" height="13" viewBox="0 0 14 14" fill="none" className="flex-shrink-0 text-[#9ca3af]">
+                    <circle cx="6" cy="6" r="4" stroke="currentColor" strokeWidth="1.3" />
+                    <path d="M9.5 9.5L12 12" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                  </svg>
+                  <input
+                    type="text"
+                    placeholder="Find a field"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="flex-1 bg-transparent text-[13px] text-[#1f2328] outline-none placeholder:text-[#9ca3af]"
+                    autoFocus
+                  />
+                </div>
+                <div className="overflow-y-auto py-1" style={{ maxHeight: 200 }}>
+                  {filteredColumns.filter((c) => !sorts.some((s) => s.columnId === c.id)).map((col) => (
+                    <button
+                      key={col.id}
+                      onClick={() => { handleAddSort(col.id); setPickerOpen(false); setSearch(""); }}
+                      className="flex w-full items-center gap-3 px-3 py-[5px] text-[13px] text-[#1f2328] hover:bg-[#f5f7fa]"
+                    >
+                      <span className="flex-shrink-0 text-[#6b7280]">
+                        <ColumnTypeIcon type={col.type} isPrimary={col.isPrimary ?? false} />
+                      </span>
+                      <span>{col.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
-              {/* Remove button */}
+      {/* Field picker (shown when no sorts) */}
+      {sorts.length === 0 && (
+        <>
+          <div className="flex items-center gap-2 px-3 py-1.5">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" className="flex-shrink-0 text-[#9ca3af]">
+              <circle cx="6" cy="6" r="4" stroke="currentColor" strokeWidth="1.3" />
+              <path d="M9.5 9.5L12 12" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Find a field"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="flex-1 bg-transparent text-[13px] text-[#1f2328] outline-none placeholder:text-[#9ca3af]"
+            />
+          </div>
+          <div className="overflow-y-auto pb-2" style={{ minHeight: 100, maxHeight: "calc(100vh - 380px)" }}>
+            {filteredColumns.map((col) => (
               <button
-                onClick={() => handleRemove(i)}
-                className="ml-auto rounded p-1 text-[#9ca3af] hover:bg-[#f3f4f6] hover:text-[#374151]"
-                title="Remove sort rule"
+                key={col.id}
+                onClick={() => handleAddSort(col.id)}
+                className="flex w-full items-center gap-3 rounded px-3 py-[5px] text-[13px] text-[#1f2328] hover:bg-[#f5f7fa]"
               >
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                  <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                </svg>
+                <span className="flex-shrink-0 text-[#6b7280]">
+                  <ColumnTypeIcon type={col.type} isPrimary={col.isPrimary ?? false} />
+                </span>
+                <span>{col.name}</span>
               </button>
-            </div>
-          );
-        })}
-      </div>
+            ))}
+          </div>
+        </>
+      )}
 
-      {/* Add sort */}
-      <button
-        onClick={handleAddSort}
-        className="mt-3 flex items-center gap-1 rounded px-2 py-1 text-[13px] text-[#166ee1] hover:bg-[#eff6ff]"
-      >
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-          <path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        </svg>
-        Add sort
-      </button>
+      {/* Bottom bar: Automatically sort records toggle */}
+      <div className="flex items-center justify-between border-t border-[#e2e0ea] bg-[#f9fafb] px-3" style={{ minHeight: 44 }}>
+        <button
+          onClick={() => setAutoSort((v) => !v)}
+          className="flex items-center gap-2 text-[13px] text-[#1f2328]"
+        >
+          {/* Toggle pill */}
+          <div
+            className="relative flex flex-none items-center rounded-full transition-colors"
+            style={{
+              width: 19.2, height: 12, padding: 2,
+              backgroundColor: autoSort ? "#2563eb" : "#d1d5db",
+            }}
+          >
+            <div
+              className="absolute h-2 w-2 rounded-full bg-white shadow-sm transition-transform"
+              style={{ transform: autoSort ? "translateX(7.2px)" : "translateX(0px)" }}
+            />
+          </div>
+          Automatically sort records
+        </button>
+      </div>
     </div>
   );
 }
