@@ -52,11 +52,11 @@ export function AppSidebar({
                   isExpanded ? "gap-3 rounded-xl px-3 py-2 text-[15px]" : "justify-center rounded-xl py-3"
                 } ${
                   isActive && isExpanded
-                    ? "bg-[#edf2ff] font-medium text-[#1c64e4]"
-                    : "font-normal text-[#1f2328]"
+                    ? "bg-[#F2F4F8] font-semibold text-[#1f2328]"
+                    : "font-medium text-[#1f2328]"
                 } ${isExpanded ? "hover:bg-[#f4f6fb]" : ""} ${item.disabled ? "cursor-default" : ""}`}
               >
-                <span className={isActive ? "text-[#1c64e4]" : "text-[#1f2328]"}>{item.icon}</span>
+                <span className="text-[#1f2328]">{item.icon}</span>
                 {isExpanded && (
                   <>
                     <span className="flex-1 text-left">{item.label}</span>
@@ -71,7 +71,7 @@ export function AppSidebar({
         <div className="mt-0.5">
           <div
             className={`flex items-center ${
-              isExpanded ? "justify-between rounded-xl px-3 py-2 text-[15px]" : "justify-center py-3"
+              isExpanded ? "justify-between rounded-xl px-3 py-2 text-[15px] font-medium" : "justify-center py-3"
             } text-[#1f2328]`}
           >
             <span className="flex items-center gap-3">
@@ -88,7 +88,8 @@ export function AppSidebar({
         </div>
       </nav>
 
-      <div className={`border-t border-[#e4e7ec] ${isExpanded ? "px-4" : "px-2"} py-4 text-sm text-[#4c5667]`}>
+      <div className={`${isExpanded ? "px-4" : "px-2"} py-4 text-sm text-[#4c5667]`}>
+        <div className={`mb-4 h-px bg-[#e4e7ec] ${isExpanded ? "mx-3" : "mx-1"}`} />
         <SidebarFooterButton icon={<TemplateIcon />} label="Templates and apps" isExpanded={isExpanded} />
         <SidebarFooterButton icon={<MarketplaceIcon />} label="Marketplace" isExpanded={isExpanded} />
         <SidebarFooterButton icon={<ImportIcon />} label="Import" isExpanded={isExpanded} />

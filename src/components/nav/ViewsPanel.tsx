@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { InlineEdit } from "~/components/ui/InlineEdit";
 import { api } from "~/trpc/react";
+import { useViewConfigFlush } from "~/components/grid/ViewConfigFlushContext";
 
 interface ViewsPanelProps {
   tableId: string;
@@ -144,6 +145,7 @@ export function ViewsPanel({ tableId, activeViewId }: ViewsPanelProps) {
   const router = useRouter();
   const params = useParams<{ baseId: string }>();
   const baseId = params.baseId;
+  const { flush } = useViewConfigFlush();
   const [search, setSearch] = useState("");
   const [showCreateMenu, setShowCreateMenu] = useState(false);
   const [createMenuAnchor, setCreateMenuAnchor] = useState<HTMLElement | null>(null);
@@ -336,20 +338,23 @@ export function ViewsPanel({ tableId, activeViewId }: ViewsPanelProps) {
               >
                 <div className={`relative flex items-center gap-2 rounded px-2 py-[6px] transition-colors ${isActive ? "bg-[#e8ebf2]" : "hover:bg-[#f0f2f5]"}`}>
                 {/* Grid icon */}
-                <Link href={`/base/${baseId}/${tableId}/view/${view.id}`} style={{ textDecoration: "none" }} tabIndex={-1}>
+                <button
+                  tabIndex={-1}
+                  onClick={async () => { await flush(); router.push(`/base/${baseId}/${tableId}/view/${view.id}`); }}
+                  className="flex-shrink-0 bg-transparent border-none p-0 cursor-pointer"
+                >
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0">
                     <rect x="1" y="1" width="5" height="5" rx="0.75" fill={isActive ? "#2563eb" : "#7f879b"} />
                     <rect x="8" y="1" width="5" height="5" rx="0.75" fill={isActive ? "#2563eb" : "#7f879b"} />
                     <rect x="1" y="8" width="5" height="5" rx="0.75" fill={isActive ? "#2563eb" : "#7f879b"} />
                     <rect x="8" y="8" width="5" height="5" rx="0.75" fill={isActive ? "#2563eb" : "#7f879b"} />
                   </svg>
-                </Link>
+                </button>
 
                 {/* Name */}
-                <Link
-                  href={`/base/${baseId}/${tableId}/view/${view.id}`}
-                  style={{ textDecoration: "none" }}
-                  className="min-w-0 flex-1"
+                <button
+                  className="min-w-0 flex-1 bg-transparent border-none p-0 cursor-pointer text-left"
+                  onClick={async () => { if (!isRenaming) { await flush(); router.push(`/base/${baseId}/${tableId}/view/${view.id}`); } }}
                   onDoubleClick={(e) => { e.preventDefault(); setRenamingViewId(view.id); }}
                 >
                   <InlineEdit
@@ -359,7 +364,7 @@ export function ViewsPanel({ tableId, activeViewId }: ViewsPanelProps) {
                     onEditingChange={(v) => { if (!v) setRenamingViewId(null); }}
                     className={`w-full truncate text-[13px] ${isActive ? "font-medium text-[#1f2328]" : "text-[#4c5667]"}`}
                   />
-                </Link>
+                </button>
 
                 {/* Three dots + expand — visible on hover */}
                 <div className="flex flex-shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">

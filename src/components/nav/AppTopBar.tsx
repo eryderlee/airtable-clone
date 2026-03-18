@@ -43,7 +43,7 @@ export function AppTopBar({
   return (
     <header className="relative flex h-14 items-center border-b border-[#e4e7ec] bg-white">
       <div
-        className="flex items-center gap-3 pl-4 pr-3"
+        className="flex items-center gap-3 pl-2 pr-3"
         style={{ width: sidebarWidth }}
       >
         <button
@@ -58,7 +58,7 @@ export function AppTopBar({
           <img
             src="/Airtable_Logo.svg.png"
             alt="Airtable"
-            className="h-7 w-auto object-contain"
+            className="h-6 w-auto object-contain"
           />
         </div>
       </div>
@@ -138,9 +138,7 @@ export function AppTopBar({
             placeholder="Search..."
             className="flex-1 bg-transparent text-sm text-[#1f2328] outline-none placeholder:text-[#9aa4b6]"
           />
-          <kbd className="rounded border border-[#dfe3ea] bg-[#f5f7fa] px-1.5 py-0.5 text-[10px] text-[#5f6c7b]">
-            ctrl K
-          </kbd>
+          <span className="font-sans text-[11px] font-medium text-[#9aa4b6]">ctrl K</span>
         </div>
       </div>
     </header>
@@ -230,10 +228,10 @@ function BellIcon() {
 
 function MenuIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
       <path
         d="M3 4h10M3 8h10M3 12h10"
-        stroke="#1f2328"
+        stroke="#9aa4b6"
         strokeWidth="1.5"
         strokeLinecap="round"
       />

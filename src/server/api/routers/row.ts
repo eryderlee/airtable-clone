@@ -75,10 +75,11 @@ function buildFilterConditions(filters: FilterCondition[]): SQL[] {
 function buildSortOrder(sorts: SortCondition[], columnTypeMap: Record<string, string>): SQL[] {
   const clauses: SQL[] = sorts.map((s) => {
     const dir = sql.raw(s.direction === "asc" ? "asc nulls last" : "desc nulls last");
+    const key = sql.raw(`'${s.columnId.replace(/'/g, "''")}'`);
     if (columnTypeMap[s.columnId] === "number") {
-      return sql`CAST(${rows.cells}->>${s.columnId} AS numeric) ${dir}`;
+      return sql`CAST(${rows.cells}->>${key} AS numeric) ${dir}`;
     } else {
-      return sql`${rows.cells}->>${s.columnId} ${dir}`;
+      return sql`${rows.cells}->>${key} ${dir}`;
     }
   });
 

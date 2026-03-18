@@ -10,6 +10,7 @@ import { api } from "~/trpc/react";
 import { GridTable, type RowData, COLUMN_VIRTUALIZATION_THRESHOLD } from "./GridTable";
 import { GridToolbar } from "./GridToolbar";
 import { ViewsPanel } from "~/components/nav/ViewsPanel";
+import { ViewConfigFlushProvider, useViewConfigFlush } from "./ViewConfigFlushContext";
 import type { FilterCondition, SortCondition } from "~/server/api/routers/row";
 
 const PAGE_SIZE = 100;
@@ -27,6 +28,14 @@ interface GridViewProps {
 }
 
 export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
+  return (
+    <ViewConfigFlushProvider>
+      <GridViewInner tableId={tableId} viewId={viewId} initialConfig={initialConfig} />
+    </ViewConfigFlushProvider>
+  );
+}
+
+function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
   const utils = api.useUtils();
 
   // Column definitions
@@ -320,6 +329,14 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
 
   // Separate ref to guard auto-save — prevents saving on initial mount (SSR-seeded values already correct in DB)
   const isFirstConfigRender = useRef(true);
+  // Always-current refs so the unmount flush can read latest values without stale closure
+  const filtersRef = useRef(filters);
+  const sortsRef = useRef(sorts);
+  const hiddenColumnsRef = useRef(hiddenColumns);
+  const isDirtyRef = useRef(false);
+  useEffect(() => { filtersRef.current = filters; }, [filters]);
+  useEffect(() => { sortsRef.current = sorts; }, [sorts]);
+  useEffect(() => { hiddenColumnsRef.current = hiddenColumns; }, [hiddenColumns]);
 
   // Auto-save filters/sorts/hiddenColumns to DB after 800ms debounce
   // searchInput/searchQuery are intentionally excluded — search is ephemeral (Phase 6 decision)
@@ -328,8 +345,10 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
       isFirstConfigRender.current = false;
       return;
     }
+    isDirtyRef.current = true;
+    const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     const timer = setTimeout(() => {
-      const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      isDirtyRef.current = false;
       updateViewConfig.mutate({
         id: viewId,
         config: { filters, sorts, hiddenColumns: hiddenColumns.filter((id) => uuidRe.test(id)) },
@@ -337,6 +356,26 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
     }, 800);
     return () => clearTimeout(timer);
   }, [filters, sorts, hiddenColumns]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Register a flush function with the context so ViewsPanel can await it before navigating
+  const { register, unregister } = useViewConfigFlush();
+  useEffect(() => {
+    const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const flushFn = async () => {
+      if (!isDirtyRef.current) return;
+      isDirtyRef.current = false;
+      await updateViewConfig.mutateAsync({
+        id: viewId,
+        config: {
+          filters: filtersRef.current,
+          sorts: sortsRef.current,
+          hiddenColumns: hiddenColumnsRef.current.filter((id) => uuidRe.test(id)),
+        },
+      });
+    };
+    register(flushFn);
+    return () => unregister();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load page 0 on mount / when count first resolves
   useEffect(() => {
@@ -495,20 +534,33 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
     const CHUNK = 1000;
     const TOTAL = 100_000;
     setIsBulkCreating(true);
-    // Clear page 0 so it reloads after the first chunk fills it with new rows.
-    // Without this, fetchPage(0) returns early because the pre-bulk-create cache entry is still "defined".
+    // Clear any stale page 0 so phase 1 can populate it fresh.
     delete pageCacheRef.current[0];
     loadingPagesRef.current.delete(0);
     try {
-      for (let i = 0; i < TOTAL / CHUNK; i++) {
+      // Phase 1 — insert the first chunk then immediately fetch count + page 0
+      // together so the virtualizer expands and top rows render in the same paint.
+      await bulkCreate.mutateAsync({ tableId, count: CHUNK });
+      const [, phase1Page0] = await Promise.all([
+        refetchCount(),
+        utils.row.getByOffset
+          .fetch({ tableId, offset: 0, limit: PAGE_SIZE, filters, sorts }, { staleTime: 0 })
+          .catch(() => null),
+      ]);
+      if (phase1Page0) {
+        pageCacheRef.current[0] = phase1Page0.items.map((r) => ({ id: r.id, cells: r.cells }));
+      }
+      forceUpdate();
+
+      // Remaining chunks — fire-and-forget refetchCount so the footer counter
+      // updates as rows accumulate (page 0 is already loaded; user can't scroll
+      // faster than new pages are fetched on demand).
+      for (let i = 1; i < TOTAL / CHUNK; i++) {
         await bulkCreate.mutateAsync({ tableId, count: CHUNK });
-        void refetchCount(); // count grows after each chunk → virtualizer expands
-        // After first chunk there are enough rows to fill page 0 — fetch it immediately
-        // so the top rows show without waiting for all 100 chunks to complete.
-        if (i === 0) void fetchPage(0);
+        void refetchCount();
       }
     } finally {
-      // Full cache refresh after all chunks so stale pages are replaced
+      // Full cache refresh after all rows are inserted
       await utils.row.getByOffset.invalidate({ tableId });
       pageCacheRef.current = {};
       loadingPagesRef.current = new Set();
@@ -524,7 +576,7 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
       forceUpdate();
       setIsBulkCreating(false);
     }
-  }, [tableId, bulkCreate, refetchCount, utils.row.getByOffset, filters, sorts, fetchPage]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tableId, bulkCreate, refetchCount, utils.row.getByOffset, filters, sorts]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const createRow = api.row.create.useMutation();
 
@@ -540,7 +592,8 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
     } else {
       pageCacheRef.current[pageIndex] = [newRowData];
     }
-    void refetchCount();
+    // Optimistically bump the count so the virtualizer sees the new row immediately
+    utils.row.count.setData({ tableId, filters }, (old) => ({ count: (old?.count ?? totalCount) + 1 }));
     forceUpdate();
     // Scroll to and start editing the new row's primary cell
     if (primaryColId) {
@@ -550,7 +603,7 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
         setEditingCell({ rowIndex: newIndex, columnId: primaryColId });
       });
     }
-  }, [tableId, createRow, columnsData, totalCount, refetchCount, forceUpdate]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tableId, createRow, columnsData, totalCount, utils, filters, forceUpdate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [isBulkAddingColumns, setIsBulkAddingColumns] = useState(false);
   const handleBulkAddColumns = useCallback(async () => {

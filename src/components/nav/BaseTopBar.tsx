@@ -251,17 +251,20 @@ export function BaseTopBar({ baseId, initialColor, initialName }: BaseTopBarProp
           { label: "Interfaces", active: false },
           { label: "Forms", active: false },
         ].map(({ label, active }) => (
-          <button
+          <a
             key={label}
-            className={`relative flex h-full items-center px-3 text-[13px] font-medium transition-colors ${
-              active ? "text-[#1f2328]" : "text-[#6b7280] hover:text-[#1f2328]"
-            }`}
+            className="relative flex h-full items-center"
           >
-            {label}
-            {active && (
-              <span className="absolute bottom-0 left-0 right-0 h-[2px] rounded-t bg-[#2563eb]" />
-            )}
-          </button>
+            <p className={`px-3 py-2 text-[13px] font-semibold transition-colors ${
+              active ? "text-[#1f2328]" : "text-[#6b7280] hover:text-[#1f2328]"
+            }`}>
+              {label}
+            </p>
+            <div
+              className="absolute left-0 right-0 transition-all duration-150"
+              style={{ bottom: -1, height: active ? 2 : 0, backgroundColor: "#20a6b5" }}
+            />
+          </a>
         ))}
         </div>
       </nav>

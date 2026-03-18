@@ -103,19 +103,32 @@ export function HomeContent({ bases: initialBases }: Props) {
     createBase.mutate({ name: "Untitled base" });
   };
 
-  const handleBaseClick = (baseId: string) => {
+  const handleBaseClick = async (baseId: string) => {
+    // Try cached data first for instant navigation
     const tables = utils.table.getByBaseId.getData({ baseId });
     if (tables && tables.length > 0) {
       const firstTable = tables[0];
       if (firstTable) {
         const views = utils.view.getByTableId.getData({ tableId: firstTable.id });
         if (views && views.length > 0 && views[0]) {
-          router.push(`/base/${baseId}/${firstTable.id}/${views[0].id}`);
+          router.push(`/base/${baseId}/${firstTable.id}/view/${views[0].id}`);
           return;
         }
       }
     }
-    // Fallback: SSR redirect (first visit or cold cache)
+    // Fallback: fetch fresh data client-side to avoid SSR race conditions
+    try {
+      const fetchedTables = await utils.table.getByBaseId.fetch({ baseId });
+      if (fetchedTables.length > 0 && fetchedTables[0]) {
+        const fetchedViews = await utils.view.getByTableId.fetch({ tableId: fetchedTables[0].id });
+        if (fetchedViews.length > 0 && fetchedViews[0]) {
+          router.push(`/base/${baseId}/${fetchedTables[0].id}/view/${fetchedViews[0].id}`);
+          return;
+        }
+      }
+    } catch {
+      // If fetch fails, fall through to SSR redirect
+    }
     router.push(`/base/${baseId}`);
   };
 
@@ -284,7 +297,7 @@ function BaseGridCard({
   }
 
   return (
-    <div className="group relative flex h-24 w-[390px] items-center gap-3 rounded-[0.4rem] border-[1.5px] border-[#d9dadb] bg-white px-4 transition hover:-translate-y-0.5 hover:border-[#cad1e0] hover:shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
+    <div className="group relative flex h-24 w-[290px] items-center gap-3 rounded-[0.4rem] border-[1.5px] border-[#d9dadb] bg-white px-4 transition hover:-translate-y-0.5 hover:border-[#cad1e0] hover:shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
       <button
         onClick={() => onBaseClick(base.id)}
         className="flex flex-1 items-center gap-5 overflow-hidden text-left"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { SortCondition } from "~/server/api/routers/row";
 import { ColumnTypeIcon } from "../ColumnIcons";
 
@@ -28,6 +28,19 @@ export function SortPanel({ sorts, onSortsChange, columnsData }: SortPanelProps)
   const [search, setSearch] = useState("");
   const [autoSort, setAutoSort] = useState(true);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const pickerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!pickerOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setPickerOpen(false);
+        setSearch("");
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [pickerOpen]);
 
   const handleAddSort = (columnId: string) => {
     if (sorts.some((s) => s.columnId === columnId)) return;
@@ -122,19 +135,20 @@ export function SortPanel({ sorts, onSortsChange, columnsData }: SortPanelProps)
             })}
           </ul>
 
-          {/* Add another sort — field picker trigger */}
-          <div className="relative mt-1 mb-1">
-            <button
-              className="flex items-center gap-2 px-1 py-1 text-[13px] text-[#6b7280] hover:text-[#1f2328]"
-              onClick={() => setPickerOpen((v) => !v)}
-            >
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-              Add another sort
-            </button>
-            {pickerOpen && (
-              <div className="absolute left-0 bottom-0 z-50 w-[240px] overflow-hidden rounded-lg border border-[#e2e0ea] bg-white shadow-xl">
+          {/* Add another sort — inline field picker */}
+          <div className="mt-1 mb-1" ref={pickerRef}>
+            {!pickerOpen ? (
+              <button
+                className="flex items-center gap-2 px-1 py-1 text-[13px] text-[#6b7280] hover:text-[#1f2328]"
+                onClick={() => setPickerOpen(true)}
+              >
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                  <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+                Add another sort
+              </button>
+            ) : (
+              <div className="overflow-hidden rounded border border-[#e2e0ea] bg-white">
                 <div className="flex items-center gap-2 border-b border-[#e2e0ea] px-3 py-1.5">
                   <svg width="13" height="13" viewBox="0 0 14 14" fill="none" className="flex-shrink-0 text-[#9ca3af]">
                     <circle cx="6" cy="6" r="4" stroke="currentColor" strokeWidth="1.3" />
@@ -148,8 +162,16 @@ export function SortPanel({ sorts, onSortsChange, columnsData }: SortPanelProps)
                     className="flex-1 bg-transparent text-[13px] text-[#1f2328] outline-none placeholder:text-[#9ca3af]"
                     autoFocus
                   />
+                  <button
+                    onClick={() => { setPickerOpen(false); setSearch(""); }}
+                    className="flex-shrink-0 text-[#9ca3af] hover:text-[#374151]"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                      <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                    </svg>
+                  </button>
                 </div>
-                <div className="overflow-y-auto py-1" style={{ maxHeight: 200 }}>
+                <div className="overflow-y-auto py-1" style={{ maxHeight: 180 }}>
                   {filteredColumns.filter((c) => !sorts.some((s) => s.columnId === c.id)).map((col) => (
                     <button
                       key={col.id}
