@@ -9,6 +9,7 @@ import { HideFieldsPanel } from "./toolbar/HideFieldsPanel";
 interface GridToolbarProps {
   onBulkCreate: () => void;
   isBulkCreating: boolean;
+  onBulkAddColumns: () => void;
   rowCount: number;
   // Panel state
   openPanel: "search" | "filter" | "sort" | "hideFields" | null;
@@ -20,6 +21,7 @@ interface GridToolbarProps {
   currentMatchIndex: number;
   onPrevMatch: () => void;
   onNextMatch: () => void;
+  hasActiveSearch: boolean;
   // Filter
   filters: FilterCondition[];
   onFiltersChange: (filters: FilterCondition[]) => void;
@@ -36,6 +38,7 @@ interface GridToolbarProps {
 export function GridToolbar({
   onBulkCreate,
   isBulkCreating,
+  onBulkAddColumns,
   filters,
   sorts,
   hiddenColumns,
@@ -51,6 +54,7 @@ export function GridToolbar({
   currentMatchIndex,
   onPrevMatch,
   onNextMatch,
+  hasActiveSearch,
 }: GridToolbarProps) {
   return (
     <div
@@ -80,8 +84,6 @@ export function GridToolbar({
         </svg>
       </button>
 
-      {/* Separator */}
-      <div className="mx-2 h-5 w-px flex-shrink-0 bg-[#e2e0ea]" />
 
       {/* Spacer — pushes all right buttons to the right */}
       <div className="flex-1" />
@@ -115,13 +117,15 @@ export function GridToolbar({
           <RowHeightIcon />
         </button>
         <ToolbarButton icon={<ShareSyncIcon />} label="Share and sync" />
-        <div className="mx-1 h-5 w-px bg-[#e2e0ea]" />
         <button
-          className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded text-[#4c5667] hover:bg-[#edf0f4] ${openPanel === "search" ? "bg-[#edf0f4] text-[#166ee1]" : ""}`}
+          className={`relative flex h-7 w-7 flex-shrink-0 items-center justify-center rounded text-[#4c5667] hover:bg-[#edf0f4] ${openPanel === "search" || hasActiveSearch ? "text-[#166ee1]" : ""} ${openPanel === "search" ? "bg-[#edf0f4]" : ""}`}
           title="Search"
           onClick={() => onTogglePanel("search")}
         >
           <SearchIcon />
+          {hasActiveSearch && openPanel !== "search" && (
+            <span className="absolute right-0.5 top-0.5 h-1.5 w-1.5 rounded-full bg-[#166ee1]" />
+          )}
         </button>
       </div>
 
@@ -133,6 +137,14 @@ export function GridToolbar({
         title="Bulk insert 100k rows"
       >
         {isBulkCreating ? "…" : "+100k"}
+      </button>
+      {/* Dev: bulk add columns for testing column virtualization */}
+      <button
+        onClick={onBulkAddColumns}
+        className="ml-1 flex-shrink-0 rounded bg-[#7c3aed] px-2 py-1 text-[11px] font-medium text-white hover:bg-[#6d28d9]"
+        title="Add 20 columns for testing"
+      >
+        +20cols
       </button>
 
       {/* Dropdown panels — absolutely positioned below toolbar */}

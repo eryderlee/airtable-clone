@@ -364,6 +364,12 @@ export function GridView({ tableId, viewId }: GridViewProps) {
     bulkCreate.mutate({ tableId, count: 100000 });
   }, [tableId, bulkCreate]);
 
+  const handleBulkAddColumns = useCallback(() => {
+    for (let i = 1; i <= 20; i++) {
+      createColumn.mutate({ tableId, name: `Col ${i}`, type: i % 3 === 0 ? "number" : "text" });
+    }
+  }, [tableId, createColumn]);
+
   // Toggle panel — clicking the same button again closes the panel
   const handleTogglePanel = useCallback((panel: "search" | "filter" | "sort" | "hideFields") => {
     setOpenPanel((prev) => (prev === panel ? null : panel));
@@ -560,6 +566,7 @@ export function GridView({ tableId, viewId }: GridViewProps) {
       <GridToolbar
         onBulkCreate={handleBulkCreate}
         isBulkCreating={bulkCreate.isPending}
+        onBulkAddColumns={handleBulkAddColumns}
         rowCount={totalCount}
         openPanel={openPanel}
         onTogglePanel={handleTogglePanel}
