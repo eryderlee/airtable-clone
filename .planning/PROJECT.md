@@ -47,7 +47,7 @@ A table UI that feels exactly like Airtable and never chokes — 1M rows, instan
 ## Context
 
 - **T3 Stack**: Next.js (App Router), tRPC, NextAuth.js, Drizzle ORM, TypeScript — initialized via `create.t3.gg`
-- **Database**: PostgreSQL hosted on Supabase (user has existing Supabase experience; chosen over Neon for familiarity — both are equivalent in performance for this use case)
+- **Database**: PostgreSQL hosted on Neon (migrated from Supabase in Phase 9 — Neon's IPv4-compatible pooled connections resolve the Vercel build node IPv6 blocker that Supabase's direct host exhibited). Neon free tier scales to zero after 5 minutes of inactivity. First request after idle takes ~500ms-1s for cold start. Subsequent requests are unaffected.
 - **Table UI**: TanStack Table for grid rendering, TanStack Virtualizer for row virtualization
 - **Auth**: NextAuth.js with Google Provider — Supabase Auth is explicitly not used
 - **Fake data**: faker.js for default row/column population on new tables
@@ -57,13 +57,13 @@ A table UI that feels exactly like Airtable and never chokes — 1M rows, instan
   - **Context7** — live docs for TanStack Table, TanStack Virtualizer, tRPC, NextAuth, Drizzle
   - **Playwright** — scrape Airtable UI for CSS reference + E2E test keyboard navigation and cell interactions
   - **pg-aiGuide** — optimize PostgreSQL queries and indexes for 1M row performance
-  - **Supabase MCP** — manage schema, run queries, and inspect data directly during development
+  - **Supabase MCP** — was used during Phases 1-8; superseded by Neon in Phase 9 (Neon is now the database host)
   - **Vercel MCP** — manage deployments, env vars, and logs without leaving the editor
 
 ## Constraints
 
 - **Tech Stack**: T3 (Next.js + tRPC + Drizzle + NextAuth) — no deviations; established by user
-- **Database**: Supabase PostgreSQL — user is experienced here, no switching
+- **Database**: Neon PostgreSQL — migrated from Supabase in Phase 9; pooled connection required for Vercel serverless
 - **Performance**: Must handle 1M rows smoothly — requires DB-level ops and virtualization; no client-side filtering/sorting
 - **Table Library**: TanStack Table + TanStack Virtualizer — specified by user
 - **Deployment**: Vercel — all architecture decisions must be serverless-compatible
@@ -73,7 +73,7 @@ A table UI that feels exactly like Airtable and never chokes — 1M rows, instan
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Supabase over Neon for PostgreSQL | User has existing Supabase experience; both are equivalent in raw query perf for this use case | — Pending |
+| Supabase over Neon for PostgreSQL | User has existing Supabase experience; both are equivalent in raw query perf for this use case | Migrated to Neon in Phase 9 — Neon's IPv4-compatible direct connection resolves the Vercel build node IPv6 blocker that Supabase exhibited |
 | NextAuth.js for Google OAuth | T3-native, no need for Supabase Auth — keeps Supabase as a pure Postgres host | — Pending |
 | TanStack Table + Virtualizer | Specified by user; best-in-class for virtualized table UIs in React | — Pending |
 | DB-level filter/sort/search | Required for 1M row target; client-side ops would be unusable at that scale | — Pending |
@@ -81,4 +81,4 @@ A table UI that feels exactly like Airtable and never chokes — 1M rows, instan
 | Drizzle ORM | T3 stack default, type-safe, works well with tRPC and Supabase Postgres | — Pending |
 
 ---
-*Last updated: 2026-03-17 after initialization*
+*Last updated: 2026-03-18 after Phase 9 Neon migration (09-03)*
