@@ -546,7 +546,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
       const [, phase1Page0] = await Promise.all([
         refetchCount(),
         utils.row.getByOffset
-          .fetch({ tableId, offset: 0, limit: PAGE_SIZE, filters, sorts }, { staleTime: 0 })
+          .fetch({ tableId, offset: 0, limit: PAGE_SIZE, filters, sorts, searchQuery }, { staleTime: 0 })
           .catch(() => null),
       ]);
       if (phase1Page0) {
@@ -569,7 +569,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
       const [, page0] = await Promise.all([
         refetchCount(),
         utils.row.getByOffset
-          .fetch({ tableId, offset: 0, limit: PAGE_SIZE, filters, sorts }, { staleTime: 0 })
+          .fetch({ tableId, offset: 0, limit: PAGE_SIZE, filters, sorts, searchQuery }, { staleTime: 0 })
           .catch(() => null),
       ]);
       if (page0) {
@@ -578,12 +578,12 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
       forceUpdate();
       setIsBulkCreating(false);
     }
-  }, [tableId, bulkCreate, refetchCount, utils.row.getByOffset, filters, sorts]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tableId, bulkCreate, refetchCount, utils.row.getByOffset, filters, sorts, searchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const createRow = api.row.create.useMutation({
     onMutate: ({ tableId: mutTableId, cells }) => {
       const optimisticId = `optimistic-${Date.now()}`;
-      const currentCount = utils.row.count.getData({ tableId: mutTableId, filters })?.count ?? totalCount;
+      const currentCount = utils.row.count.getData({ tableId: mutTableId, filters, searchQuery })?.count ?? totalCount;
       const newIndex = currentCount;
       const pageIndex = Math.floor(newIndex / PAGE_SIZE);
       const pageEntry = pageCacheRef.current[pageIndex];
@@ -593,7 +593,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
       } else {
         pageCacheRef.current[pageIndex] = [newRow];
       }
-      utils.row.count.setData({ tableId: mutTableId, filters }, (old) => ({
+      utils.row.count.setData({ tableId: mutTableId, filters, searchQuery }, (old) => ({
         count: (old?.count ?? currentCount) + 1,
       }));
       forceUpdate();
@@ -626,7 +626,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
         const idx = page.findIndex((r) => r.id === ctx.optimisticId);
         if (idx !== -1) {
           page.splice(idx, 1);
-          utils.row.count.setData({ tableId: mutTableId, filters }, (old) => ({
+          utils.row.count.setData({ tableId: mutTableId, filters, searchQuery }, (old) => ({
             count: Math.max(0, (old?.count ?? 0) - 1),
           }));
           forceUpdate();
