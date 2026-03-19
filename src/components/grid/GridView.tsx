@@ -634,8 +634,10 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
       toast.error("Failed to add row. Changes reverted.");
     },
     onSettled: (_d, _e, { tableId: mutTableId }) => {
-      void utils.row.getByOffset.invalidate({ tableId: mutTableId });
-      void refetchCount();
+      // Do NOT invalidate getByOffset — pageCacheRef manages row data manually.
+      // Invalidation would clear pages mid-flight causing optimistic rows to flash
+      // away during rapid creation. Just sync the count.
+      void utils.row.count.invalidate({ tableId: mutTableId });
     },
   });
 

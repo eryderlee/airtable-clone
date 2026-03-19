@@ -30,7 +30,7 @@ export const viewRouter = createTRPCRouter({
         .select()
         .from(views)
         .where(eq(views.tableId, input.tableId))
-        .orderBy(asc(views.id));
+        .orderBy(asc(views.createdAt));
     }),
 
   create: protectedProcedure

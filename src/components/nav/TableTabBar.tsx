@@ -152,6 +152,7 @@ export function TableTabBar({ baseId, initialColor, initialName }: TableTabBarPr
   });
 
   async function handleTabClick(tableId: string) {
+    if (tableId.startsWith("optimistic-")) return;
     const cachedViews = utils.view.getByTableId.getData({ tableId });
     if (cachedViews && cachedViews.length > 0 && cachedViews[0]) {
       router.push(`/base/${baseId}/${tableId}/view/${cachedViews[0].id}`);
@@ -166,9 +167,11 @@ export function TableTabBar({ baseId, initialColor, initialName }: TableTabBarPr
   }
 
   const handleTabHover = (tableId: string) => {
+    if (tableId.startsWith("optimistic-")) return;
     void utils.column.getByTableId.prefetch({ tableId });
     void utils.view.getByTableId.prefetch({ tableId });
     void utils.row.count.prefetch({ tableId, filters: [] });
+    void router.prefetch(`/base/${baseId}/${tableId}`);
   };
 
   return (

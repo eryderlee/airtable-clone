@@ -187,6 +187,7 @@ export function ViewsPanel({ tableId, activeViewId }: ViewsPanelProps) {
           name,
           tableId: mutTableId,
           config: { filters: [], sorts: [], hiddenColumns: [], searchQuery: "" },
+          createdAt: new Date(),
         },
       ]);
       setPendingViewId(optimisticId);

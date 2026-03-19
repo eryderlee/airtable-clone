@@ -221,6 +221,7 @@ export const views = createTable(
       }>()
       .default({ filters: [], sorts: [], hiddenColumns: [], searchQuery: "" })
       .notNull(),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
   },
   (view) => ({
     tableIdIdx: index("view_table_id_idx").on(view.tableId),
