@@ -201,10 +201,10 @@ function AddColumnMenu({ onAdd }: { onAdd: (type: "text" | "number") => void }) 
   }, [open]);
 
   return (
-    <div ref={ref} className="relative flex h-full w-full items-center justify-center">
+    <div ref={ref} className="relative flex h-full w-full items-start justify-center pt-2">
       <button
         onClick={() => setOpen(!open)}
-        className="flex h-full w-full items-center justify-center text-[#888] hover:bg-[#f0f0f0]"
+        className="flex items-center justify-center text-[#888] hover:bg-[#f0f0f0] rounded p-1"
         title="Add field"
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -382,21 +382,21 @@ export function GridHeader({
       <tr style={{ display: "flex" }}>
         {/* Checkbox column — sticky */}
         <th
-          style={{ display: "flex", width: 100, minWidth: 100, height: 32, position: "sticky", left: 0, zIndex: 4 }}
-          className="items-center border-b border-[#e2e0ea] bg-white px-2"
+          style={{ display: "flex", width: 100, minWidth: 100, height: 36, position: "sticky", left: 0, zIndex: 4 }}
+          className="items-start justify-center border-b border-[#e2e0ea] bg-white pt-2"
         >
           <input
             type="checkbox"
             checked={allSelected}
             onChange={onSelectAll}
-            className="h-3.5 w-3.5 cursor-pointer rounded border-[#ccc] accent-[#2563eb]"
+            className="h-4 w-4 cursor-pointer appearance-none rounded-[3px] border border-[#d1d5db] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.06)] checked:bg-[#2563eb] checked:border-[#2563eb]"
           />
         </th>
 
         {/* Left virtual padding spacer */}
         {virtualPaddingLeft > 0 && (
           <th
-            style={{ display: "flex", width: virtualPaddingLeft, minWidth: virtualPaddingLeft, height: 32 }}
+            style={{ display: "flex", width: virtualPaddingLeft, minWidth: virtualPaddingLeft, height: 36 }}
             className="border-b border-[#e2e0ea] bg-white"
           />
         )}
@@ -408,7 +408,7 @@ export function GridHeader({
           const columnId = meta?.columnId ?? header.id;
           const colType = (meta?.type ?? "text") as "text" | "number";
           const isPrimary = meta?.isPrimary ?? false;
-          const colWidth = isPrimary ? 200 : 180;
+          const colWidth = isPrimary ? 165 : 219;
           const headerName =
             typeof header.column.columnDef.header === "string"
               ? header.column.columnDef.header
@@ -421,36 +421,34 @@ export function GridHeader({
             <th
               key={header.id}
               style={{
-                display: "flex", width: colWidth, minWidth: colWidth, height: 32,
+                display: "flex", width: colWidth, minWidth: colWidth, height: 36,
                 ...(isPrimary ? { position: "sticky", left: 100, zIndex: 4 } : {}),
                 backgroundColor: isFiltered ? "#eafaeb" : isSorted ? "#FFF8F3" : undefined,
               }}
-              className="group relative items-center border-b border-r border-[#e2e0ea] bg-white px-2 py-0 text-left hover:!bg-[#f8f8f8]"
+              className="group relative items-start border-b border-r border-[#e2e0ea] bg-white px-2 pt-2 text-left hover:!bg-[#f8f8f8]"
             >
               {/* Field type icon — key for primary, text/number otherwise */}
-              <span className="mr-1.5 flex-shrink-0 text-[#888]">
-                {isPrimary ? <PrimaryKeyIcon /> : colType === "number" ? <NumberIcon /> : <TextIcon />}
-              </span>
-
-              {/* Column name — double-click opens edit modal */}
-              <span
-                className="flex-1 cursor-default truncate text-[13px] font-medium text-[#333]"
-                onDoubleClick={(e) => { e.stopPropagation(); setEditingColumnId(columnId); }}
-              >
-                {headerName}
-              </span>
-
-              {/* Chevron dropdown — visible on hover */}
-              <span className="ml-1 hidden group-hover:flex">
-                <ColumnMenu
-                  columnId={columnId}
-                  columnName={headerName}
-                  isPrimary={isPrimary}
-                  onRename={(name) => onRenameColumn(columnId, name)}
-                  onDelete={() => onDeleteColumn(columnId)}
-                  onEditField={() => setEditingColumnId(columnId)}
-                />
-              </span>
+              <div className="flex w-full items-center">
+                <span className="mr-1.5 flex-shrink-0 text-[#888]">
+                  {isPrimary ? <PrimaryKeyIcon /> : colType === "number" ? <NumberIcon /> : <TextIcon />}
+                </span>
+                <span
+                  className="flex-1 cursor-default truncate text-[13px] font-medium text-[#1d1f25]"
+                  onDoubleClick={(e) => { e.stopPropagation(); setEditingColumnId(columnId); }}
+                >
+                  {headerName}
+                </span>
+                <span className="ml-1 hidden group-hover:flex">
+                  <ColumnMenu
+                    columnId={columnId}
+                    columnName={headerName}
+                    isPrimary={isPrimary}
+                    onRename={(name) => onRenameColumn(columnId, name)}
+                    onDelete={() => onDeleteColumn(columnId)}
+                    onEditField={() => setEditingColumnId(columnId)}
+                  />
+                </span>
+              </div>
 
               {/* Edit field modal */}
               {isEditing && (
@@ -469,14 +467,14 @@ export function GridHeader({
         {/* Right virtual padding spacer — before add-column button */}
         {virtualPaddingRight > 0 && (
           <th
-            style={{ display: "flex", width: virtualPaddingRight, minWidth: virtualPaddingRight, height: 32 }}
+            style={{ display: "flex", width: virtualPaddingRight, minWidth: virtualPaddingRight, height: 36 }}
             className="border-b border-[#e2e0ea] bg-white"
           />
         )}
 
         {/* Add column button — sits after last column */}
         <th
-          style={{ display: "flex", width: 90, minWidth: 90, height: 32 }}
+          style={{ display: "flex", width: 90, minWidth: 90, height: 36 }}
           className="border-b border-l border-r border-[#e2e0ea] bg-white p-0"
         >
           <AddColumnMenu onAdd={onAddColumn} />

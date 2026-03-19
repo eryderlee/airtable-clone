@@ -26,13 +26,28 @@ function luminance({ r, g, b }: { r: number; g: number; b: number }): number {
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
 }
 
-function lightTint(hex: string, amount = 0.85): string {
+const DARK_TO_LIGHT: Record<string, string> = {
+  "#dc043b": "#fff2fa",
+  "#d54401": "#ffece3",
+  "#ffba05": "#fff6dd",
+  "#048a0e": "#e6fce8",
+  "#01ddd5": "#e4fbfb",
+  "#39caff": "#e3fafd",
+  "#166ee1": "#f1f5ff",
+  "#dd04a8": "#fff1ff",
+  "#7c37ef": "#fcf3ff",
+  "#616670": "#f2f4f8",
+};
+
+function lightTint(hex: string): string {
+  const mapped = DARK_TO_LIGHT[hex.toLowerCase()];
+  if (mapped) return mapped;
+  // Fallback: compute a tint for unknown colors
   const rgb = hexToRgb(hex);
-  // If the color is already light (luminance > 0.75), return it directly
   if (luminance(rgb) > 0.75) return hex;
-  const tr = Math.round(rgb.r + (255 - rgb.r) * amount);
-  const tg = Math.round(rgb.g + (255 - rgb.g) * amount);
-  const tb = Math.round(rgb.b + (255 - rgb.b) * amount);
+  const tr = Math.round(rgb.r + (255 - rgb.r) * 0.85);
+  const tg = Math.round(rgb.g + (255 - rgb.g) * 0.85);
+  const tb = Math.round(rgb.b + (255 - rgb.b) * 0.85);
   return `rgb(${tr}, ${tg}, ${tb})`;
 }
 
@@ -178,7 +193,7 @@ export function TableTabBar({ baseId, initialColor, initialName }: TableTabBarPr
   };
 
   return (
-    <div className="relative flex h-[30px] flex-shrink-0 items-stretch justify-between" style={{ backgroundColor: bgColor, borderBottom: "1px solid #dfe3ea", overflow: "visible" }}>
+    <div className="relative flex h-[32px] flex-shrink-0 items-stretch justify-between" style={{ backgroundColor: bgColor, borderBottom: "1px solid #dfe3ea", overflow: "visible" }}>
       {/* Tabs + actions */}
       <div className="flex flex-1 items-stretch" style={{ overflow: "visible" }}>
         {tables?.map((table, index) => {
@@ -210,9 +225,6 @@ export function TableTabBar({ baseId, initialColor, initialName }: TableTabBarPr
             <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
-
-        {/* Divider */}
-        <div className="mx-1 self-center h-3 w-px bg-[#4c5667] opacity-30" />
 
         {/* Add or import */}
         <AddOrImportButton

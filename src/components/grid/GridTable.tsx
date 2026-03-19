@@ -337,21 +337,22 @@ export const GridTable = React.memo(function GridTable({
                   {/* Checkbox + row number — sticky */}
                   <td
                     style={{ display: "flex", width: 100, minWidth: 100, position: "sticky", left: 0, zIndex: 1 }}
-                    className="h-full items-center bg-white px-2 py-0 group-hover:bg-[#f8f8f8]"
+                    className="relative h-full items-center justify-center bg-white py-0 group-hover:bg-[#f8f8f8]"
                   >
-                    {/* Checkbox / row number — same position, swap on hover/selected */}
-                    <label className="relative flex h-3.5 w-3.5 flex-shrink-0 cursor-pointer items-center justify-center">
+                    {/* Checkbox — hidden until hover/selected */}
+                    <label className="flex h-4 w-4 cursor-pointer items-center justify-center">
                       <input
                         type="checkbox"
                         checked={selectedRowIds.has(rowData.id)}
                         onChange={() => onToggleRow(rowData.id)}
-                        className="absolute inset-0 h-3.5 w-3.5 cursor-pointer accent-[#2563eb] opacity-0 group-hover:opacity-100"
+                        className="h-4 w-4 cursor-pointer accent-[#2563eb] opacity-0 group-hover:opacity-100"
                         style={{ opacity: selectedRowIds.has(rowData.id) ? 1 : undefined }}
                       />
-                      <span className={`absolute left-0 select-none whitespace-nowrap text-xs text-[#aaa] group-hover:hidden ${selectedRowIds.has(rowData.id) ? "hidden" : ""}`}>
-                        {virtualRow.index + 1}
-                      </span>
                     </label>
+                    {/* Row number — overlays the checkbox area, hides on hover */}
+                    <span className={`pointer-events-none absolute inset-0 flex items-center justify-center select-none text-xs text-[#aaa] group-hover:hidden ${selectedRowIds.has(rowData.id) ? "hidden" : ""}`}>
+                      {virtualRow.index + 1}
+                    </span>
                     <button
                       className="ml-auto hidden items-center justify-center rounded text-[#888] hover:bg-[#e8e4f5] group-hover:flex"
                       title="Expand row"

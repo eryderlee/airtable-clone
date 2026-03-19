@@ -212,7 +212,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
   );
 
   const columnWidths = useMemo(
-    () => Object.fromEntries((columnsData ?? []).map((c) => [c.id, c.isPrimary ? 200 : 180])),
+    () => Object.fromEntries((columnsData ?? []).map((c) => [c.id, c.isPrimary ? 165 : 219])),
     [columnsData],
   );
 
@@ -883,7 +883,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
           onMouseEnter={() => { cancelHoverClose(); if (!viewsPanelOpen) setViewsPanelHover(true); }}
           onMouseLeave={() => { if (!viewsPanelOpen) startHoverClose(); }}
           style={{
-            width: showViewsPanel ? 275 : 0,
+            width: showViewsPanel ? 280 : 0,
             flexShrink: 0,
             overflow: "hidden",
             transition: "width 200ms ease",

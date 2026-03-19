@@ -15,6 +15,11 @@ type BaseRecord = {
   userId: string;
 };
 
+const DARK_TEXT_COLORS = new Set(["#ffba05", "#01ddd5", "#39caff"]);
+function baseInitialColor(hex: string): string {
+  return DARK_TEXT_COLORS.has(hex.toLowerCase()) ? "#000" : "#ffffff";
+}
+
 type Props = {
   bases: BaseRecord[];
 };
@@ -305,8 +310,8 @@ function BaseGridCard({
         className="flex flex-1 items-center gap-5 overflow-hidden text-left"
       >
         <div
-          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[10px] text-[20px] font-normal text-white"
-          style={{ backgroundColor: color, boxShadow: "inset 0 0 0 1.5px rgba(0,0,0,0.15)" }}
+          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[10px] text-[20px] font-normal"
+          style={{ backgroundColor: color, color: baseInitialColor(color), boxShadow: "inset 0 0 0 1.5px rgba(0,0,0,0.15)" }}
         >
           {base.name.slice(0, 2)}
         </div>
@@ -427,8 +432,8 @@ function BaseListRow({
     >
       <span className="flex items-center gap-2 font-normal">
         <span
-          className="flex h-8 w-8 items-center justify-center rounded-[8px] text-[11px] font-normal text-white"
-          style={{ backgroundColor: color }}
+          className="flex h-8 w-8 items-center justify-center rounded-[8px] text-[11px] font-normal"
+          style={{ backgroundColor: color, color: baseInitialColor(color) }}
         >
           {base.name.slice(0, 2)}
         </span>

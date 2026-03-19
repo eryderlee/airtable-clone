@@ -272,11 +272,11 @@ export function ViewsPanel({ tableId, activeViewId }: ViewsPanelProps) {
   );
 
   return (
-    <aside className="relative flex h-full w-[350px] flex-shrink-0 flex-col border-r border-[#e2e0ea] bg-white">
+    <aside className="relative flex h-full w-[280px] flex-shrink-0 flex-col border-r border-[#e2e0ea] bg-white py-[10px] px-2">
       {/* Create new */}
       <button
         onClick={(e) => { setCreateMenuAnchor(e.currentTarget); setShowCreateMenu((v) => !v); }}
-        className="flex items-center gap-2 px-3 py-2 text-[13px] text-[#4c5667] hover:bg-[#eceff4]"
+        className="flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] text-[#4c5667] hover:bg-[#eceff4]"
         data-testid="create-view-button"
       >
         <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
@@ -325,7 +325,7 @@ export function ViewsPanel({ tableId, activeViewId }: ViewsPanelProps) {
 
 
       {/* Find a view */}
-      <div className="flex items-center gap-2 px-3 py-[7px] text-[#7f879b]">
+      <div className="mt-1 flex items-center gap-2 px-3 py-[7px] text-[#7f879b]">
         <svg width="13" height="13" viewBox="0 0 12 12" fill="none" className="flex-shrink-0">
           <circle cx="5.5" cy="5.5" r="3.75" stroke="currentColor" strokeWidth="1.2" />
           <path d="M9 9l-1.5-1.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
@@ -352,7 +352,7 @@ export function ViewsPanel({ tableId, activeViewId }: ViewsPanelProps) {
             return (
               <div
                 key={view.id}
-                className="group relative px-2 py-[3px] transition-colors"
+                className="group relative px-1 py-[3px] transition-colors"
                 onMouseEnter={() => {
                   void utils.column.getByTableId.prefetch({ tableId });
                   void utils.row.count.prefetch({ tableId, filters: [], searchQuery: "" });
