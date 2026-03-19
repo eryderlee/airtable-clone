@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-03-17)
 
 **Core value:** A table UI that feels exactly like Airtable and never chokes — 1M rows, instant scroll, DB-level filtering.
-**Current focus:** Phase 10 — UX Performance (Optimistic Updates)
+**Current focus:** Phase 11 — Instant Interactions & Cold Start Optimization
 
 ## Current Position
 
-Phase: 10 of 10 (UX Performance) — COMPLETE
-Plan: 3/3 complete
-Status: ALL PHASES COMPLETE. 10-01 (sonner + HomeContent optimistic base CRUD), 10-02 (table/view optimistic mutations), and 10-03 (column optimistic mutations + view hover prefetch) all done. Human-verified.
-Last activity: 2026-03-18 — Completed 10-03-PLAN.md (optimistic column CRUD in GridView, hover prefetch in ViewsPanel, human-verified full optimistic UX)
+Phase: 11 of 11 (Instant Interactions & Cold Start Optimization) — PLANNED
+Plan: 0/2 complete
+Status: Phase 11 planned — 2 plans in 1 wave (parallel). Navigation fixes + view stability (Plan 01) and optimistic row/view/base creation fixes (Plan 02).
+Last activity: 2026-03-19 — Phase 11 planned
 
 Progress: [█████████████████████████████] 100% (30 of 30 total plans)
 
@@ -139,9 +139,13 @@ Recent decisions affecting current work:
 - 10-03: Hover prefetch scope limited to columns + row count only — row data pages not prefetched (virtualizer loads on demand)
 - 10-03: Post-verification orchestrator fixes: filter/sort race condition via generation counter; column order on add; rename flicker; table tab loading cursor; navigation guard for optimistic non-UUID tab IDs
 
+### Roadmap Evolution
+
+- Phase 11 added (2026-03-19): Instant Interactions & Cold Start Optimization — user-reported 12 latency/responsiveness issues after Phase 10 human verification
+
 ### Pending Todos
 
-None — all 30 plans across 10 phases are complete.
+Phase 11 planned — 2 plans ready for execution. Run /gsd:execute-phase 11 to execute.
 
 ### Blockers/Concerns
 
@@ -150,6 +154,6 @@ None — all 30 plans across 10 phases are complete.
 
 ## Session Continuity
 
-Last session: 2026-03-18
-Stopped at: Completed 10-03-PLAN.md — ALL PHASES COMPLETE (30/30 plans)
+Last session: 2026-03-19
+Stopped at: Phase 11 planned — 2 plans in 1 wave (parallel)
 Resume file: None

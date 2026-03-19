@@ -21,6 +21,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 7: Column Virtualization** - Horizontal virtualization for large column counts, column resize
 - [x] **Phase 8: View Persistence** - Full per-view state saved and restored across sessions
 - [ ] **Phase 9: Neon Migration** - Database migration from Supabase to Neon, Vercel env update, production cutover
+- [ ] **Phase 11: Instant Interactions & Cold Start Optimization** - Every click responds instantly, cold start mitigated, table/view/row creation never blocks the UI
 
 ## Standing Deployment Note
 
@@ -199,10 +200,35 @@ Plans:
   7. All operations still show error toasts and roll back UI state if the server returns an error
 **Plans**: TBD
 
+### Phase 11: Instant Interactions & Cold Start Optimization
+**Goal**: Every click, navigation, and creation feels instantaneous — buttons never make the user wait before showing a UI change, cold start latency is mitigated with prefetching, and all view/table/row operations switch UI immediately while data loads in the background.
+**Depends on**: Phase 10
+**Requirements**: (UX polish phase — no direct requirement IDs)
+**Plans**: 2 plans
+**Success Criteria** (what must be TRUE):
+  1. Cold start: opening a base on first load is not noticeably slower than a warm load — prefetch or skeleton navigation eliminates the double-wait feel
+  2. Adding a table switches to the new tab immediately; data (rows/columns) loads in afterward — user never waits before the tab appears
+  3. Switching tables navigates instantly to the tab; grid content loads in without blocking the switch
+  4. Creating a new grid view adds it to the views panel and switches to it instantly; no gap between button press and view appearing
+  5. No active-view highlight loss after creating a view — the newly created view remains visually active at all times until user interaction
+  6. View order in the sidebar is stable — views never reorder themselves when switching between them
+  7. Adding a new row appears in the grid immediately without visible delay
+  8. Navigating home (back button / logo) is instant with no loading pause
+  9. Creating a new base navigates directly to the base — it does not flash the home page with the new base card before redirecting
+  10. Creating a base is visually instant — the UI responds before the server confirms
+  11. Opening a base navigates immediately to the first table on click; grid loads data in the background
+  12. All interactive buttons (create, delete, switch, navigate) respond with an immediate UI change; data may load afterward but the button never blocks
+
+Plans:
+- [ ] 11-01-PLAN.md — Navigation fixes: remove router.refresh() from home nav, cache-first table tab switching, view order stability
+- [ ] 11-02-PLAN.md — Optimistic row add, view active highlight (pendingViewId), base creation no-flash fix, cold start prefetch
+
+---
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -216,3 +242,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 8. View Persistence | 2/2 | Complete | 2026-03-18 |
 | 9. Neon Migration | 0/3 | Not started | - |
 | 10. UX Performance | 3/3 | Complete | 2026-03-18 |
+| 11. Instant Interactions | 0/2 | Not started | - |
