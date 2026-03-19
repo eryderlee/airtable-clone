@@ -11,6 +11,11 @@ interface GridToolbarProps {
   isBulkCreating: boolean;
   onBulkAddColumns: () => void;
   isBulkAddingColumns: boolean;
+  onBenchmark: () => void;
+  benchmarkPhase: "idle" | "creating" | "cleaning" | "done";
+  benchmarkProgress: number;
+  benchmarkElapsed: number;
+  benchmarkResult: number | null;
   onToggleViewsPanel: () => void;
   viewsPanelOpen: boolean;
   onHamburgerMouseEnter: () => void;
@@ -48,6 +53,11 @@ export function GridToolbar({
   isBulkCreating,
   onBulkAddColumns,
   isBulkAddingColumns,
+  onBenchmark,
+  benchmarkPhase,
+  benchmarkProgress,
+  benchmarkElapsed,
+  benchmarkResult,
   onToggleViewsPanel,
   viewsPanelOpen,
   onHamburgerMouseEnter,
@@ -225,11 +235,34 @@ export function GridToolbar({
       {/* Dev: bulk insert — small icon-only button */}
       <button
         onClick={onBulkCreate}
-        disabled={isBulkCreating}
+        disabled={isBulkCreating || benchmarkPhase !== "idle"}
         className="ml-2 flex-shrink-0 rounded bg-[#2563eb] px-2 py-1 text-[11px] font-medium text-white hover:bg-[#1d4ed8] disabled:opacity-50"
         title="Bulk insert 100k rows"
       >
         {isBulkCreating ? "…" : "+100k"}
+      </button>
+      {/* Dev: benchmark — create 100k rows, time it, auto-delete */}
+      <button
+        onClick={onBenchmark}
+        disabled={benchmarkPhase !== "idle" || isBulkCreating}
+        className={`ml-1 flex-shrink-0 rounded px-2 py-1 text-[11px] font-medium text-white disabled:opacity-50 ${
+          benchmarkPhase === "done"
+            ? "bg-[#16a34a]"
+            : benchmarkPhase === "creating"
+            ? "bg-[#d97706]"
+            : benchmarkPhase === "cleaning"
+            ? "bg-[#6b7280]"
+            : "bg-[#0891b2] hover:bg-[#0e7490]"
+        }`}
+        title="Benchmark: create 100k rows timed, then auto-delete"
+      >
+        {benchmarkPhase === "creating"
+          ? `${Math.round(benchmarkProgress / 1000)}k/100k · ${(benchmarkElapsed / 1000).toFixed(1)}s`
+          : benchmarkPhase === "cleaning"
+          ? "↩ cleaning…"
+          : benchmarkPhase === "done" && benchmarkResult !== null
+          ? `✓ ${(benchmarkResult / 1000).toFixed(2)}s`
+          : "⏱ bench"}
       </button>
       {/* Dev: bulk add columns for testing column virtualization */}
       <button

@@ -150,6 +150,7 @@ Recent decisions affecting current work:
 ### Roadmap Evolution
 
 - Phase 11 added (2026-03-19): Instant Interactions & Cold Start Optimization — user-reported 12 latency/responsiveness issues after Phase 10 human verification
+- Phase 14 added (2026-03-20): 100k Row Creation Performance Optimization — current time is ~88s, target is sub-6s (ideally sub-4.6s parity with known benchmarks); benchmark button added to toolbar
 
 ### Pending Todos
 

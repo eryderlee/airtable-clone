@@ -1,4 +1,4 @@
-import { and, asc, count, eq, inArray, max, or, sql } from "drizzle-orm";
+import { and, asc, count, eq, gte, inArray, max, or, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
@@ -495,6 +495,45 @@ export const rowRouter = createTRPCRouter({
       }
 
       return { count: input.count };
+    }),
+
+  // -------------------------------------------------------------------------
+  // deleteFromOrder: delete all rows at or above a given rowOrder (benchmark cleanup)
+  // -------------------------------------------------------------------------
+  deleteFromOrder: protectedProcedure
+    .input(
+      z.object({
+        tableId: z.string().uuid(),
+        fromOrder: z.number().int().min(0),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const ownership = await ctx.db
+        .select({ tableId: tables.id })
+        .from(tables)
+        .innerJoin(bases, eq(tables.baseId, bases.id))
+        .where(
+          and(
+            eq(tables.id, input.tableId),
+            eq(bases.userId, ctx.session.user.id),
+          ),
+        )
+        .limit(1);
+
+      if (ownership.length === 0) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
+      await ctx.db
+        .delete(rows)
+        .where(
+          and(
+            eq(rows.tableId, input.tableId),
+            gte(rows.rowOrder, input.fromOrder),
+          ),
+        );
+
+      return { deleted: true };
     }),
 
   // -------------------------------------------------------------------------

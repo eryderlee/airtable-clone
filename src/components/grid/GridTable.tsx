@@ -377,6 +377,7 @@ export const GridTable = React.memo(function GridTable({
                       | undefined;
                     const columnType = (meta?.type ?? "text") as "text" | "number";
                     const isPrimary = meta?.isPrimary ?? colId === columnIds[0];
+                    const isNextToPrimary = !isPrimary && colId === columnIds[1];
                     const cellValue = rowData.cells[colId] ?? null;
                     const w = columnWidths[colId] ?? 180;
                     const isFocused = cursor?.rowIndex === virtualRow.index && cursor?.columnId === colId;
@@ -391,9 +392,14 @@ export const GridTable = React.memo(function GridTable({
                           ...(isPrimary ? { position: "sticky", left: 100, zIndex: isFocused ? 10 : 1 } : isFocused ? { position: "relative", zIndex: 10 } : {}),
                           ...(filteredColumnIds.includes(colId) ? { backgroundColor: "#d1f5d3" } : sortedColumnIds.includes(colId) ? { backgroundColor: "#FFF5EE" } : {}),
                           ...(isFocused ? {
-                            outline: "2px solid #2563eb",
-                            outlineOffset: "-1px",
-                            borderRadius: 2,
+                            boxShadow: [
+                              virtualRow.index === 0 ? "" : "inset 0 2px 0 0 #2563eb",              // top
+                              "inset 0 -2px 0 0 #2563eb",                                             // bottom
+                              isNextToPrimary ? "" : "inset 2px 0 0 0 #2563eb",                         // left (skip for next-to-primary)
+                              isPrimary ? "" : "inset -2px 0 0 0 #2563eb",                            // right (skip for primary)
+                            ].filter(Boolean).join(", "),
+                            // top-left, top-right, bottom-right, bottom-left
+                            borderRadius: `${virtualRow.index === 0 || isNextToPrimary ? 0 : 2}px ${virtualRow.index === 0 || isPrimary ? 0 : 2}px ${isPrimary ? 0 : 2}px ${isNextToPrimary ? 0 : 2}px`,
                           } : {}),
                         }}
                         className={`border-r border-[#e2e0ea]${isPrimary && !filteredColumnIds.includes(colId) && !sortedColumnIds.includes(colId) ? " bg-white group-hover:bg-[#f8f8f8]" : ""}`}

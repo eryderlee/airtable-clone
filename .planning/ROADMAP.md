@@ -257,6 +257,20 @@ Plans:
 
 ---
 
+### Phase 14: 100k Row Creation Performance Optimization
+
+**Goal:** Drive 100k row creation time below 6 seconds (targeting sub-4.6s parity with known benchmarks) through iterative server-side and client-side optimizations, measured via the in-app benchmark button.
+**Depends on:** Phase 13
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 14 to break down)
+
+**Details:**
+[To be added during planning]
+
+---
+
 ## Progress
 
 **Execution Order:**
@@ -277,3 +291,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 11. Instant Interactions | 2/2 | Complete | 2026-03-19 |
 | 12. Server-Side Search | 1/1 | Complete | 2026-03-19 |
 | 13. Navigation & Housekeeping | 1/1 | Complete | 2026-03-19 |
+| 14. 100k Row Creation Performance Optimization | 0/? | Not started | - |

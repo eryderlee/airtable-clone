@@ -514,6 +514,17 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
   const bulkCreate = api.row.bulkCreate.useMutation();
   const [isBulkCreating, setIsBulkCreating] = useState(false);
 
+  // Benchmark state
+  type BenchmarkPhase = "idle" | "creating" | "cleaning" | "done";
+  const [benchmarkPhase, setBenchmarkPhase] = useState<BenchmarkPhase>("idle");
+  const [benchmarkProgress, setBenchmarkProgress] = useState(0);
+  const [benchmarkElapsed, setBenchmarkElapsed] = useState(0);
+  const [benchmarkResult, setBenchmarkResult] = useState<number | null>(null);
+  const benchmarkTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const benchmarkStartTimeRef = useRef(0);
+  const benchmarkStartOrderRef = useRef(0);
+  const deleteFromOrder = api.row.deleteFromOrder.useMutation();
+
   const handleAddColumn = useCallback(
     (type: "text" | "number") => {
       const name = type === "text" ? "Text Field" : "Number Field";
@@ -592,6 +603,54 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
       setIsBulkCreating(false);
     }
   }, [tableId, bulkCreate, refetchCount, utils.row.getByOffset, filters, sorts, searchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleBenchmark = useCallback(async () => {
+    if (benchmarkPhase !== "idle") return;
+
+    const CHUNK = 1000;
+    const TOTAL = 100_000;
+    // Rows are dense 0..totalCount-1; benchmark rows start at totalCount
+    const startOrder = totalCount;
+    benchmarkStartOrderRef.current = startOrder;
+    benchmarkStartTimeRef.current = Date.now();
+    setBenchmarkProgress(0);
+    setBenchmarkResult(null);
+    setBenchmarkElapsed(0);
+    setBenchmarkPhase("creating");
+
+    benchmarkTimerRef.current = setInterval(() => {
+      setBenchmarkElapsed(Date.now() - benchmarkStartTimeRef.current);
+    }, 100);
+
+    try {
+      for (let i = 0; i < TOTAL / CHUNK; i++) {
+        await bulkCreate.mutateAsync({ tableId, count: CHUNK });
+        setBenchmarkProgress((i + 1) * CHUNK);
+        void refetchCount();
+      }
+      const elapsed = Date.now() - benchmarkStartTimeRef.current;
+      setBenchmarkResult(elapsed);
+    } finally {
+      if (benchmarkTimerRef.current) {
+        clearInterval(benchmarkTimerRef.current);
+        benchmarkTimerRef.current = null;
+      }
+      setBenchmarkPhase("cleaning");
+      try {
+        await deleteFromOrder.mutateAsync({ tableId, fromOrder: benchmarkStartOrderRef.current });
+      } catch { /* best-effort cleanup */ }
+      pageCacheRef.current = {};
+      loadingPagesRef.current = new Set();
+      await refetchCount();
+      forceUpdate();
+      setBenchmarkPhase("done");
+      setTimeout(() => {
+        setBenchmarkPhase("idle");
+        setBenchmarkProgress(0);
+        setBenchmarkElapsed(0);
+      }, 5000);
+    }
+  }, [benchmarkPhase, totalCount, tableId, bulkCreate, deleteFromOrder, refetchCount]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const createRow = api.row.create.useMutation({
     onMutate: ({ tableId: mutTableId, cells }) => {
@@ -880,6 +939,11 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
         isBulkCreating={isBulkCreating}
         onBulkAddColumns={handleBulkAddColumns}
         isBulkAddingColumns={isBulkAddingColumns}
+        onBenchmark={handleBenchmark}
+        benchmarkPhase={benchmarkPhase}
+        benchmarkProgress={benchmarkProgress}
+        benchmarkElapsed={benchmarkElapsed}
+        benchmarkResult={benchmarkResult}
         rowCount={totalCount}
         openPanel={openPanel}
         onTogglePanel={handleTogglePanel}
