@@ -13,13 +13,13 @@ import { signIn } from "~/server/auth";
 export default function SignUpPage() {
   return (
     <main className="min-h-screen bg-white text-[#1f2328]">
-      <div className="mx-auto flex min-h-screen w-full max-w-3xl items-center px-6 py-12">
-        <section className="w-full max-w-xl">
-          <div className="-mt-6">
+      <div className="mx-auto flex min-h-screen w-full max-w-3xl items-center px-6 pt-12 pb-16">
+        <section className="w-full max-w-[440px]">
+          <div className="mb-12">
             <AuthLogo />
           </div>
-          <div className="mt-10 space-y-6">
-            <h1 className="text-4xl font-[450] text-[#13141c]">
+          <div className="space-y-6">
+            <h1 className="mb-6 text-[32px] font-[400] leading-tight text-[#13141c]">
               Welcome to Airtable
             </h1>
             <EmailCaptureForm
@@ -51,7 +51,7 @@ export default function SignUpPage() {
             </div>
           </div>
 
-          <div className="mt-8 space-y-4 text-xs text-[#5f6c7b]">
+          <div className="mt-8 space-y-4 text-[13px] text-[#5f6c7b]">
             <div className="space-y-2 pl-6">
               <p>
                 By creating an account, you agree to the{" "}

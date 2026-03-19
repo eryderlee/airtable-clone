@@ -14,13 +14,13 @@ import { signIn } from "~/server/auth";
 export default function SignInPage() {
   return (
     <main className="min-h-screen bg-white text-[#1f2328]">
-      <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col items-center gap-12 px-6 py-16 lg:flex-row lg:items-center lg:justify-between lg:gap-32">
-        <section className="w-full max-w-xl lg:max-w-lg">
-          <div className="-mt-6">
+      <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col items-center gap-12 px-6 pt-12 pb-16 lg:flex-row lg:items-center lg:justify-between lg:gap-32">
+        <section className="w-full max-w-[500px] lg:-ml-20">
+          <div className="mb-12">
             <AuthLogo />
           </div>
-          <div className="mt-10 space-y-6">
-            <h1 className="text-4xl font-[400] text-[#13141c]">
+          <div className="space-y-8">
+            <h1 className="mb-6 text-[32px] font-[550] leading-tight text-[#13141c]">
               Sign in to Airtable
             </h1>
             <EmailCaptureForm
@@ -30,7 +30,7 @@ export default function SignInPage() {
               inputId="signin-email"
             />
             <Divider />
-            <div className="space-y-3">
+            <div className="space-y-3 !mt-2 ">
               <Button variant="outline">
                 Sign in with <span className="font-[650]">Single Sign On</span>
               </Button>
@@ -52,7 +52,7 @@ export default function SignInPage() {
             </div>
           </div>
 
-          <div className="mt-8 space-y-2 text-xs text-[#5f6c7b]">
+          <div className="pt-12 text-[13px] text-[#5f6c7b]" style={{ transform: "translateY(25px)" }}>
             <p>
               New to Airtable?{" "}
               <Link
@@ -63,6 +63,8 @@ export default function SignInPage() {
               </Link>{" "}
               instead
             </p>
+          </div>
+          <div className="pt-3 text-[13px] text-[#5f6c7b]" style={{ transform: "translateY(30px)" }}>
             <p>
               Manage your cookie preferences{" "}
               <Link
@@ -75,13 +77,13 @@ export default function SignInPage() {
             </p>
           </div>
         </section>
-        <aside className="hidden w-full max-w-sm shrink-0 lg:block">
+        <aside className="hidden w-full max-w-[400px] shrink-0 self-center lg:block lg:mr-0 lg:ml-auto" style={{ transform: "translate(35px, 36px)" }}>
           <Image
             src="/omni_signin_large@2x.png"
             alt="Meet Omni, your AI collaborator for building custom apps"
-            width={450}
+            width={440}
             height={620}
-            className="w-full rounded-[32px] transition duration-300 hover:scale-[1.02]"
+            className="w-full rounded-lg transition duration-300 hover:scale-[1.02]"
             priority
           />
         </aside>

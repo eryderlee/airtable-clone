@@ -29,10 +29,10 @@ export function EmailCaptureForm({
     : "!bg-[#8fb0e9] !cursor-not-allowed";
 
   return (
-    <form className="space-y-3" onSubmit={handleSubmit}>
+    <form className="space-y-2" onSubmit={handleSubmit}>
       <label
         htmlFor={inputId}
-        className="block text-sm font-medium text-[#3b424d]"
+        className="mb-1 block text-sm font-medium text-[#3b424d]"
       >
         {label}
       </label>
@@ -42,9 +42,9 @@ export function EmailCaptureForm({
         placeholder={placeholder}
         value={value}
         onChange={(event) => setValue(event.target.value)}
-        className="w-full rounded-xl border border-[#dfe2e8] px-4 py-3 text-base text-[#1b1f2b] outline-none transition focus:border-[#2667ff] focus:bg-[#eef3ff] focus:ring-2 focus:ring-[#c8d9ff]"
+        className="h-[40px] w-[500px] rounded-md border border-[#dfe2e8] px-2 text-[14px] text-[#757575] outline-none transition focus:border-[#2667ff] focus:bg-[#eef3ff] focus:ring-2 focus:ring-[#c8d9ff]"
       />
-      <Button type="submit" className={`${buttonStateClass} text-white`}>
+      <Button type="submit" className={`!h-40px] !w-[500px] !mt-[15px] rounded-md  ${buttonStateClass} text-white`}>
         {buttonText}
       </Button>
     </form>

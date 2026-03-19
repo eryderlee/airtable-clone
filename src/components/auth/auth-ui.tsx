@@ -13,7 +13,7 @@ export function Button({
   ...props
 }: ButtonProps) {
   const base =
-    "flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 hover:shadow-[0_4px_12px_rgba(0,0,0,0.07)]";
+    "flex h-12 w-full items-center justify-center gap-2 rounded-xl px-4 text-[14px] font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 hover:shadow-[0_4px_12px_rgba(0,0,0,0.07)]";
   const variants = {
     primary:
       "bg-[#6a90e0] text-white focus-visible:outline-[#5a82d6]",
@@ -39,8 +39,8 @@ export function AuthLogo() {
     <Image
       src="/airtable%20logo.png"
       alt="Airtable logo"
-      width={48}
-      height={48}
+      width={42}
+      height={42}
       priority
     />
   );
