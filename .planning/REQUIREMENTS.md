@@ -13,17 +13,17 @@
 
 ### Bases
 
-- [ ] **BASE-01**: User can create a new base
-- [ ] **BASE-02**: User can rename a base
-- [ ] **BASE-03**: User can delete a base
+- [x] **BASE-01**: User can create a new base
+- [x] **BASE-02**: User can rename a base
+- [x] **BASE-03**: User can delete a base
 - [x] **BASE-04**: User can only see their own bases (private, no sharing)
 
 ### Tables
 
-- [ ] **TBL-01**: User can create a new table within a base
-- [ ] **TBL-02**: User can rename a table
-- [ ] **TBL-03**: User can delete a table
-- [ ] **TBL-04**: New tables are pre-populated with default rows and columns using faker.js data
+- [x] **TBL-01**: User can create a new table within a base
+- [x] **TBL-02**: User can rename a table
+- [x] **TBL-03**: User can delete a table
+- [x] **TBL-04**: New tables are pre-populated with default rows and columns using faker.js data
 - [x] **TBL-05**: User can add 100k rows to any table via a single button click
 
 ### Columns
@@ -45,36 +45,36 @@
 
 - [x] **PERF-01**: Table uses virtualized infinite scroll — only visible rows are rendered in the DOM
 - [x] **PERF-02**: Row virtualization handles 1M rows without lag (TanStack Virtualizer)
-- [ ] **PERF-03**: Column virtualization handles large numbers of columns without lag
-- [ ] **PERF-04**: Columns are fetched incrementally as the user scrolls horizontally
+- [x] **PERF-03**: Column virtualization handles large numbers of columns without lag
+- [x] **PERF-04**: Columns are fetched incrementally as the user scrolls horizontally
 - [x] **PERF-05**: Loading states are shown during all async operations (fetch, filter, sort, search)
 
 ### Search, Filter & Sort
 
 - [x] **SFS-01**: User can search across all cells — search hides non-matching rows (row-level filter)
 - [x] **SFS-02**: Search is executed at the database level
-- [ ] **SFS-03**: User can filter Text columns by: is empty, is not empty, contains, does not contain, equals
-- [ ] **SFS-04**: User can filter Number columns by: greater than, less than
-- [ ] **SFS-05**: All column filters are executed at the database level
-- [ ] **SFS-06**: User can sort any Text column ascending (A→Z) or descending (Z→A)
-- [ ] **SFS-07**: User can sort any Number column ascending or descending
-- [ ] **SFS-08**: All sorting is executed at the database level
+- [x] **SFS-03**: User can filter Text columns by: is empty, is not empty, contains, does not contain, equals
+- [x] **SFS-04**: User can filter Number columns by: greater than, less than
+- [x] **SFS-05**: All column filters are executed at the database level
+- [x] **SFS-06**: User can sort any Text column ascending (A→Z) or descending (Z→A)
+- [x] **SFS-07**: User can sort any Number column ascending or descending
+- [x] **SFS-08**: All sorting is executed at the database level
 
 ### Views
 
-- [ ] **VIEW-01**: User can create a named view within a table
-- [ ] **VIEW-02**: User can switch between views from the left views panel
-- [ ] **VIEW-03**: Each view saves and restores its filter configuration
-- [ ] **VIEW-04**: Each view saves and restores its sort configuration
-- [ ] **VIEW-05**: Each view saves and restores column visibility (hidden/shown columns)
-- [ ] **VIEW-06**: Each view saves and restores the active search query
+- [x] **VIEW-01**: User can create a named view within a table
+- [x] **VIEW-02**: User can switch between views from the left views panel
+- [x] **VIEW-03**: Each view saves and restores its filter configuration
+- [x] **VIEW-04**: Each view saves and restores its sort configuration
+- [x] **VIEW-05**: Each view saves and restores column visibility (hidden/shown columns)
+- [x] **VIEW-06**: Each view saves and restores the active search query
 
 ### UI Layout
 
-- [ ] **UI-01**: Left sidebar displays the user's bases and allows navigation between them
-- [ ] **UI-02**: Top tab bar displays tables within the current base
-- [ ] **UI-03**: Left views panel displays saved views for the current table
-- [ ] **UI-04**: Top toolbar contains search, filter, sort, and hide-columns controls
+- [x] **UI-01**: Left sidebar displays the user's bases and allows navigation between them
+- [x] **UI-02**: Top tab bar displays tables within the current base
+- [x] **UI-03**: Left views panel displays saved views for the current table
+- [x] **UI-04**: Top toolbar contains search, filter, sort, and hide-columns controls
 - [ ] **UI-05**: Overall layout matches Airtable 1:1 in structure and visual style
 
 ## v2 Requirements
@@ -117,17 +117,17 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 1 | Pending |
-| AUTH-02 | Phase 1 | Pending |
-| AUTH-03 | Phase 1 | Pending |
-| BASE-01 | Phase 3 | Pending |
-| BASE-02 | Phase 3 | Pending |
-| BASE-03 | Phase 3 | Pending |
-| BASE-04 | Phase 1 | Pending |
-| TBL-01 | Phase 3 | Pending |
-| TBL-02 | Phase 3 | Pending |
-| TBL-03 | Phase 3 | Pending |
-| TBL-04 | Phase 3 | Pending |
+| AUTH-01 | Phase 1 | Complete |
+| AUTH-02 | Phase 1 | Complete |
+| AUTH-03 | Phase 1 | Complete |
+| BASE-01 | Phase 3/10 | Complete |
+| BASE-02 | Phase 3/10 | Complete |
+| BASE-03 | Phase 3/10 | Complete |
+| BASE-04 | Phase 1 | Complete |
+| TBL-01 | Phase 3 | Complete |
+| TBL-02 | Phase 3 | Complete |
+| TBL-03 | Phase 3 | Complete |
+| TBL-04 | Phase 3 | Complete |
 | TBL-05 | Phase 4 | Complete |
 | COL-01 | Phase 4 | Complete |
 | COL-02 | Phase 4 | Complete |
@@ -140,27 +140,27 @@
 | CELL-05 | Phase 5 | Complete |
 | PERF-01 | Phase 4 | Complete |
 | PERF-02 | Phase 4 | Complete |
-| PERF-03 | Phase 7 | Pending |
-| PERF-04 | Phase 7 | Pending |
+| PERF-03 | Phase 7 | Complete |
+| PERF-04 | Phase 7 | Complete |
 | PERF-05 | Phase 4 | Complete |
 | SFS-01 | Phase 12 | Complete |
 | SFS-02 | Phase 12 | Complete |
-| SFS-03 | Phase 6 | Pending |
-| SFS-04 | Phase 6 | Pending |
-| SFS-05 | Phase 6 | Pending |
-| SFS-06 | Phase 6 | Pending |
-| SFS-07 | Phase 6 | Pending |
-| SFS-08 | Phase 6 | Pending |
+| SFS-03 | Phase 6 | Complete |
+| SFS-04 | Phase 6 | Complete |
+| SFS-05 | Phase 6 | Complete |
+| SFS-06 | Phase 6 | Complete |
+| SFS-07 | Phase 6 | Complete |
+| SFS-08 | Phase 6 | Complete |
 | VIEW-01 | Phase 8 | Complete |
 | VIEW-02 | Phase 8 | Complete |
 | VIEW-03 | Phase 8 | Complete |
 | VIEW-04 | Phase 8 | Complete |
 | VIEW-05 | Phase 8 | Complete |
-| VIEW-06 | Phase 8 | Complete |
-| UI-01 | Phase 3 | Pending |
-| UI-02 | Phase 3 | Pending |
-| UI-03 | Phase 3 | Pending |
-| UI-04 | Phase 6 | Pending |
+| VIEW-06 | Phase 8/12 | Complete |
+| UI-01 | Phase 3 | Complete |
+| UI-02 | Phase 3 | Complete |
+| UI-03 | Phase 3 | Complete |
+| UI-04 | Phase 6 | Complete |
 | UI-05 | Phase 3 | Pending |
 
 **Coverage:**
@@ -170,4 +170,4 @@
 
 ---
 *Requirements defined: 2026-03-17*
-*Last updated: 2026-03-17 after roadmap creation*
+*Last updated: 2026-03-19 after Phase 13-01 completion (all v1 requirements checked except UI-05)*
