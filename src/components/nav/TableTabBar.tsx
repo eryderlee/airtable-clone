@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import Link from "next/link";
 import { useRouter, useParams, usePathname } from "next/navigation";
 import { toast } from "sonner";
 
@@ -71,9 +70,15 @@ export function TableTabBar({ baseId, initialColor, initialName }: TableTabBarPr
           createdAt: new Date(),
         },
       ]);
+      setNavigatingTo(optimisticId);
       return { previous, optimisticId };
     },
-    onSuccess: async (newTable) => {
+    onSuccess: async (newTable, _vars, context) => {
+      if (context?.optimisticId) {
+        utils.table.getByBaseId.setData({ baseId }, (old) =>
+          old?.map((t) => t.id === context.optimisticId ? { ...t, id: newTable.id, name: newTable.name } : t) ?? []
+        );
+      }
       const fetchedViews = await utils.view.getByTableId.fetch({ tableId: newTable.id });
       if (fetchedViews[0]) {
         router.push(`/base/${baseId}/${newTable.id}/view/${fetchedViews[0].id}`);
@@ -146,6 +151,20 @@ export function TableTabBar({ baseId, initialColor, initialName }: TableTabBarPr
     },
   });
 
+  async function handleTabClick(tableId: string) {
+    const cachedViews = utils.view.getByTableId.getData({ tableId });
+    if (cachedViews && cachedViews.length > 0 && cachedViews[0]) {
+      router.push(`/base/${baseId}/${tableId}/view/${cachedViews[0].id}`);
+      return;
+    }
+    const fetchedViews = await utils.view.getByTableId.fetch({ tableId });
+    if (fetchedViews[0]) {
+      router.push(`/base/${baseId}/${tableId}/view/${fetchedViews[0].id}`);
+      return;
+    }
+    router.push(`/base/${baseId}/${tableId}`);
+  }
+
   const handleTabHover = (tableId: string) => {
     void utils.column.getByTableId.prefetch({ tableId });
     void utils.view.getByTableId.prefetch({ tableId });
@@ -169,7 +188,7 @@ export function TableTabBar({ baseId, initialColor, initialName }: TableTabBarPr
               bgColor={bgColor}
               isPending={table.id.startsWith("optimistic-")}
               isNavigating={navigatingTo === table.id}
-              onNavigate={() => setNavigatingTo(table.id)}
+              onTabClick={() => { setNavigatingTo(table.id); void handleTabClick(table.id); }}
               onHover={() => handleTabHover(table.id)}
               onRename={(name) => renameTable.mutate({ id: table.id, name })}
               onDelete={() => deleteTable.mutate({ id: table.id })}
@@ -221,11 +240,11 @@ function TableTab({
   table,
   isActive,
   isFirst,
-  baseId,
+  baseId: _baseId,
   bgColor,
   isPending,
   isNavigating,
-  onNavigate,
+  onTabClick,
   onHover,
   onRename,
   onDelete,
@@ -239,7 +258,7 @@ function TableTab({
   bgColor: string;
   isPending?: boolean;
   isNavigating?: boolean;
-  onNavigate: () => void;
+  onTabClick: () => void;
   onHover: () => void;
   onRename: (name: string) => void;
   onDelete: () => void;
@@ -297,16 +316,15 @@ function TableTab({
           {table.name}
         </span>
       ) : (
-        <Link
-          href={`/base/${baseId}/${table.id}`}
-          style={{ textDecoration: "none" }}
+        <button
+          style={{ textDecoration: "none", background: "none", border: "none", padding: 0, cursor: "pointer" }}
           className="flex items-center gap-1"
-          onClick={onNavigate}
+          onClick={onTabClick}
         >
           <span className={`whitespace-nowrap text-[13px] ${isActive ? "font-medium text-[#1f2328]" : "text-[#4c5667] hover:text-[#1f2328]"}`}>
             {table.name}
           </span>
-        </Link>
+        </button>
       )}
 
       {/* Chevron — opens dropdown */}
