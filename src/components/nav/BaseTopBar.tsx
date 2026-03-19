@@ -313,8 +313,8 @@ export function BaseTopBar({ baseId, initialColor, initialName }: BaseTopBarProp
 
         {/* Share */}
         <button
-          className="rounded-full px-3 py-1.5 text-[13px] font-semibold text-white"
-          style={{ backgroundColor: baseColor }}
+          className="rounded-lg px-3 text-[13px] font-semibold text-white shadow-[0_1px_2px_rgba(0,0,0,0.12)] hover:shadow-[0_2px_4px_rgba(0,0,0,0.15)]"
+          style={{ backgroundColor: baseColor, height: 28, border: 0 }}
         >
           Share
         </button>
