@@ -263,6 +263,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
   const handleCommit = useCallback((rowId: string, columnId: string, value: string | number | null) => {
     setEditingCell(null);
     setInitialDraft(undefined);
+    if (rowId.startsWith('optimistic-')) return;
     updateCell.mutate({ id: rowId, cells: { [columnId]: value } });
   }, [updateCell]);
 
@@ -578,32 +579,69 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
     }
   }, [tableId, bulkCreate, refetchCount, utils.row.getByOffset, filters, sorts]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const createRow = api.row.create.useMutation();
+  const createRow = api.row.create.useMutation({
+    onMutate: ({ tableId: mutTableId, cells }) => {
+      const optimisticId = `optimistic-${Date.now()}`;
+      const currentCount = utils.row.count.getData({ tableId: mutTableId, filters })?.count ?? totalCount;
+      const newIndex = currentCount;
+      const pageIndex = Math.floor(newIndex / PAGE_SIZE);
+      const pageEntry = pageCacheRef.current[pageIndex];
+      const newRow: RowData = { id: optimisticId, cells: cells as Record<string, string | number | null> };
+      if (pageEntry) {
+        pageEntry.push(newRow);
+      } else {
+        pageCacheRef.current[pageIndex] = [newRow];
+      }
+      utils.row.count.setData({ tableId: mutTableId, filters }, (old) => ({
+        count: (old?.count ?? currentCount) + 1,
+      }));
+      forceUpdate();
+      // Scroll and focus on the primary cell
+      const primaryColId = columnsData?.find((c) => c.isPrimary)?.id ?? columnsData?.[0]?.id;
+      if (primaryColId) {
+        requestAnimationFrame(() => {
+          rowVirtualizerRef.current?.scrollToIndex(newIndex, { align: "end" });
+          setCursor({ rowIndex: newIndex, columnId: primaryColId });
+          setEditingCell({ rowIndex: newIndex, columnId: primaryColId });
+        });
+      }
+      return { optimisticId, newIndex, pageIndex };
+    },
+    onSuccess: (created, _vars, ctx) => {
+      if (!ctx) return;
+      const page = pageCacheRef.current[ctx.pageIndex];
+      if (page) {
+        const idx = page.findIndex((r) => r.id === ctx.optimisticId);
+        if (idx !== -1) {
+          page[idx] = { id: created.id, cells: created.cells };
+          forceUpdate();
+        }
+      }
+    },
+    onError: (_err, { tableId: mutTableId }, ctx) => {
+      if (!ctx) return;
+      const page = pageCacheRef.current[ctx.pageIndex];
+      if (page) {
+        const idx = page.findIndex((r) => r.id === ctx.optimisticId);
+        if (idx !== -1) {
+          page.splice(idx, 1);
+          utils.row.count.setData({ tableId: mutTableId, filters }, (old) => ({
+            count: Math.max(0, (old?.count ?? 0) - 1),
+          }));
+          forceUpdate();
+        }
+      }
+      toast.error("Failed to add row. Changes reverted.");
+    },
+    onSettled: (_d, _e, { tableId: mutTableId }) => {
+      void utils.row.getByOffset.invalidate({ tableId: mutTableId });
+      void refetchCount();
+    },
+  });
 
-  const handleAddRow = useCallback(async () => {
-    const primaryColId = columnsData?.find((c) => c.isPrimary)?.id ?? columnsData?.[0]?.id;
-    const created = await createRow.mutateAsync({ tableId, cells: {} });
-    // Append to cache and bump total count
-    const newRowData: RowData = { id: created.id, cells: created.cells };
-    const newIndex = totalCount; // 0-based index of the new row
-    const pageIndex = Math.floor(newIndex / PAGE_SIZE);
-    if (pageCacheRef.current[pageIndex]) {
-      pageCacheRef.current[pageIndex]?.push(newRowData);
-    } else {
-      pageCacheRef.current[pageIndex] = [newRowData];
-    }
-    // Optimistically bump the count so the virtualizer sees the new row immediately
-    utils.row.count.setData({ tableId, filters }, (old) => ({ count: (old?.count ?? totalCount) + 1 }));
-    forceUpdate();
-    // Scroll to and start editing the new row's primary cell
-    if (primaryColId) {
-      requestAnimationFrame(() => {
-        rowVirtualizerRef.current?.scrollToIndex(newIndex, { align: "end" });
-        setCursor({ rowIndex: newIndex, columnId: primaryColId });
-        setEditingCell({ rowIndex: newIndex, columnId: primaryColId });
-      });
-    }
-  }, [tableId, createRow, columnsData, totalCount, utils, filters, forceUpdate]); // eslint-disable-line react-hooks/exhaustive-deps
+  const handleAddRow = useCallback(() => {
+    createRow.mutate({ tableId, cells: {} });
+  }, [tableId, createRow]);
 
   const [isBulkAddingColumns, setIsBulkAddingColumns] = useState(false);
   const handleBulkAddColumns = useCallback(async () => {
