@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 
 ## Current Position
 
-Phase: 11 of 11 (Instant Interactions & Cold Start Optimization) — PLANNED
-Plan: 0/2 complete
-Status: Phase 11 planned — 2 plans in 1 wave (parallel). Navigation fixes + view stability (Plan 01) and optimistic row/view/base creation fixes (Plan 02).
-Last activity: 2026-03-19 — Phase 11 planned
+Phase: 11 of 11 (Instant Interactions & Cold Start Optimization) — In progress
+Plan: 1/2 complete
+Status: Plan 02 complete. Plan 01 (navigation fixes + view stability) pending.
+Last activity: 2026-03-19 — Completed 11-02-PLAN.md
 
 Progress: [█████████████████████████████] 100% (30 of 30 total plans)
 
@@ -138,6 +138,10 @@ Recent decisions affecting current work:
 - 10-03: Column delete clears pageCacheRef cell data optimistically across all cached pages, with full snapshot rollback on onError + forceUpdate()
 - 10-03: Hover prefetch scope limited to columns + row count only — row data pages not prefetched (virtualizer loads on demand)
 - 10-03: Post-verification orchestrator fixes: filter/sort race condition via generation counter; column order on add; rename flicker; table tab loading cursor; navigation guard for optimistic non-UUID tab IDs
+- 11-02: cells ?? {} pattern instead of cells as T cast — ESLint non-nullable-type-assertion-style prohibits redundant casts even when zod schema implies correct type
+- 11-02: pendingViewId tracks optimistic view before navigation confirms activeViewId (URL param only updates on navigation)
+- 11-02: base.getAll NOT set in createBase.onMutate to prevent home flash — only invalidated after navigation in createTable.onSettled
+- 11-02: pendingBaseIdRef ref bridges createBase.onSuccess and createTable.onSuccess closures for baseId
 
 ### Roadmap Evolution
 
@@ -145,7 +149,7 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-Phase 11 planned — 2 plans ready for execution. Run /gsd:execute-phase 11 to execute.
+Plan 11-02 complete. Plan 11-01 (navigation fixes + view stability) still pending.
 
 ### Blockers/Concerns
 
@@ -155,5 +159,5 @@ Phase 11 planned — 2 plans ready for execution. Run /gsd:execute-phase 11 to e
 ## Session Continuity
 
 Last session: 2026-03-19
-Stopped at: Phase 11 planned — 2 plans in 1 wave (parallel)
+Stopped at: Completed 11-02-PLAN.md (optimistic row/view/base creation + cold start prefetch)
 Resume file: None
