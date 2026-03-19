@@ -92,7 +92,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
 
   // Total row count — drives virtualizer size; reflects filtered count when filters active
   const { data: countData, refetch: refetchCount } = api.row.count.useQuery(
-    { tableId, filters },
+    { tableId, filters, searchQuery },
     { staleTime: 30_000 },
   );
   const totalCount = countData?.count ?? 0;
@@ -289,6 +289,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
           limit: PAGE_SIZE,
           filters,
           sorts,
+          searchQuery,
         });
         // Discard if cache was reset by a newer filter/sort since this fetch started
         if (cacheGenerationRef.current !== gen) return;
@@ -303,7 +304,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
         }
       }
     },
-    [tableId, utils.row.getByOffset, filters, sorts],
+    [tableId, utils.row.getByOffset, filters, sorts, searchQuery],
   );
 
   // Reset page cache — clears all cached pages and loading state
@@ -326,7 +327,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
     resetCache();
     void refetchCount();
     // fetchPage(0) will be triggered by the existing totalCount effect
-  }, [filters, sorts]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [filters, sorts, searchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Separate ref to guard auto-save — prevents saving on initial mount (SSR-seeded values already correct in DB)
   const isFirstConfigRender = useRef(true);
