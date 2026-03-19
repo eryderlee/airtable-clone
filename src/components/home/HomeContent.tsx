@@ -155,7 +155,7 @@ export function HomeContent({ bases: initialBases }: Props) {
       <main className="flex w-full flex-1 flex-col gap-8 px-12 pb-16 pt-8">
         <header className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-[1.5rem] font-bold tracking-tight">Home</h1>
+            <h1 className="pb-5 text-[1.78rem] font-[680] leading-tight text-[#1f2328]">Home</h1>
             <button className="mt-6 inline-flex items-center gap-2 rounded-full border border-transparent px-0 py-1 text-sm text-[#6a7385] transition hover:text-[#1f2328]">
               Opened anytime <ChevronDownIcon />
             </button>
