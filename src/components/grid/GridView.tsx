@@ -884,7 +884,8 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
         hiddenColumns={hiddenColumns}
         onHiddenColumnsChange={setHiddenColumns}
         columnsData={columnsForToolbar}
-        matchCount={searchMatches.length}
+        matchCount={searchQuery.trim() ? totalCount : searchMatches.length}
+        loadedMatchCount={searchMatches.length}
         currentMatchIndex={searchMatchIndex}
         onPrevMatch={handlePrevMatch}
         onNextMatch={handleNextMatch}

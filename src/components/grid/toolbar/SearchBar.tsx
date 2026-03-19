@@ -5,6 +5,7 @@ interface SearchBarProps {
   onSearchChange: (value: string) => void;
   onClose: () => void;
   matchCount: number;
+  loadedMatchCount: number;
   currentMatchIndex: number;
   onPrevMatch: () => void;
   onNextMatch: () => void;
@@ -15,6 +16,7 @@ export function SearchBar({
   onSearchChange,
   onClose,
   matchCount,
+  loadedMatchCount,
   currentMatchIndex,
   onPrevMatch,
   onNextMatch,
@@ -43,7 +45,7 @@ export function SearchBar({
         {/* Prev / next navigation */}
         <button
           onClick={onPrevMatch}
-          disabled={matchCount === 0}
+          disabled={loadedMatchCount === 0}
           className="flex-shrink-0 rounded p-1 text-[#6b7280] hover:bg-[#f3f4f6] hover:text-[#374151] disabled:cursor-not-allowed disabled:opacity-40"
           title="Previous match"
         >
@@ -53,7 +55,7 @@ export function SearchBar({
         </button>
         <button
           onClick={onNextMatch}
-          disabled={matchCount === 0}
+          disabled={loadedMatchCount === 0}
           className="flex-shrink-0 rounded p-1 text-[#6b7280] hover:bg-[#f3f4f6] hover:text-[#374151] disabled:cursor-not-allowed disabled:opacity-40"
           title="Next match"
         >
