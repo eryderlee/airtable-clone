@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 
 ## Current Position
 
-Phase: 12 of 13 (Server-Side Search) — Not started
-Plan: 0/1 complete
-Status: Gap closure phases added after v1.0 audit. Starting Phase 12.
-Last activity: 2026-03-19 — Phase 12 and 13 added from audit gap closure
+Phase: 12 of 13 (Server-Side Search) — Complete
+Plan: 1/1 complete
+Status: Phase 12 complete. Phase 13 (Navigation and Housekeeping) is next.
+Last activity: 2026-03-19 — Completed 12-01-PLAN.md (server-side search wiring)
 
-Progress: [████████████████████████████ ] 96% (30 of 32 total plans)
+Progress: [█████████████████████████████ ] 97% (31 of 32 total plans)
 
 ## Performance Metrics
 
@@ -108,6 +108,7 @@ Recent decisions affecting current work:
 - 06-02: data-toolbar-panel attribute on panel wrappers for click-outside detection via element.closest()
 - 06-02: HideFieldsPanel completed early in 06-02 — Plan 06-03 scope narrowed to view config persistence only
 - 06-03: sql.raw(columnId) in buildFilterConditions/buildSortOrder embeds UUID without quotes — invalid SQL (cells->>UUID). Fixed by using columnId directly in SQL template (parameterized: cells->>$1)
+- 12-01: searchQuery wired back to row.count and getByOffset — server-side filtering now active; row count reflects filtered matches; cache resets on search change; optimistic cache keys include searchQuery
 - 06-03: Search changed to client-side highlight mode — rows are not hidden, matching cells get yellow highlight, navigation via prev/next arrows in search bar. searchQuery removed from row.count and getByOffset calls.
 - 06-03: GridHeader hidden column fix — table.getHeaderGroups()[0]?.headers returns all columns; must filter by columnIds (visibleColumnIds from GridView) before passing to GridHeader
 - 06-03: cacheVersion exposed from useReducer (was [, forceUpdate]) — drives searchMatches useMemo recompute when pages load into pageCacheRef
@@ -159,5 +160,5 @@ Phase 11 fully complete — all 2 plans executed. No pending todos.
 ## Session Continuity
 
 Last session: 2026-03-19
-Stopped at: Completed 11-01-PLAN.md (navigation fixes + view stability) — Phase 11 complete
+Stopped at: Completed 12-01-PLAN.md (server-side search wiring) — Phase 12 complete
 Resume file: None
