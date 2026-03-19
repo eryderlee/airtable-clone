@@ -75,6 +75,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
   const [viewsPanelOpen, setViewsPanelOpen] = useState(true);
   const [viewsPanelHover, setViewsPanelHover] = useState(false);
   const [viewSwitching, setViewSwitching] = useState(false);
+  const [isDataRefreshing, setIsDataRefreshing] = useState(false);
   const showViewsPanel = viewsPanelOpen || viewsPanelHover;
   const hoverCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -298,6 +299,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
           id: r.id,
           cells: r.cells,
         }));
+        if (pageIndex === 0) setIsDataRefreshing(false);
       } finally {
         if (cacheGenerationRef.current === gen) {
           loadingPagesRef.current.delete(pageIndex);
@@ -326,6 +328,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
       return;
     }
     resetCache();
+    setIsDataRefreshing(true);
     void refetchCount();
     // fetchPage(0) will be triggered by the existing totalCount effect
   }, [filters, sorts, searchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -905,7 +908,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
         >
           <ViewsPanel tableId={tableId} activeViewId={viewId} onViewSwitch={() => setViewSwitching(true)} />
         </div>
-      {isInitialLoading || viewSwitching ? (
+      {isInitialLoading || viewSwitching || isDataRefreshing ? (
         <div className="flex flex-1 items-center justify-center">
           <div className="flex flex-col items-center gap-2">
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#e2e0ea] border-t-[#2563eb]" />
