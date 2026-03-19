@@ -162,6 +162,7 @@ export const GridTable = React.memo(function GridTable({
     getScrollElement: () => parentRef.current,
     estimateSize: () => 32,
     overscan: 20,
+    paddingEnd: 48, // Extra space so the Add row button is always reachable
     measureElement:
       typeof window !== "undefined" && !navigator.userAgent.includes("Firefox")
         ? (element) => element.getBoundingClientRect().height

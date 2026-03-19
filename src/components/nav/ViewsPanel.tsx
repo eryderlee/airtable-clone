@@ -345,7 +345,8 @@ export function ViewsPanel({ tableId, activeViewId }: ViewsPanelProps) {
           <div className="px-3 py-2 text-xs text-gray-400">No views</div>
         ) : (
           filtered.map((view) => {
-            const isActive = view.id === activeViewId || view.id === pendingViewId;
+            // If a pending view exists, only it is active; otherwise use URL-based activeViewId
+            const isActive = pendingViewId ? view.id === pendingViewId : view.id === activeViewId;
             const isRenaming = renamingViewId === view.id;
             const menuOpen = openMenuViewId === view.id;
             return (
