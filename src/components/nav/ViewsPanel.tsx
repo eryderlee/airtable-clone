@@ -213,12 +213,17 @@ export function ViewsPanel({ tableId, activeViewId, onViewSwitch }: ViewsPanelPr
       toast.error("Failed to create view. Changes reverted.");
     },
     onSettled: (_data, _err, { tableId: mutTableId }) => {
+      document.body.style.cursor = "";
       // Delay invalidation until after navigation completes to avoid mid-render refetch
       setTimeout(() => {
         void utils.view.getByTableId.invalidate({ tableId: mutTableId });
       }, 500);
     },
   });
+  useEffect(() => {
+    if (createView.isPending) document.body.style.cursor = "wait";
+    return () => { document.body.style.cursor = ""; };
+  }, [createView.isPending]);
 
   const renameView = api.view.update.useMutation({
     onMutate: async ({ id, name }) => {
