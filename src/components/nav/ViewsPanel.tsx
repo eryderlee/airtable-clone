@@ -272,7 +272,7 @@ export function ViewsPanel({ tableId, activeViewId }: ViewsPanelProps) {
   );
 
   return (
-    <aside className="relative flex h-full w-[275px] flex-shrink-0 flex-col border-r border-[#e2e0ea] bg-white">
+    <aside className="relative flex h-full w-[350px] flex-shrink-0 flex-col border-r border-[#e2e0ea] bg-white">
       {/* Create new */}
       <button
         onClick={(e) => { setCreateMenuAnchor(e.currentTarget); setShowCreateMenu((v) => !v); }}
@@ -362,7 +362,7 @@ export function ViewsPanel({ tableId, activeViewId }: ViewsPanelProps) {
                 {/* Grid icon */}
                 <button
                   tabIndex={-1}
-                  onClick={async () => { if (view.id.startsWith("optimistic-")) return; await flush(); router.push(`/base/${baseId}/${tableId}/view/${view.id}`); }}
+                  onClick={() => { if (view.id.startsWith("optimistic-")) return; setPendingViewId(view.id); void flush().then(() => router.push(`/base/${baseId}/${tableId}/view/${view.id}`)); }}
                   className="flex-shrink-0 bg-transparent border-none p-0 cursor-pointer"
                 >
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0">
@@ -376,7 +376,7 @@ export function ViewsPanel({ tableId, activeViewId }: ViewsPanelProps) {
                 {/* Name */}
                 <button
                   className="min-w-0 flex-1 bg-transparent border-none p-0 cursor-pointer text-left"
-                  onClick={async () => { if (!isRenaming && !view.id.startsWith("optimistic-")) { await flush(); router.push(`/base/${baseId}/${tableId}/view/${view.id}`); } }}
+                  onClick={() => { if (!isRenaming && !view.id.startsWith("optimistic-")) { setPendingViewId(view.id); void flush().then(() => router.push(`/base/${baseId}/${tableId}/view/${view.id}`)); } }}
                   onDoubleClick={(e) => { e.preventDefault(); setRenamingViewId(view.id); }}
                 >
                   <InlineEdit

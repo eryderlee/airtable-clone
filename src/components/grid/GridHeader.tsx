@@ -425,7 +425,7 @@ export function GridHeader({
                 ...(isPrimary ? { position: "sticky", left: 100, zIndex: 4 } : {}),
                 backgroundColor: isFiltered ? "#eafaeb" : isSorted ? "#FFF8F3" : undefined,
               }}
-              className="group relative items-center border-b border-r border-[#e2e0ea] bg-white px-2 py-0 text-left"
+              className="group relative items-center border-b border-r border-[#e2e0ea] bg-white px-2 py-0 text-left hover:!bg-[#f8f8f8]"
             >
               {/* Field type icon — key for primary, text/number otherwise */}
               <span className="mr-1.5 flex-shrink-0 text-[#888]">

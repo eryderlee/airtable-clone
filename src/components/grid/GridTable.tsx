@@ -327,7 +327,7 @@ export const GridTable = React.memo(function GridTable({
                     transform: `translateY(${virtualRow.start}px)`,
                     height: 32,
                   }}
-                  className="group border-b border-[#e2e0ea] bg-white hover:bg-[#f5f7fa]"
+                  className="group border-b border-[#e2e0ea] bg-white hover:bg-[#f8f8f8]"
                   onContextMenu={(e) => {
                     if (!selectedRowIds.has(rowData.id)) return;
                     e.preventDefault();
@@ -337,7 +337,7 @@ export const GridTable = React.memo(function GridTable({
                   {/* Checkbox + row number — sticky */}
                   <td
                     style={{ display: "flex", width: 100, minWidth: 100, position: "sticky", left: 0, zIndex: 1 }}
-                    className="h-full items-center bg-white px-2 py-0 group-hover:bg-[#f5f7fa]"
+                    className="h-full items-center bg-white px-2 py-0 group-hover:bg-[#f8f8f8]"
                   >
                     {/* Checkbox / row number — same position, swap on hover/selected */}
                     <label className="relative flex h-3.5 w-3.5 flex-shrink-0 cursor-pointer items-center justify-center">
@@ -388,7 +388,7 @@ export const GridTable = React.memo(function GridTable({
                           ...(isPrimary ? { position: "sticky", left: 100, zIndex: 1 } : {}),
                           ...(filteredColumnIds.includes(colId) ? { backgroundColor: "#d1f5d3" } : sortedColumnIds.includes(colId) ? { backgroundColor: "#FFF5EE" } : {}),
                         }}
-                        className={`border-r border-[#e2e0ea]${isPrimary && !filteredColumnIds.includes(colId) && !sortedColumnIds.includes(colId) ? " bg-white group-hover:bg-[#f5f7fa]" : ""}`}
+                        className={`border-r border-[#e2e0ea]${isPrimary && !filteredColumnIds.includes(colId) && !sortedColumnIds.includes(colId) ? " bg-white group-hover:bg-[#f8f8f8]" : ""}`}
                       >
                         <GridCell
                           rowId={rowData.id}
@@ -421,10 +421,10 @@ export const GridTable = React.memo(function GridTable({
 
         {/* Add row button */}
         <div
-          className="group flex h-8 items-center border-b border-[#e2e0ea] bg-white hover:bg-[#f5f7fa]"
+          className="group flex h-8 items-center border-b border-[#e2e0ea] bg-white hover:bg-[#f8f8f8]"
           style={{ width: "fit-content" }}
         >
-          <div style={{ width: 100, minWidth: 100, position: "sticky", left: 0, zIndex: 1 }} className="flex items-center bg-white px-2 group-hover:bg-[#f5f7fa]">
+          <div style={{ width: 100, minWidth: 100, position: "sticky", left: 0, zIndex: 1 }} className="flex items-center bg-white px-2 group-hover:bg-[#f8f8f8]">
             <button
               onClick={onAddRow}
               className="flex h-3.5 w-3.5 flex-shrink-0 items-center justify-center rounded text-[#888] hover:bg-[#e2e0ea]"
@@ -490,19 +490,24 @@ export const GridTable = React.memo(function GridTable({
       <div className="relative flex h-[23px] flex-shrink-0 items-center border-t border-[#e2e0ea] bg-white px-3">
         {/* Floating pill — sits above the footer bar */}
         <div className="absolute left-3 z-20 flex items-center overflow-hidden rounded-full border border-[#d1d5db] bg-white" style={{ bottom: "80%" }}>
-          <button onClick={onAddRow} className="flex h-7 w-7 items-center justify-center text-[#4c5667] hover:bg-[#f3f4f6]" title="Add row">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <path d="M6 2v8M2 6h8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+          <button onClick={onAddRow} className="flex items-center justify-center py-2 pl-4 pr-3 text-[#4c5667] hover:bg-[#f3f4f6]" title="Add row" style={{ borderTopLeftRadius: 9999, borderBottomLeftRadius: 9999 }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
             </svg>
           </button>
-          <div className="h-4 w-px bg-[#d1d5db]" />
-          <button className="flex h-7 items-center gap-1.5 px-3 text-[12px] text-[#4c5667] hover:bg-[#f3f4f6]" title="Add...">
-            <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-              <path d="M2 5.5h4M5.5 2v4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-              <path d="M7.5 8.5l1.5 1.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-              <circle cx="7.5" cy="7.5" r="2" stroke="currentColor" strokeWidth="1.1" />
+          <div className="h-5 w-px bg-[#d1d5db]" />
+          <button className="flex items-center gap-2 py-2 pl-3 pr-4 text-[13px] text-[#4c5667] hover:bg-[#f3f4f6]" title="Add..." style={{ borderTopRightRadius: 9999, borderBottomRightRadius: 9999 }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M13.5 8V11" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M12 9.5H15" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M5.25 2.5V5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M4 3.75H6.5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M10.5 11.5V13.5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M9.5 12.5H11.5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M11.6515 2.35241L2.35746 11.6464C2.1622 11.8417 2.1622 12.1583 2.35746 12.3536L3.65014 13.6462C3.8454 13.8415 4.16198 13.8415 4.35725 13.6462L13.6513 4.3522C13.8465 4.15694 13.8465 3.84035 13.6513 3.64509L12.3586 2.35241C12.1633 2.15715 11.8468 2.15715 11.6515 2.35241Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M9 5L11 7" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            Add...
+            Add…
           </button>
         </div>
 

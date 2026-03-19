@@ -539,11 +539,11 @@ function AddOrImportButton({
   }, [open]);
 
   return (
-    <div className="relative" ref={menuRef}>
+    <div className="relative flex items-center self-center" ref={menuRef}>
       <button
         onClick={() => setOpen(!open)}
         disabled={isPending}
-        className="flex items-center gap-1 self-center px-2 py-1 text-[13px] text-[#4c5667] hover:text-[#1f2328] disabled:opacity-40"
+        className="flex items-center gap-1 px-2 py-1 text-[13px] text-[#4c5667] hover:text-[#1f2328] disabled:opacity-40"
         data-testid="add-or-import-button"
       >
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none">

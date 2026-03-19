@@ -7,14 +7,14 @@ import { useBaseColor } from "./BaseColorContext";
 
 const COLOR_PALETTE = [
   // Row 1 — light pastels
-  ["#ffc9d4","#ffd4b8","#ffedb8","#c8edc8","#b8e8e8","#c8dcf5","#d8cef5","#d8d8d8"],
+  ["#FCCFDA","#FBD0B6","#FEDAAB","#D1F0C4","#C2F0EB","#B5E4F7","#D0E4FE","#F2C4F7","#CDB0FF","#DEDEE3"],
   // Row 2 — dark/saturated
-  ["#e8384f","#f06a00","#f1bc00","#20a84a","#00b2b2","#1264a3","#b144c0","#666666"],
+  ["#dc043b","#d54401","#ffba05","#048a0e","#01ddd5","#39caff","#166ee1","#dd04a8","#7c37ef","#616670"],
 ];
 
 function getBaseColor(color: string | null | undefined, id: string): string {
   if (color) return color;
-  const defaults = ["#4aa4ff", "#f97316", "#22c55e", "#a855f7", "#ec4899"];
+  const defaults = ["#1283DA", "#20A6A4", "#D4135B", "#7C39ED", "#F0A000"];
   const index = id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) % defaults.length;
   return defaults[index] ?? "#4aa4ff";
 }
@@ -124,7 +124,7 @@ export function BaseTopBar({ baseId, initialColor, initialName }: BaseTopBarProp
           {menuOpen && (
             <div
               ref={menuRef}
-              className="absolute left-0 top-full z-50 mt-1 w-[280px] rounded-xl border border-[#e4e7ec] bg-white shadow-xl"
+              className="absolute left-0 top-full z-50 -mt-1 w-[400px] rounded-md border border-[#e4e7ec] bg-white shadow-xl"
             >
               {/* Header */}
               <div className="flex items-center justify-between border-b border-[#f0f0f0] px-4 py-3">
@@ -138,12 +138,12 @@ export function BaseTopBar({ baseId, initialColor, initialName }: BaseTopBarProp
                       if (e.key === "Enter") handleRenameCommit();
                       if (e.key === "Escape") setRenamingBase(false);
                     }}
-                    className="flex-1 rounded bg-[#f3f4f6] px-1.5 py-0.5 text-[15px] font-semibold text-[#1f2328] outline-none ring-2 ring-[#2563eb]"
+                    className="flex-1 rounded bg-[#f3f4f6] px-1.5 py-0.5 text-[15px] font-normal text-[#1f2328] outline-none ring-2 ring-[#2563eb]"
                   />
                 ) : (
                   <span
                     onClick={handleRenameStart}
-                    className="cursor-text text-[15px] font-semibold text-[#1f2328] hover:text-[#2563eb]"
+                    className="cursor-text text-[15px] font-normal text-[#1f2328] hover:text-[#2563eb]"
                     title="Click to rename"
                   >
                     {optimisticName ?? base?.name ?? "Untitled Base"}
@@ -190,9 +190,9 @@ export function BaseTopBar({ baseId, initialColor, initialName }: BaseTopBarProp
                     ))}
                   </div>
                   {appearanceTab === "color" && (
-                    <div className="space-y-1.5">
+                    <div className="space-y-2">
                       {COLOR_PALETTE.map((row, rowIdx) => (
-                        <div key={rowIdx} className="flex gap-1.5">
+                        <div key={rowIdx} className="flex justify-between" style={{ height: 24 }}>
                           {row.map((c) => {
                             const isActive = baseColor === c;
                             const isDark = rowIdx === 1;
@@ -200,8 +200,8 @@ export function BaseTopBar({ baseId, initialColor, initialName }: BaseTopBarProp
                               <button
                                 key={c}
                                 onClick={() => handleColorSelect(c)}
-                                style={{ backgroundColor: c }}
-                                className="flex h-6 w-6 items-center justify-center rounded-full transition-transform hover:scale-110"
+                                style={{ backgroundColor: c, boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.15)", width: 26, height: 24 }}
+                                className="flex items-center justify-center rounded-[6px] cursor-pointer transition-transform hover:scale-110"
                                 title={c}
                               >
                                 {isActive && (
@@ -255,14 +255,14 @@ export function BaseTopBar({ baseId, initialColor, initialName }: BaseTopBarProp
             key={label}
             className="relative flex h-full items-center"
           >
-            <p className={`px-3 py-2 text-[13px] font-semibold transition-colors ${
+            <p className={`px-2 py-2 text-[12px] font-medium transition-colors ${
               active ? "text-[#1f2328]" : "text-[#6b7280] hover:text-[#1f2328]"
             }`}>
               {label}
             </p>
             <div
-              className="absolute left-0 right-0 transition-all duration-150"
-              style={{ bottom: -1, height: active ? 2 : 0, backgroundColor: "#20a6b5" }}
+              className="absolute left-1/4 right-1/4"
+              style={{ bottom: -1, height: active ? 2 : 0, backgroundColor: baseColor }}
             />
           </a>
         ))}

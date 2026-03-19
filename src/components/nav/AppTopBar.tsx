@@ -41,13 +41,13 @@ export function AppTopBar({
   }, [open]);
 
   return (
-    <header className="relative flex h-14 items-center border-b border-[#e4e7ec] bg-white">
+    <header className="relative flex h-[56px] items-center border-b border-[#dce0e8] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
       <div
         className="flex items-center gap-3 pl-2 pr-3"
         style={{ width: sidebarWidth }}
       >
         <button
-          className="flex h-8 w-8 items-center justify-center rounded-xl border border-transparent hover:border-[#dfe3ea]"
+          className="flex h-8 w-8 items-center justify-center rounded-xl transition hover:brightness-50"
           aria-label="Toggle sidebar"
           onClick={onToggleSidebar}
         >
@@ -130,15 +130,15 @@ export function AppTopBar({
         </div>
       </div>
 
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        <div className="pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-full border border-[#dfe3ea] bg-white px-3 py-1.5 text-xs text-[#5f6c7b] shadow-sm">
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center pr-3">
+        <div className="pointer-events-auto flex w-full max-w-[355px] items-center gap-2 rounded-full border border-[#dfe3ea] bg-white px-3 py-1 text-xs text-[#5f6c7b] shadow-sm">
           <SearchIcon />
           <input
             type="search"
             placeholder="Search..."
-            className="flex-1 bg-transparent text-sm text-[#1f2328] outline-none placeholder:text-[#9aa4b6]"
+            className="flex-1 bg-transparent text-[12px] text-[#1f2328] outline-none placeholder:text-[#666666]"
           />
-          <span className="font-sans text-[11px] font-medium text-[#9aa4b6]">ctrl K</span>
+          <span className="font-sans text-[13px] font-medium text-[#9aa4b6]">ctrl K</span>
         </div>
       </div>
     </header>
@@ -161,7 +161,9 @@ function MenuItem({ label, badge }: { label: string; badge?: string }) {
 function SearchIcon() {
   return (
     <svg
-      className="h-3.5 w-3.5 text-[#7b869b]"
+      width="24"
+      height="24"
+      className="flex-none text-[#1f2328]"
       viewBox="0 0 20 20"
       fill="none"
       aria-hidden="true"
@@ -169,7 +171,7 @@ function SearchIcon() {
       <path
         d="m15 15-3.5-3.5"
         stroke="currentColor"
-        strokeWidth="1.5"
+        strokeWidth="0.9"
         strokeLinecap="round"
       />
       <circle
@@ -177,7 +179,7 @@ function SearchIcon() {
         cy="9"
         r="4.75"
         stroke="currentColor"
-        strokeWidth="1.5"
+        strokeWidth="0.9"
       />
     </svg>
   );
@@ -213,13 +215,13 @@ function BellIcon() {
     >
       <path
         d="M5 8.5A5 5 0 0 1 10 3a5 5 0 0 1 5 5.5c0 3 1 4 1 4H4s1-1 1-4Z"
-        strokeWidth="1.5"
+        strokeWidth="0.9"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
       <path
         d="M8 16a2 2 0 0 0 4 0"
-        strokeWidth="1.5"
+        strokeWidth="0.9"
         strokeLinecap="round"
       />
     </svg>
@@ -228,11 +230,11 @@ function BellIcon() {
 
 function MenuIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
+    <svg width="29" height="20" viewBox="0 0 16 16" fill="none">
       <path
         d="M3 4h10M3 8h10M3 12h10"
-        stroke="#9aa4b6"
-        strokeWidth="1.5"
+        stroke="#737a86"
+        strokeWidth="0.9"
         strokeLinecap="round"
       />
     </svg>

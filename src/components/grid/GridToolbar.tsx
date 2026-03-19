@@ -68,7 +68,7 @@ export function GridToolbar({
 }: GridToolbarProps) {
   return (
     <div
-      className="relative flex h-[44px] flex-shrink-0 items-center border-b border-[#e2e0ea] bg-white px-2"
+      className="relative flex h-[48px] flex-shrink-0 items-center border-b border-[#e2e0ea] bg-white pl-3 pr-5"
       data-testid="grid-toolbar"
     >
       {/* Left: hamburger + Grid view toggle */}
@@ -76,11 +76,11 @@ export function GridToolbar({
         onClick={onToggleViewsPanel}
         onMouseEnter={onHamburgerMouseEnter}
         onMouseLeave={onHamburgerMouseLeave}
-        className={`mr-1 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded text-[#4c5667] hover:bg-[#edf0f4] ${viewsPanelOpen ? "bg-[#edf0f4]" : ""}`}
+        className="mr-1 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded text-[#4c5667] hover:bg-[#edf0f4]"
         title="Toggle views"
       >
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-          <path d="M2 3.5h10M2 7h10M2 10.5h10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{ shapeRendering: "geometricPrecision" }}>
+          <path d="M2.5 4.5h11a.5.5 0 0 0 0-1h-11a.5.5 0 0 0 0 1ZM2.5 8.5h11a.5.5 0 0 0 0-1h-11a.5.5 0 0 0 0 1ZM2.5 12.5h11a.5.5 0 0 0 0-1h-11a.5.5 0 0 0 0 1Z" />
         </svg>
       </button>
 
