@@ -116,20 +116,22 @@ export function HomeContent({ bases: initialBases }: Props) {
         }
       }
     }
-    // Fallback: fetch fresh data client-side to avoid SSR race conditions
-    try {
-      const fetchedTables = await utils.table.getByBaseId.fetch({ baseId });
-      if (fetchedTables.length > 0 && fetchedTables[0]) {
-        const fetchedViews = await utils.view.getByTableId.fetch({ tableId: fetchedTables[0].id });
-        if (fetchedViews.length > 0 && fetchedViews[0]) {
-          router.push(`/base/${baseId}/${fetchedTables[0].id}/view/${fetchedViews[0].id}`);
-          return;
-        }
-      }
-    } catch {
-      // If fetch fails, fall through to SSR redirect
-    }
+    // Cold path — navigate immediately, fetch in background
+    // The base layout will SSR-redirect to the correct table/view once data arrives
     router.push(`/base/${baseId}`);
+    void (async () => {
+      try {
+        const fetchedTables = await utils.table.getByBaseId.fetch({ baseId });
+        if (fetchedTables.length > 0 && fetchedTables[0]) {
+          const fetchedViews = await utils.view.getByTableId.fetch({ tableId: fetchedTables[0].id });
+          if (fetchedViews.length > 0 && fetchedViews[0]) {
+            router.push(`/base/${baseId}/${fetchedTables[0].id}/view/${fetchedViews[0].id}`);
+          }
+        }
+      } catch {
+        // SSR redirect already handled navigation
+      }
+    })();
   };
 
   const sorted = [...bases].sort((a, b) => {
@@ -297,31 +299,48 @@ function BaseGridCard({
   }
 
   return (
-    <div className="group relative flex h-24 w-[290px] items-center gap-3 rounded-[0.4rem] border-[1.5px] border-[#d9dadb] bg-white px-4 transition hover:-translate-y-0.5 hover:border-[#cad1e0] hover:shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
+    <div className="group relative flex h-24 w-[290px] items-center gap-3 rounded-[0.4rem] border-[1.5px] border-[#d9dadb] bg-white px-4 shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition hover:-translate-y-0.5 hover:border-[#cad1e0] hover:shadow-[0_4px_12px_rgba(15,23,42,0.1)]">
       <button
         onClick={() => onBaseClick(base.id)}
         className="flex flex-1 items-center gap-5 overflow-hidden text-left"
       >
         <div
           className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[10px] text-[20px] font-normal text-white"
-          style={{ backgroundColor: color }}
+          style={{ backgroundColor: color, boxShadow: "inset 0 0 0 1.5px rgba(0,0,0,0.15)" }}
         >
           {base.name.slice(0, 2)}
         </div>
         <div className="flex min-w-0 flex-col">
-          <span className="truncate text-[13px] font-semibold text-[#1f2328]">
-            {base.name}
-          </span>
-          <span className="text-[12px] text-[#6a7385] group-hover:hidden">
-            Opened{" "}
-            {formatRelativeTime(
-              base.lastOpenedAt ?? base.updatedAt ?? base.createdAt,
-            )}
-          </span>
-          <span className="hidden items-center gap-1 text-[12px] text-[#6a7385] group-hover:flex">
-            <DataIcon />
-            Open data
-          </span>
+          {renaming ? (
+            <input
+              ref={renameRef}
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              onBlur={handleRenameSubmit}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleRenameSubmit();
+                if (e.key === "Escape") setRenaming(false);
+              }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full truncate rounded border-2 border-[#1c64e4] bg-white px-1 text-[13px] font-semibold text-[#1f2328] outline-none"
+            />
+          ) : (
+            <span className="truncate text-[13px] font-semibold text-[#1f2328]">
+              {base.name}
+            </span>
+          )}
+          <div className="relative h-[18px]">
+            <span className="truncate text-[12px] text-[#6a7385] transition-opacity group-hover:opacity-0">
+              Opened{" "}
+              {formatRelativeTime(
+                base.lastOpenedAt ?? base.updatedAt ?? base.createdAt,
+              )}
+            </span>
+            <span className="absolute left-0 top-0 flex items-center gap-1 text-[12px] text-[#6a7385] opacity-0 transition-opacity group-hover:opacity-100">
+              <DataIcon />
+              Open data
+            </span>
+          </div>
         </div>
       </button>
 
@@ -389,46 +408,6 @@ function BaseGridCard({
         </div>
       </div>
 
-      {/* Rename modal */}
-      {renaming && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
-          onClick={() => setRenaming(false)}
-        >
-          <div
-            className="w-80 rounded-xl border border-[#e4e7ec] bg-white p-5 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="mb-3 text-sm font-semibold text-[#1f2328]">
-              Rename base
-            </h3>
-            <input
-              ref={renameRef}
-              value={renameValue}
-              onChange={(e) => setRenameValue(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleRenameSubmit();
-                if (e.key === "Escape") setRenaming(false);
-              }}
-              className="w-full rounded-lg border border-[#dfe3ea] px-3 py-2 text-sm outline-none focus:border-[#1c64e4]"
-            />
-            <div className="mt-3 flex justify-end gap-2">
-              <button
-                onClick={() => setRenaming(false)}
-                className="rounded-lg px-3 py-1.5 text-sm text-[#6a7385] hover:bg-[#f4f6fb]"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleRenameSubmit}
-                className="rounded-lg bg-[#1c64e4] px-3 py-1.5 text-sm text-white hover:bg-[#1550b6]"
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -572,7 +551,7 @@ function formatRelativeTime(date: Date | string | null) {
 }
 
 function colorFromString(input: string) {
-  const colors = ["#4aa4ff", "#f97316", "#22c55e", "#a855f7", "#ec4899"];
+  const colors = ["#1283DA", "#20A6A4", "#D4135B", "#7C39ED", "#F0A000"];
   const index =
     input
       .split("")

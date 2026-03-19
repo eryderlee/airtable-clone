@@ -9,10 +9,10 @@ import { useBaseColor } from "./BaseColorContext";
 
 function getBaseColor(color: string | null | undefined, id: string): string {
   if (color) return color;
-  const colors = ["#4aa4ff", "#f97316", "#22c55e", "#a855f7", "#ec4899"];
+  const colors = ["#1283DA", "#20A6A4", "#D4135B", "#7C39ED", "#F0A000"];
   const index =
     id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
-  return colors[index] ?? "#4aa4ff";
+  return colors[index] ?? "#1283DA";
 }
 
 function hexToRgb(hex: string) {
@@ -173,7 +173,7 @@ export function TableTabBar({ baseId, initialColor, initialName }: TableTabBarPr
     if (tableId.startsWith("optimistic-")) return;
     void utils.column.getByTableId.prefetch({ tableId });
     void utils.view.getByTableId.prefetch({ tableId });
-    void utils.row.count.prefetch({ tableId, filters: [] });
+    void utils.row.count.prefetch({ tableId, filters: [], searchQuery: "" });
     void router.prefetch(`/base/${baseId}/${tableId}`);
   };
 
@@ -215,17 +215,11 @@ export function TableTabBar({ baseId, initialColor, initialName }: TableTabBarPr
         <div className="mx-1 self-center h-3 w-px bg-[#4c5667] opacity-30" />
 
         {/* Add or import */}
-        <button
-          onClick={() => createTable.mutate({ baseId, seed: true })}
-          disabled={createTable.isPending}
-          className="flex items-center gap-1 self-center px-2 py-1 text-[13px] text-[#4c5667] hover:text-[#1f2328] disabled:opacity-40"
-          data-testid="add-or-import-button"
-        >
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <path d="M6 1.5v9M1.5 6h9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-          </svg>
-          Add or import
-        </button>
+        <AddOrImportButton
+          tableCount={tables?.length ?? 0}
+          isPending={createTable.isPending}
+          onStartFromScratch={() => createTable.mutate({ baseId, seed: true })}
+        />
       </div>
 
       {/* Tools */}
@@ -520,6 +514,121 @@ function MenuItem({
         </svg>
       )}
     </button>
+  );
+}
+
+function AddOrImportButton({
+  tableCount,
+  isPending,
+  onStartFromScratch,
+}: {
+  tableCount: number;
+  isPending: boolean;
+  onStartFromScratch: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <button
+        onClick={() => setOpen(!open)}
+        disabled={isPending}
+        className="flex items-center gap-1 self-center px-2 py-1 text-[13px] text-[#4c5667] hover:text-[#1f2328] disabled:opacity-40"
+        data-testid="add-or-import-button"
+      >
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M6 1.5v9M1.5 6h9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+        </svg>
+        {tableCount < 4 && "Add or import"}
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full z-50 mt-1 w-[280px] rounded-lg border border-[#e4e7ec] bg-white py-2 shadow-xl">
+          {/* Add a blank table */}
+          <div className="px-4 pb-1 pt-1 text-[11px] font-medium text-[#999]">Add a blank table</div>
+          <button
+            onClick={() => { setOpen(false); onStartFromScratch(); }}
+            className="flex w-full items-center gap-2.5 px-4 py-[7px] text-[13px] text-[#333] hover:bg-[#f5f5f5]"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-[#666]">
+              <rect x="2" y="3" width="12" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
+              <path d="M2 6h12M6 6v7" stroke="currentColor" strokeWidth="1.2" />
+            </svg>
+            Start from scratch
+          </button>
+
+          <div className="my-2 h-px bg-[#e4e7ec]" />
+
+          {/* Build with Omni */}
+          <div className="px-4 pb-1 pt-1 text-[11px] font-medium text-[#999]">Build with Omni</div>
+          <button disabled className="flex w-full cursor-default items-center gap-2.5 px-4 py-[7px] text-[13px] text-[#bbb]">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-[#ccc]">
+              <circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.2" />
+              <path d="M8 5v3l2 1.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            New table
+          </button>
+          <button disabled className="flex w-full cursor-default items-center justify-between gap-2.5 px-4 py-[7px] text-[13px] text-[#bbb]">
+            <span className="flex items-center gap-2.5">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-[#ccc]">
+                <circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.2" />
+                <path d="M5 8h6M8 5v6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+              </svg>
+              New table with web data
+            </span>
+            <span className="rounded-full bg-[#fff3e0] px-2 py-0.5 text-[10px] font-medium text-[#e69500]">Beta</span>
+          </button>
+
+          <div className="my-2 h-px bg-[#e4e7ec]" />
+
+          {/* Add from other sources */}
+          <div className="px-4 pb-1 pt-1 text-[11px] font-medium text-[#999]">Add from other sources</div>
+          {[
+            { label: "Airtable base", badge: "Team" },
+            { label: "CSV file" },
+            { label: "Google Calendar", badge: "Team" },
+            { label: "Google Sheets" },
+            { label: "Microsoft Excel" },
+            { label: "Salesforce", badge: "Business" },
+            { label: "Smartsheet" },
+          ].map(({ label, badge }) => (
+            <button key={label} disabled className="flex w-full cursor-default items-center justify-between gap-2.5 px-4 py-[7px] text-[13px] text-[#bbb]">
+              <span className="flex items-center gap-2.5">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-[#ccc]">
+                  <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.2" />
+                </svg>
+                {label}
+              </span>
+              {badge && (
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${badge === "Team" ? "bg-[#e8f4ff] text-[#1a73e8]" : "bg-[#fff3e0] text-[#e69500]"}`}>
+                  {badge}
+                </span>
+              )}
+            </button>
+          ))}
+          <button disabled className="flex w-full cursor-default items-center justify-between gap-2.5 px-4 py-[7px] text-[13px] text-[#bbb]">
+            <span className="flex items-center gap-2.5">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-[#ccc]">
+                <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.2" />
+              </svg>
+              25 more sources...
+            </span>
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="text-[#aaa]">
+              <path d="M3.5 2L7 5L3.5 8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
