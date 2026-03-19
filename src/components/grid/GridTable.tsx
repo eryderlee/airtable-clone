@@ -162,7 +162,6 @@ export const GridTable = React.memo(function GridTable({
     getScrollElement: () => parentRef.current,
     estimateSize: () => 32,
     overscan: 20,
-    paddingEnd: 48, // Extra space so the Add row button is always reachable
     measureElement:
       typeof window !== "undefined" && !navigator.userAgent.includes("Firefox")
         ? (element) => element.getBoundingClientRect().height
@@ -454,6 +453,8 @@ export const GridTable = React.memo(function GridTable({
             <div style={{ width: virtualPaddingRight, minWidth: virtualPaddingRight }} className="h-full" />
           )}
         </div>
+        {/* Spacer so the Add row button is never flush against the bottom edge */}
+        <div style={{ height: 48 }} />
         </div>{/* end parentRef */}
 
         {/* Vertical mirror scrollbar */}
