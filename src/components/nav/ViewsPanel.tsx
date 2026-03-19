@@ -169,6 +169,8 @@ export function ViewsPanel({ tableId, activeViewId, onViewSwitch }: ViewsPanelPr
   const { data: views } = api.view.getByTableId.useQuery({ tableId });
   const utils = api.useUtils();
   const [pendingViewId, setPendingViewId] = useState<string | null>(null);
+  // Tracks the most recent createView optimistic ID — used to skip router.push for older mutations
+  const latestCreateOptimisticIdRef = useRef<string | null>(null);
 
   // Clear pendingViewId only when the URL has caught up to the pending view
   useEffect(() => {
@@ -192,6 +194,7 @@ export function ViewsPanel({ tableId, activeViewId, onViewSwitch }: ViewsPanelPr
           createdAt: new Date(),
         },
       ]);
+      latestCreateOptimisticIdRef.current = optimisticId;
       setPendingViewId(optimisticId);
       return { previous, optimisticId };
     },
@@ -201,9 +204,9 @@ export function ViewsPanel({ tableId, activeViewId, onViewSwitch }: ViewsPanelPr
       utils.view.getByTableId.setData({ tableId }, (old) =>
         old?.map((v) => v.id === ctx?.optimisticId ? { ...newView } : v) ?? []
       );
-      // Only take over pendingViewId if it still matches this mutation's optimistic ID.
-      // If the user created another view in the meantime, leave their newer pendingViewId alone.
-      setPendingViewId((current) => current === ctx?.optimisticId ? newView.id : current);
+      // If a newer createView mutation is in flight, skip navigation — the newer one will navigate.
+      if (latestCreateOptimisticIdRef.current !== ctx?.optimisticId) return;
+      setPendingViewId(newView.id);
       router.push(`/base/${baseId}/${tableId}/view/${newView.id}`);
     },
     onError: (_err, { tableId: mutTableId }, context) => {
