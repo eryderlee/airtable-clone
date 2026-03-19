@@ -51,8 +51,8 @@
 
 ### Search, Filter & Sort
 
-- [ ] **SFS-01**: User can search across all cells — search hides non-matching rows (row-level filter)
-- [ ] **SFS-02**: Search is executed at the database level
+- [x] **SFS-01**: User can search across all cells — search hides non-matching rows (row-level filter)
+- [x] **SFS-02**: Search is executed at the database level
 - [ ] **SFS-03**: User can filter Text columns by: is empty, is not empty, contains, does not contain, equals
 - [ ] **SFS-04**: User can filter Number columns by: greater than, less than
 - [ ] **SFS-05**: All column filters are executed at the database level
@@ -143,8 +143,8 @@
 | PERF-03 | Phase 7 | Pending |
 | PERF-04 | Phase 7 | Pending |
 | PERF-05 | Phase 4 | Complete |
-| SFS-01 | Phase 6 | Pending |
-| SFS-02 | Phase 6 | Pending |
+| SFS-01 | Phase 12 | Complete |
+| SFS-02 | Phase 12 | Complete |
 | SFS-03 | Phase 6 | Pending |
 | SFS-04 | Phase 6 | Pending |
 | SFS-05 | Phase 6 | Pending |
