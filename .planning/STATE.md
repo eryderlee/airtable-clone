@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-17)
 
 **Core value:** A table UI that feels exactly like Airtable and never chokes — 1M rows, instant scroll, DB-level filtering.
-**Current focus:** Phase 12 — Server-Side Search
+**Current focus:** Phase 13 — Navigation & Housekeeping — COMPLETE
 
 ## Current Position
 
-Phase: 12 of 13 (Server-Side Search) — Complete
+Phase: 13 of 13 (Navigation & Housekeeping) — Complete
 Plan: 1/1 complete
-Status: Phase 12 complete. Phase 13 (Navigation and Housekeeping) is next.
-Last activity: 2026-03-19 — Completed 12-01-PLAN.md (server-side search wiring)
+Status: PROJECT COMPLETE — all 13 phases and 32 plans executed
+Last activity: 2026-03-19 — Completed 13-01-PLAN.md (navigation fixes and requirements audit)
 
-Progress: [█████████████████████████████ ] 97% (31 of 32 total plans)
+Progress: [██████████████████████████████] 100% (32 of 32 total plans)
 
 ## Performance Metrics
 
@@ -143,6 +143,9 @@ Recent decisions affecting current work:
 - 11-02: pendingViewId tracks optimistic view before navigation confirms activeViewId (URL param only updates on navigation)
 - 11-02: base.getAll NOT set in createBase.onMutate to prevent home flash — only invalidated after navigation in createTable.onSettled
 - 11-02: pendingBaseIdRef ref bridges createBase.onSuccess and createTable.onSuccess closures for baseId
+- 13-01: Cold-path navigation fires router.push immediately then fetches in background IIFE — URL changes before data arrives (TD-2)
+- 13-01: handleTabHover prefetch cache key includes searchQuery: '' to match GridView mount cache key (TD-5)
+- 13-01: UI-05 left unchecked — pixel-comparison pass 03-03 never ran; cannot assert 1:1 Airtable match (TD-7)
 
 ### Roadmap Evolution
 
@@ -160,5 +163,5 @@ Phase 11 fully complete — all 2 plans executed. No pending todos.
 ## Session Continuity
 
 Last session: 2026-03-19
-Stopped at: Completed 12-01-PLAN.md (server-side search wiring) — Phase 12 complete
+Stopped at: Completed 13-01-PLAN.md — PROJECT COMPLETE
 Resume file: None
