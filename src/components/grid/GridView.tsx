@@ -24,6 +24,7 @@ interface GridViewProps {
     sorts: unknown[];
     hiddenColumns: string[];
     searchQuery: string;
+    filterConjunction?: string;
   };
 }
 
@@ -71,6 +72,9 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
   const [hiddenColumns, setHiddenColumns] = useState<string[]>(
     initialConfig?.hiddenColumns ?? [],
   );
+  const [filterConjunction, setFilterConjunction] = useState<"and" | "or">(
+    (initialConfig?.filterConjunction as "and" | "or") ?? "and",
+  );
   const [openPanel, setOpenPanel] = useState<"search" | "filter" | "sort" | "hideFields" | null>(null);
   const [viewsPanelOpen, setViewsPanelOpen] = useState(true);
   const [viewsPanelHover, setViewsPanelHover] = useState(false);
@@ -94,7 +98,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
 
   // Total row count — drives virtualizer size; reflects filtered count when filters active
   const { data: countData, refetch: refetchCount } = api.row.count.useQuery(
-    { tableId, filters, searchQuery },
+    { tableId, filters, filterConjunction, searchQuery },
     { staleTime: 30_000 },
   );
   const totalCount = countData?.count ?? 0;
@@ -290,6 +294,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
           offset: pageIndex * PAGE_SIZE,
           limit: PAGE_SIZE,
           filters,
+          filterConjunction,
           sorts,
           searchQuery,
         });
@@ -307,7 +312,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
         }
       }
     },
-    [tableId, utils.row.getByOffset, filters, sorts, searchQuery],
+    [tableId, utils.row.getByOffset, filters, filterConjunction, sorts, searchQuery],
   );
 
   // Reset page cache — clears all cached pages and loading state
@@ -331,7 +336,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
     setIsDataRefreshing(true);
     void refetchCount();
     // fetchPage(0) will be triggered by the existing totalCount effect
-  }, [filters, sorts, searchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [filters, filterConjunction, sorts, searchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Separate ref to guard auto-save — prevents saving on initial mount (SSR-seeded values already correct in DB)
   const isFirstConfigRender = useRef(true);
@@ -357,11 +362,11 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
       isDirtyRef.current = false;
       updateViewConfig.mutate({
         id: viewId,
-        config: { filters, sorts, hiddenColumns: hiddenColumns.filter((id) => uuidRe.test(id)) },
+        config: { filters, filterConjunction, sorts, hiddenColumns: hiddenColumns.filter((id) => uuidRe.test(id)) },
       });
     }, 800);
     return () => clearTimeout(timer);
-  }, [filters, sorts, hiddenColumns]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [filters, filterConjunction, sorts, hiddenColumns]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Register a flush function with the context so ViewsPanel can await it before navigating
   const { register, unregister } = useViewConfigFlush();
@@ -554,7 +559,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
       const [, phase1Page0] = await Promise.all([
         refetchCount(),
         utils.row.getByOffset
-          .fetch({ tableId, offset: 0, limit: PAGE_SIZE, filters, sorts, searchQuery }, { staleTime: 0 })
+          .fetch({ tableId, offset: 0, limit: PAGE_SIZE, filters, filterConjunction, sorts, searchQuery }, { staleTime: 0 })
           .catch(() => null),
       ]);
       if (phase1Page0) {
@@ -577,7 +582,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
       const [, page0] = await Promise.all([
         refetchCount(),
         utils.row.getByOffset
-          .fetch({ tableId, offset: 0, limit: PAGE_SIZE, filters, sorts, searchQuery }, { staleTime: 0 })
+          .fetch({ tableId, offset: 0, limit: PAGE_SIZE, filters, filterConjunction, sorts, searchQuery }, { staleTime: 0 })
           .catch(() => null),
       ]);
       if (page0) {
@@ -882,6 +887,8 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
         onSearchChange={setSearchInput}
         filters={filters}
         onFiltersChange={setFilters}
+        filterConjunction={filterConjunction}
+        onFilterConjunctionChange={setFilterConjunction}
         sorts={sorts}
         onSortsChange={setSorts}
         hiddenColumns={hiddenColumns}

@@ -1,10 +1,13 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
 import type { FilterCondition } from "~/server/api/routers/row";
 
 interface FilterPanelProps {
   filters: FilterCondition[];
   onFiltersChange: (filters: FilterCondition[]) => void;
+  filterConjunction: "and" | "or";
+  onFilterConjunctionChange: (v: "and" | "or") => void;
   columnsData: { id: string; name: string; type: string }[];
   onClose: () => void;
 }
@@ -37,8 +40,22 @@ function getDefaultOperator(type: string): string {
   return type === "number" ? "greater_than" : "contains";
 }
 
-export function FilterPanel({ filters, onFiltersChange, columnsData, onClose }: FilterPanelProps) {
+export function FilterPanel({ filters, onFiltersChange, filterConjunction, onFilterConjunctionChange, columnsData, onClose }: FilterPanelProps) {
   const firstColumn = columnsData[0];
+  const [conjunctionDropdownOpen, setConjunctionDropdownOpen] = useState(false);
+  const [conjunctionAnchor, setConjunctionAnchor] = useState<DOMRect | null>(null);
+  const conjunctionMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!conjunctionDropdownOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (conjunctionMenuRef.current && !conjunctionMenuRef.current.contains(e.target as Node)) {
+        setConjunctionDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [conjunctionDropdownOpen]);
 
   const handleAddCondition = () => {
     if (!firstColumn) return;
@@ -190,9 +207,22 @@ export function FilterPanel({ filters, onFiltersChange, columnsData, onClose }: 
 
               return (
                 <div key={i} className="flex items-stretch gap-0 rounded border border-[#e2e0ea]" style={{ height: 30 }}>
-                  {/* Where / And label */}
+                  {/* Where / And / Or label */}
                   <div className="flex w-[72px] flex-shrink-0 items-center px-2 text-[12px] text-[#6b7280]">
-                    {i === 0 ? "Where" : "And"}
+                    {i === 0 ? "Where" : (
+                      <button
+                        onClick={(e) => {
+                          setConjunctionAnchor(e.currentTarget.getBoundingClientRect());
+                          setConjunctionDropdownOpen((v) => !v);
+                        }}
+                        className="flex items-center gap-0.5 rounded px-1 py-0.5 font-medium text-[#2563eb] hover:bg-[#eff6ff]"
+                      >
+                        {filterConjunction === "or" ? "Or" : "And"}
+                        <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+                          <path d="M1.5 3L4 5.5L6.5 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </button>
+                    )}
                   </div>
 
                   {/* Column picker */}
@@ -293,6 +323,34 @@ export function FilterPanel({ filters, onFiltersChange, columnsData, onClose }: 
           Copy from another view
         </button>
       </div>
+
+      {/* And / Or dropdown — fixed position relative to button */}
+      {conjunctionDropdownOpen && conjunctionAnchor && (
+        <div
+          ref={conjunctionMenuRef}
+          style={{
+            position: "fixed",
+            // Prefer below; if too close to bottom, flip above
+            top: conjunctionAnchor.bottom + 4,
+            left: conjunctionAnchor.left,
+            zIndex: 9999,
+          }}
+          className="w-[90px] rounded-md border border-[#e2e0ea] bg-white py-1 shadow-lg"
+        >
+          {(["and", "or"] as const).map((opt) => (
+            <button
+              key={opt}
+              onClick={() => {
+                onFilterConjunctionChange(opt);
+                setConjunctionDropdownOpen(false);
+              }}
+              className="flex w-full items-center px-3 py-1.5 text-[13px] text-[#1f2328]"
+            >
+              {opt === "and" ? "And" : "Or"}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

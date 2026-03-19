@@ -363,7 +363,7 @@ export function ViewsPanel({ tableId, activeViewId, onViewSwitch }: ViewsPanelPr
             return (
               <div
                 key={view.id}
-                className="group relative px-1 py-[3px] transition-colors"
+                className="group relative px-1 transition-colors"
                 onMouseEnter={() => {
                   void utils.column.getByTableId.prefetch({ tableId });
                   void utils.row.count.prefetch({ tableId, filters: [], searchQuery: "" });

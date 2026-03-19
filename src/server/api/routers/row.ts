@@ -1,4 +1,4 @@
-import { and, asc, count, eq, inArray, max, sql } from "drizzle-orm";
+import { and, asc, count, eq, inArray, max, or, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
@@ -44,6 +44,20 @@ export type SortCondition = z.infer<typeof sortConditionSchema>;
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+function applyFilterConditions(
+  conditions: (SQL | undefined)[],
+  filters: FilterCondition[],
+  conjunction: "and" | "or",
+) {
+  const clauses = buildFilterConditions(filters);
+  if (clauses.length === 0) return;
+  if (conjunction === "or") {
+    conditions.push(or(...clauses));
+  } else {
+    conditions.push(...clauses);
+  }
+}
 
 function buildFilterConditions(filters: FilterCondition[]): SQL[] {
   return filters.flatMap((f) => {
@@ -493,6 +507,7 @@ export const rowRouter = createTRPCRouter({
         offset: z.number().int().min(0),
         limit: z.number().int().min(1).max(500).default(100),
         filters: z.array(filterConditionSchema).default([]),
+        filterConjunction: z.enum(["and", "or"]).default("and"),
         sorts: z.array(sortConditionSchema).default([]),
         searchQuery: z.string().default(""),
       }),
@@ -543,8 +558,7 @@ export const rowRouter = createTRPCRouter({
       // Build WHERE conditions
       const conditions: SQL[] = [eq(rows.tableId, input.tableId)];
 
-      const filterClauses = buildFilterConditions(input.filters);
-      conditions.push(...filterClauses);
+      applyFilterConditions(conditions, input.filters, input.filterConjunction);
 
       if (input.searchQuery.trim()) {
         conditions.push(
@@ -615,6 +629,7 @@ export const rowRouter = createTRPCRouter({
       z.object({
         tableId: z.string().uuid(),
         filters: z.array(filterConditionSchema).default([]),
+        filterConjunction: z.enum(["and", "or"]).default("and"),
         searchQuery: z.string().default(""),
       }),
     )
@@ -637,8 +652,7 @@ export const rowRouter = createTRPCRouter({
 
       const conditions: SQL[] = [eq(rows.tableId, input.tableId)];
 
-      const filterClauses = buildFilterConditions(input.filters);
-      conditions.push(...filterClauses);
+      applyFilterConditions(conditions, input.filters, input.filterConjunction);
 
       if (input.searchQuery.trim()) {
         conditions.push(

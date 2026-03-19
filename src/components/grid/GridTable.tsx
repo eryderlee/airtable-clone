@@ -317,6 +317,7 @@ export const GridTable = React.memo(function GridTable({
               }
 
               // Real row
+              const rowHasFocus = cursor?.rowIndex === virtualRow.index;
               return (
                 <tr
                   key={rowData.id}
@@ -326,6 +327,7 @@ export const GridTable = React.memo(function GridTable({
                     position: "absolute",
                     transform: `translateY(${virtualRow.start}px)`,
                     height: 32,
+                    zIndex: rowHasFocus ? 5 : 0,
                   }}
                   className="group border-b border-[#e2e0ea] bg-white hover:bg-[#f8f8f8]"
                   onContextMenu={(e) => {
@@ -385,9 +387,14 @@ export const GridTable = React.memo(function GridTable({
                       <td
                         key={colId}
                         style={{
-                          display: "flex", width: w, minWidth: w,
-                          ...(isPrimary ? { position: "sticky", left: 100, zIndex: 1 } : {}),
+                          display: "flex", width: w, minWidth: w, overflow: "visible",
+                          ...(isPrimary ? { position: "sticky", left: 100, zIndex: isFocused ? 10 : 1 } : isFocused ? { position: "relative", zIndex: 10 } : {}),
                           ...(filteredColumnIds.includes(colId) ? { backgroundColor: "#d1f5d3" } : sortedColumnIds.includes(colId) ? { backgroundColor: "#FFF5EE" } : {}),
+                          ...(isFocused ? {
+                            outline: "2px solid #2563eb",
+                            outlineOffset: "-1px",
+                            borderRadius: 2,
+                          } : {}),
                         }}
                         className={`border-r border-[#e2e0ea]${isPrimary && !filteredColumnIds.includes(colId) && !sortedColumnIds.includes(colId) ? " bg-white group-hover:bg-[#f8f8f8]" : ""}`}
                       >
@@ -399,6 +406,7 @@ export const GridTable = React.memo(function GridTable({
                           value={cellValue}
                           isFocused={isFocused}
                           isEditing={isEditing}
+                          isPrimary={isPrimary}
                           initialDraft={isEditing ? initialDraft : undefined}
                           searchQuery={searchQuery}
                           isCurrentMatch={isCurrentMatch}
@@ -407,6 +415,23 @@ export const GridTable = React.memo(function GridTable({
                           onStartEditing={() => onStartEditing(virtualRow.index, colId)}
                           onSelect={() => onSelect(virtualRow.index, colId)}
                         />
+                        {/* Fill handle — sits on bottom-right edge of focused cell */}
+                        {isFocused && !isEditing && (
+                          <div
+                            style={{
+                              position: "absolute",
+                              right: -4,
+                              bottom: -4,
+                              width: 8,
+                              height: 8,
+                              backgroundColor: "#fff",
+                              border: "1px solid #2563eb",
+                              borderRadius: 2,
+                              cursor: "crosshair",
+                              zIndex: 15,
+                            }}
+                          />
+                        )}
                       </td>
                     );
                   })}

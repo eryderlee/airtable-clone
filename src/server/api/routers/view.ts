@@ -119,6 +119,7 @@ export const viewRouter = createTRPCRouter({
         id: z.string().uuid(),
         config: z.object({
           filters: z.array(z.any()).optional(),
+          filterConjunction: z.enum(["and", "or"]).optional(),
           sorts: z.array(z.any()).optional(),
           hiddenColumns: z.array(z.string().uuid()).optional(),
           searchQuery: z.string().optional(),

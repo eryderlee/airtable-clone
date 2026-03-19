@@ -11,6 +11,7 @@ interface GridCellProps {
   value: string | number | null;
   isFocused: boolean;
   isEditing: boolean;
+  isPrimary?: boolean;
   initialDraft?: string; // When set, enter edit mode with this value (for printable char entry)
   searchQuery?: string;
   isCurrentMatch?: boolean;
@@ -41,6 +42,7 @@ export function GridCell({
   value,
   isFocused,
   isEditing,
+  isPrimary,
   initialDraft,
   searchQuery,
   isCurrentMatch,
@@ -116,9 +118,7 @@ export function GridCell({
       data-column-id={columnId}
       tabIndex={-1}
       onClick={handleClick}
-      className={`flex h-full w-full items-center truncate px-[6px] py-[6px] text-[13px] leading-4 outline-none ${
-        isFocused ? "ring-2 ring-inset ring-blue-500" : ""
-      } ${isCurrentMatch ? "bg-yellow-200" : ""}`}
+      className={`relative flex h-full w-full items-center truncate px-[6px] py-[6px] text-[13px] leading-4 outline-none ${isCurrentMatch ? "bg-yellow-200" : ""}`}
     >
       {isEditing ? (
         <input
@@ -137,6 +137,8 @@ export function GridCell({
             : (value ?? "")}
         </span>
       )}
+
+      {/* Fill handle removed — rendered at td level in GridTable */}
     </div>
   );
 }

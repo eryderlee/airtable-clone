@@ -31,6 +31,8 @@ interface GridToolbarProps {
   // Filter
   filters: FilterCondition[];
   onFiltersChange: (filters: FilterCondition[]) => void;
+  filterConjunction: "and" | "or";
+  onFilterConjunctionChange: (v: "and" | "or") => void;
   // Sort
   sorts: SortCondition[];
   onSortsChange: (sorts: SortCondition[]) => void;
@@ -59,6 +61,8 @@ export function GridToolbar({
   onSearchChange,
   searchInput,
   onFiltersChange,
+  filterConjunction,
+  onFilterConjunctionChange,
   onSortsChange,
   columnsData,
   matchCount,
@@ -146,6 +150,8 @@ export function GridToolbar({
               <FilterPanel
                 filters={filters}
                 onFiltersChange={onFiltersChange}
+                filterConjunction={filterConjunction}
+                onFilterConjunctionChange={onFilterConjunctionChange}
                 columnsData={columnsData}
                 onClose={() => onTogglePanel("filter")}
               />
