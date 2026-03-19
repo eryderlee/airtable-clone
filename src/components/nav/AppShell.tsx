@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { toast } from "sonner";
 
 import { api } from "~/trpc/react";
 import { AppSidebar } from "./AppSidebar";
@@ -30,22 +31,49 @@ export function AppShell({ user, children }: AppShellProps) {
 
   const utils = api.useUtils();
 
-  const createTable = api.table.create.useMutation();
-  const createBase = api.base.create.useMutation();
+  // Cold start prefetch — cache base list before user navigates home
+  useEffect(() => {
+    void utils.base.getAll.prefetch();
+  }, [utils]);
+
+  const pendingBaseIdRef = useRef<string | null>(null);
+
+  const createTable = api.table.create.useMutation({
+    onSuccess: async (newTable) => {
+      const baseId = newTable.baseId ?? pendingBaseIdRef.current;
+      const fetchedViews = await utils.view.getByTableId.fetch({ tableId: newTable.id });
+      if (fetchedViews[0]) {
+        router.push(`/base/${baseId}/${newTable.id}/view/${fetchedViews[0].id}`);
+      } else {
+        router.push(`/base/${baseId}/${newTable.id}`);
+      }
+    },
+    onError: () => {
+      toast.error("Failed to create table.");
+    },
+    onSettled: () => {
+      void utils.base.getAll.invalidate();
+    },
+  });
+
+  const createBase = api.base.create.useMutation({
+    onMutate: () => {
+      setShowCreateModal(false); // Close modal immediately
+    },
+    onSuccess: (base) => {
+      pendingBaseIdRef.current = base.id;
+      createTable.mutate({ baseId: base.id, seed: true });
+    },
+    onError: () => {
+      toast.error("Failed to create base.");
+    },
+  });
 
   const isCreatingBase = createBase.isPending || createTable.isPending;
 
-  async function handleCreateBase() {
+  function handleCreateBase() {
     if (isCreatingBase) return;
-    try {
-      const base = await createBase.mutateAsync({ name: "Untitled Base" });
-      await createTable.mutateAsync({ baseId: base.id, seed: true });
-      setShowCreateModal(false);
-      void utils.base.getAll.invalidate();
-      router.push(`/base/${base.id}`);
-    } catch (error) {
-      console.error("Failed to create base", error);
-    }
+    createBase.mutate({ name: "Untitled Base" });
   }
 
   function handleToggleSidebar() {

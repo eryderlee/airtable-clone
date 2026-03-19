@@ -586,7 +586,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
       const newIndex = currentCount;
       const pageIndex = Math.floor(newIndex / PAGE_SIZE);
       const pageEntry = pageCacheRef.current[pageIndex];
-      const newRow: RowData = { id: optimisticId, cells: cells as Record<string, string | number | null> };
+      const newRow: RowData = { id: optimisticId, cells: cells ?? {} };
       if (pageEntry) {
         pageEntry.push(newRow);
       } else {

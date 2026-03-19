@@ -167,6 +167,13 @@ export function ViewsPanel({ tableId, activeViewId }: ViewsPanelProps) {
 
   const { data: views } = api.view.getByTableId.useQuery({ tableId });
   const utils = api.useUtils();
+  const [pendingViewId, setPendingViewId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (pendingViewId && !activeViewId.startsWith("optimistic-")) {
+      setPendingViewId(null);
+    }
+  }, [activeViewId, pendingViewId]);
 
   const createView = api.view.create.useMutation({
     onMutate: async ({ tableId: mutTableId, name }) => {
@@ -182,6 +189,7 @@ export function ViewsPanel({ tableId, activeViewId }: ViewsPanelProps) {
           config: { filters: [], sorts: [], hiddenColumns: [], searchQuery: "" },
         },
       ]);
+      setPendingViewId(optimisticId);
       return { previous, optimisticId };
     },
     onSuccess: async (newView) => {
@@ -324,7 +332,7 @@ export function ViewsPanel({ tableId, activeViewId }: ViewsPanelProps) {
           <div className="px-3 py-2 text-xs text-gray-400">No views</div>
         ) : (
           filtered.map((view) => {
-            const isActive = view.id === activeViewId;
+            const isActive = view.id === activeViewId || view.id === pendingViewId;
             const isRenaming = renamingViewId === view.id;
             const menuOpen = openMenuViewId === view.id;
             return (
