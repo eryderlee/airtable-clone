@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
@@ -29,7 +29,8 @@ export const viewRouter = createTRPCRouter({
       return ctx.db
         .select()
         .from(views)
-        .where(eq(views.tableId, input.tableId));
+        .where(eq(views.tableId, input.tableId))
+        .orderBy(asc(views.id));
     }),
 
   create: protectedProcedure

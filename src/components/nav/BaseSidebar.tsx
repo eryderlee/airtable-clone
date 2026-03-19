@@ -38,7 +38,7 @@ export function BaseSidebar({ user }: BaseSidebarProps) {
     <aside className="flex h-full w-[56px] flex-shrink-0 flex-col items-center border-r border-[#e4e7ec] bg-white py-2">
       {/* Logo at top */}
       <button
-        onClick={() => { router.push("/"); router.refresh(); }}
+        onClick={() => router.push("/")}
         className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl hover:bg-[#f3f4f6]"
         title="Home"
       >
