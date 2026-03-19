@@ -286,7 +286,8 @@ export function ViewsPanel({ tableId, activeViewId, onViewSwitch }: ViewsPanelPr
       {/* Create new */}
       <button
         onClick={(e) => { setCreateMenuAnchor(e.currentTarget); setShowCreateMenu((v) => !v); }}
-        className="flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] text-[#4c5667] hover:bg-[#eceff4]"
+        disabled={createView.isPending}
+        className="flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] text-[#4c5667] hover:bg-[#eceff4] disabled:cursor-wait disabled:opacity-50"
         data-testid="create-view-button"
       >
         <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
@@ -308,8 +309,8 @@ export function ViewsPanel({ tableId, activeViewId, onViewSwitch }: ViewsPanelPr
           {VIEW_TYPES.map((vt) => (
             <button
               key={vt.type}
+              disabled={createView.isPending || !vt.functional}
               onClick={() => {
-                if (!vt.functional) return;
                 createView.mutate({ tableId, name: `Grid view ${(views?.length ?? 0) + 1}` });
                 setShowCreateMenu(false);
               }}
