@@ -12,6 +12,7 @@ import { useViewConfigFlush } from "~/components/grid/ViewConfigFlushContext";
 interface ViewsPanelProps {
   tableId: string;
   activeViewId: string;
+  onViewSwitch?: () => void;
 }
 
 const VIEW_TYPES = [
@@ -141,7 +142,7 @@ const VIEW_TYPES = [
   },
 ];
 
-export function ViewsPanel({ tableId, activeViewId }: ViewsPanelProps) {
+export function ViewsPanel({ tableId, activeViewId, onViewSwitch }: ViewsPanelProps) {
   const router = useRouter();
   const params = useParams<{ baseId: string }>();
   const baseId = params.baseId;
@@ -362,7 +363,7 @@ export function ViewsPanel({ tableId, activeViewId }: ViewsPanelProps) {
                 {/* Grid icon */}
                 <button
                   tabIndex={-1}
-                  onClick={() => { if (view.id.startsWith("optimistic-")) return; setPendingViewId(view.id); void flush().then(() => router.push(`/base/${baseId}/${tableId}/view/${view.id}`)); }}
+                  onClick={() => { if (view.id.startsWith("optimistic-")) return; onViewSwitch?.(); setPendingViewId(view.id); void flush().then(() => router.push(`/base/${baseId}/${tableId}/view/${view.id}`)); }}
                   className="flex-shrink-0 bg-transparent border-none p-0 cursor-pointer"
                 >
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0">
@@ -376,7 +377,7 @@ export function ViewsPanel({ tableId, activeViewId }: ViewsPanelProps) {
                 {/* Name */}
                 <button
                   className="min-w-0 flex-1 bg-transparent border-none p-0 cursor-pointer text-left"
-                  onClick={() => { if (!isRenaming && !view.id.startsWith("optimistic-")) { setPendingViewId(view.id); void flush().then(() => router.push(`/base/${baseId}/${tableId}/view/${view.id}`)); } }}
+                  onClick={() => { if (!isRenaming && !view.id.startsWith("optimistic-")) { onViewSwitch?.(); setPendingViewId(view.id); void flush().then(() => router.push(`/base/${baseId}/${tableId}/view/${view.id}`)); } }}
                   onDoubleClick={(e) => { e.preventDefault(); setRenamingViewId(view.id); }}
                 >
                   <InlineEdit

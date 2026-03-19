@@ -74,6 +74,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
   const [openPanel, setOpenPanel] = useState<"search" | "filter" | "sort" | "hideFields" | null>(null);
   const [viewsPanelOpen, setViewsPanelOpen] = useState(true);
   const [viewsPanelHover, setViewsPanelHover] = useState(false);
+  const [viewSwitching, setViewSwitching] = useState(false);
   const showViewsPanel = viewsPanelOpen || viewsPanelHover;
   const hoverCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -890,11 +891,13 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
             height: "100%",
           }}
         >
-          <ViewsPanel tableId={tableId} activeViewId={viewId} />
+          <ViewsPanel tableId={tableId} activeViewId={viewId} onViewSwitch={() => setViewSwitching(true)} />
         </div>
-      {isInitialLoading ? (
+      {isInitialLoading || viewSwitching ? (
         <div className="flex flex-1 items-center justify-center">
-          <p className="text-sm text-[#aaa]">Loading...</p>
+          <div className="flex flex-col items-center gap-2">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#e2e0ea] border-t-[#2563eb]" />
+          </div>
         </div>
       ) : (
         <GridTable

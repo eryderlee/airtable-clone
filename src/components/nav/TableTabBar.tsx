@@ -111,6 +111,10 @@ export function TableTabBar({ baseId, initialColor, initialName }: TableTabBarPr
       void utils.table.getByBaseId.invalidate({ baseId: mutBaseId });
     },
   });
+  useEffect(() => {
+    document.body.style.cursor = (createTable.isPending || navigatingTo !== null) ? "wait" : "";
+    return () => { document.body.style.cursor = ""; };
+  }, [createTable.isPending, navigatingTo]);
 
   const renameTable = api.table.update.useMutation({
     onMutate: async ({ id, name }) => {
@@ -306,6 +310,7 @@ function TableTab({
       onMouseEnter={() => { setHovered(true); onHover(); }}
       onMouseLeave={() => setHovered(false)}
       onDoubleClick={(e) => { e.preventDefault(); setRenameOpen(true); }}
+      onContextMenu={(e) => { if (!isActive) { e.preventDefault(); setMenuOpen((v) => !v); } }}
       className={`relative flex flex-shrink-0 ${(isPending ?? isNavigating) ? "cursor-wait" : "cursor-pointer"} items-center gap-1 px-3 transition-colors ${
         isFirst ? "rounded-tr-md" : "rounded-t-md"
       } ${
@@ -339,8 +344,8 @@ function TableTab({
         </button>
       )}
 
-      {/* Chevron — opens dropdown */}
-      {(isActive || hovered) && (
+      {/* Chevron — opens dropdown (active tab only; inactive uses right-click) */}
+      {isActive && (
         <button
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMenuOpen((v) => !v); }}
           className="flex h-4 w-4 items-center justify-center rounded text-[#6b7280] hover:bg-[#e8eaed]"
