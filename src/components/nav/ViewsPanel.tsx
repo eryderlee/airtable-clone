@@ -201,8 +201,9 @@ export function ViewsPanel({ tableId, activeViewId, onViewSwitch }: ViewsPanelPr
       utils.view.getByTableId.setData({ tableId }, (old) =>
         old?.map((v) => v.id === ctx?.optimisticId ? { ...newView } : v) ?? []
       );
-      // Track the real view ID so isActive stays true through navigation
-      setPendingViewId(newView.id);
+      // Only take over pendingViewId if it still matches this mutation's optimistic ID.
+      // If the user created another view in the meantime, leave their newer pendingViewId alone.
+      setPendingViewId((current) => current === ctx?.optimisticId ? newView.id : current);
       router.push(`/base/${baseId}/${tableId}/view/${newView.id}`);
     },
     onError: (_err, { tableId: mutTableId }, context) => {

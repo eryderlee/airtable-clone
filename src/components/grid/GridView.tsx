@@ -422,7 +422,12 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
           order: Math.max(...(old?.map((col) => col.order) ?? []), -1) + 1,
         },
       ]);
-      return { previous };
+      return { previous, optimisticId };
+    },
+    onSuccess: (newColumn, { tableId: mutTableId }, context) => {
+      utils.column.getByTableId.setData({ tableId: mutTableId }, (old) =>
+        old?.map((col) => col.id === context?.optimisticId ? newColumn : col) ?? [],
+      );
     },
     onError: (_err, { tableId: mutTableId }, context) => {
       if (context?.previous !== undefined) {
@@ -430,9 +435,8 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
       }
       toast.error("Failed to add column. Changes reverted.");
     },
-    onSettled: () => {
-      void refetchColumns();
-    },
+    // Intentionally no refetch in onSettled — onSuccess already swapped the optimistic entry.
+    // Refetching here causes flicker as the cache briefly shows stale data during revalidation.
   });
 
   const renameColumn = api.column.update.useMutation({
@@ -707,6 +711,13 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
   useEffect(() => {
     setSearchMatchIndex(-1);
   }, [searchQuery]);
+
+  // Auto-jump to first match when results arrive (or change) and no match is selected
+  useEffect(() => {
+    if (searchMatches.length > 0 && searchMatchIndex === -1) {
+      setSearchMatchIndex(0);
+    }
+  }, [searchMatches.length, searchMatchIndex]);
 
   // Scroll to current match
   useEffect(() => {
