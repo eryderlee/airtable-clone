@@ -223,12 +223,44 @@ Plans:
 - [ ] 11-01-PLAN.md — Navigation fixes: remove router.refresh() from home nav, cache-first table tab switching, view order stability
 - [ ] 11-02-PLAN.md — Optimistic row add, view active highlight (pendingViewId), base creation no-flash fix, cold start prefetch
 
+### Phase 12: Server-Side Search
+**Goal**: Search filters rows at the database level — matching rows are excluded server-side so users find results across all pages of a 1M-row table, not just loaded pages.
+**Depends on**: Phase 11
+**Requirements**: SFS-01, SFS-02 (currently degraded — client-side highlight only)
+**Gap Closure**: Closes TD-1 from v1.0 audit
+**Success Criteria** (what must be TRUE):
+  1. Typing in the search bar triggers a server-side query — only rows containing the search term are fetched
+  2. Rows not matching the search term are absent from the grid (not just un-highlighted)
+  3. The row count updates to reflect the filtered result set
+  4. Clearing the search restores the full unfiltered row set
+  5. Search works correctly in combination with active filter and sort rules
+**Plans**: 1 plan
+
+Plans:
+- [ ] 12-01-PLAN.md — Pass searchQuery to getByOffset.fetch, row.count query, and cache-reset dep array; remove intentional-exclusion comment
+
+---
+
+### Phase 13: Navigation & Housekeeping
+**Goal**: Cold-path base navigation is instant (no sequential fetches before router.push), prefetch cache keys are correct, and REQUIREMENTS.md accurately reflects what has been implemented.
+**Depends on**: Phase 12
+**Requirements**: (Housekeeping phase — no new requirements; closes TD-2, TD-5, TD-7 from v1.0 audit)
+**Gap Closure**: Closes TD-2, TD-5, TD-7 from v1.0 audit
+**Success Criteria** (what must be TRUE):
+  1. Clicking a base on cold cache navigates immediately — URL changes before data loads (same pattern as TableTabBar.handleTabClick)
+  2. handleTabHover count prefetch uses the correct cache key (searchQuery: "" included) — prefetch is reused by GridView on mount
+  3. REQUIREMENTS.md traceability table reflects actual implementation status (all implemented requirements checked)
+**Plans**: 1 plan
+
+Plans:
+- [ ] 13-01-PLAN.md — HomeContent cold path fix (router.push first), handleTabHover prefetch key fix, REQUIREMENTS.md update
+
 ---
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11 -> 12 -> 13
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -243,3 +275,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 9. Neon Migration | 0/3 | Not started | - |
 | 10. UX Performance | 3/3 | Complete | 2026-03-18 |
 | 11. Instant Interactions | 2/2 | Complete | 2026-03-19 |
+| 12. Server-Side Search | 0/1 | Not started | - |
+| 13. Navigation & Housekeeping | 0/1 | Not started | - |
