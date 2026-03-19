@@ -153,17 +153,20 @@ export function TableTabBar({ baseId, initialColor, initialName }: TableTabBarPr
 
   async function handleTabClick(tableId: string) {
     if (tableId.startsWith("optimistic-")) return;
+    // Already on this table — clear any stuck navigatingTo state and bail
+    if (tableId === activeTableId) {
+      setNavigatingTo(null);
+      return;
+    }
     const cachedViews = utils.view.getByTableId.getData({ tableId });
     if (cachedViews && cachedViews.length > 0 && cachedViews[0]) {
       router.push(`/base/${baseId}/${tableId}/view/${cachedViews[0].id}`);
       return;
     }
-    const fetchedViews = await utils.view.getByTableId.fetch({ tableId });
-    if (fetchedViews[0]) {
-      router.push(`/base/${baseId}/${tableId}/view/${fetchedViews[0].id}`);
-      return;
-    }
+    // Cache cold — navigate immediately so UI responds instantly; SSR redirect
+    // will resolve the view. Fetch in background to warm cache for next time.
     router.push(`/base/${baseId}/${tableId}`);
+    void utils.view.getByTableId.fetch({ tableId }).catch(() => undefined);
   }
 
   const handleTabHover = (tableId: string) => {

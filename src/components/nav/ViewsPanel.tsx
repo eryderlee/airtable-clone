@@ -169,8 +169,9 @@ export function ViewsPanel({ tableId, activeViewId }: ViewsPanelProps) {
   const utils = api.useUtils();
   const [pendingViewId, setPendingViewId] = useState<string | null>(null);
 
+  // Clear pendingViewId only when the URL has caught up to the pending view
   useEffect(() => {
-    if (pendingViewId && !activeViewId.startsWith("optimistic-")) {
+    if (pendingViewId && activeViewId === pendingViewId) {
       setPendingViewId(null);
     }
   }, [activeViewId, pendingViewId]);
@@ -193,17 +194,28 @@ export function ViewsPanel({ tableId, activeViewId }: ViewsPanelProps) {
       setPendingViewId(optimisticId);
       return { previous, optimisticId };
     },
-    onSuccess: async (newView) => {
+    onSuccess: async (newView, _vars, ctx) => {
+      // Replace optimistic entry with real view before navigating so the cache
+      // is correct the moment the new route renders — eliminates flicker
+      utils.view.getByTableId.setData({ tableId }, (old) =>
+        old?.map((v) => v.id === ctx?.optimisticId ? { ...newView } : v) ?? []
+      );
+      // Track the real view ID so isActive stays true through navigation
+      setPendingViewId(newView.id);
       router.push(`/base/${baseId}/${tableId}/view/${newView.id}`);
     },
     onError: (_err, { tableId: mutTableId }, context) => {
       if (context?.previous !== undefined) {
         utils.view.getByTableId.setData({ tableId: mutTableId }, context.previous);
       }
+      setPendingViewId(null);
       toast.error("Failed to create view. Changes reverted.");
     },
     onSettled: (_data, _err, { tableId: mutTableId }) => {
-      void utils.view.getByTableId.invalidate({ tableId: mutTableId });
+      // Delay invalidation until after navigation completes to avoid mid-render refetch
+      setTimeout(() => {
+        void utils.view.getByTableId.invalidate({ tableId: mutTableId });
+      }, 500);
     },
   });
 
@@ -349,7 +361,7 @@ export function ViewsPanel({ tableId, activeViewId }: ViewsPanelProps) {
                 {/* Grid icon */}
                 <button
                   tabIndex={-1}
-                  onClick={async () => { await flush(); router.push(`/base/${baseId}/${tableId}/view/${view.id}`); }}
+                  onClick={async () => { if (view.id.startsWith("optimistic-")) return; await flush(); router.push(`/base/${baseId}/${tableId}/view/${view.id}`); }}
                   className="flex-shrink-0 bg-transparent border-none p-0 cursor-pointer"
                 >
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0">
@@ -363,7 +375,7 @@ export function ViewsPanel({ tableId, activeViewId }: ViewsPanelProps) {
                 {/* Name */}
                 <button
                   className="min-w-0 flex-1 bg-transparent border-none p-0 cursor-pointer text-left"
-                  onClick={async () => { if (!isRenaming) { await flush(); router.push(`/base/${baseId}/${tableId}/view/${view.id}`); } }}
+                  onClick={async () => { if (!isRenaming && !view.id.startsWith("optimistic-")) { await flush(); router.push(`/base/${baseId}/${tableId}/view/${view.id}`); } }}
                   onDoubleClick={(e) => { e.preventDefault(); setRenamingViewId(view.id); }}
                 >
                   <InlineEdit
