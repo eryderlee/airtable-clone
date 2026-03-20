@@ -471,8 +471,11 @@ export const rowRouter = createTRPCRouter({
       // Dynamic import for faker (production dep, avoid static bundle cost)
       const { faker } = await import("@faker-js/faker");
 
-      const CHUNK_SIZE = 1000;
+      const CHUNK_SIZE = 5000;
+      const CONCURRENCY = 5;
 
+      // Phase 1: Pre-generate all chunks
+      const chunks: (typeof rows.$inferInsert)[][] = [];
       for (let offset = 0; offset < input.count; offset += CHUNK_SIZE) {
         const chunkSize = Math.min(CHUNK_SIZE, input.count - offset);
         const chunk = Array.from({ length: chunkSize }, (_, i) => {
@@ -490,8 +493,13 @@ export const rowRouter = createTRPCRouter({
             cells,
           };
         });
+        chunks.push(chunk);
+      }
 
-        await ctx.db.insert(rows).values(chunk);
+      // Phase 2: Execute in parallel batches of CONCURRENCY
+      for (let i = 0; i < chunks.length; i += CONCURRENCY) {
+        const batch = chunks.slice(i, i + CONCURRENCY);
+        await Promise.all(batch.map((chunk) => ctx.db.insert(rows).values(chunk)));
       }
 
       return { count: input.count };
