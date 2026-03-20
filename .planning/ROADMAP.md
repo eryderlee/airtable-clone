@@ -261,13 +261,15 @@ Plans:
 
 **Goal:** Drive 100k row creation time below 6 seconds (targeting sub-4.6s parity with known benchmarks) through iterative server-side and client-side optimizations, measured via the in-app benchmark button.
 **Depends on:** Phase 13
-**Plans:** 0 plans
+**Plans:** 2 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 14 to break down)
+- [ ] 14-01-PLAN.md — Quick wins: maxDuration + 5k chunk size + 5x parallel execution
+- [ ] 14-02-PLAN.md — Single-query generate_series if 14-01 insufficient
 
 **Details:**
-[To be added during planning]
+- Step 1 (14-01): Increase chunk size 1k->5k, run 5 concurrent inserts via Promise.all, add maxDuration=300. Expected: ~3-4s.
+- Step 2 (14-02): Replace with single INSERT...SELECT FROM generate_series() if needed. Expected: ~1-3s.
 
 ---
 
