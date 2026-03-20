@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-17)
 
 **Core value:** A table UI that feels exactly like Airtable and never chokes — 1M rows, instant scroll, DB-level filtering.
-**Current focus:** Phase 13 — Navigation & Housekeeping — COMPLETE
+**Current focus:** Phase 14 — 100k Row Creation Performance Optimization
 
 ## Current Position
 
-Phase: 13 of 13 (Navigation & Housekeeping) — Complete
-Plan: 1/1 complete
-Status: PROJECT COMPLETE — all 13 phases and 32 plans executed
-Last activity: 2026-03-19 — Completed 13-01-PLAN.md (navigation fixes and requirements audit)
+Phase: 14 of 14 (100k Row Creation Performance Optimization) — In Progress
+Plan: 0/2 complete (14-01 at checkpoint:human-verify)
+Status: Awaiting benchmark verification
+Last activity: 2026-03-21 — Executed 14-01 Task 1; at checkpoint awaiting benchmark result
 
-Progress: [██████████████████████████████] 100% (32 of 32 total plans)
+Progress: [██████████████████████████████░░] ~94% (32 of 34 total plans)
 
 ## Performance Metrics
 
@@ -146,6 +146,9 @@ Recent decisions affecting current work:
 - 13-01: Cold-path navigation fires router.push immediately then fetches in background IIFE — URL changes before data arrives (TD-2)
 - 13-01: handleTabHover prefetch cache key includes searchQuery: '' to match GridView mount cache key (TD-5)
 - 13-01: UI-05 left unchecked — pixel-comparison pass 03-03 never ran; cannot assert 1:1 Airtable match (TD-7)
+- 14-01: CHUNK_SIZE=5000 (5 cols × 5000 rows = 25k params, under 32,767 Postgres limit); CONCURRENCY=5 safe for Neon free tier (~10 pool connections)
+- 14-01: Two-phase bulk insert: pre-generate all chunks (CPU), then execute in parallel batches via Promise.all (IO-bound)
+- 14-01: maxDuration=300 + dynamic=force-dynamic added to tRPC route segment — prevents Vercel 504 on long bulk inserts
 
 ### Roadmap Evolution
 
@@ -163,6 +166,6 @@ Phase 11 fully complete — all 2 plans executed. No pending todos.
 
 ## Session Continuity
 
-Last session: 2026-03-19
-Stopped at: Completed 13-01-PLAN.md — PROJECT COMPLETE
+Last session: 2026-03-21
+Stopped at: 14-01 checkpoint:human-verify — benchmark verification pending
 Resume file: None
