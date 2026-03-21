@@ -516,15 +516,32 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
   const bulkCreate = api.row.bulkCreate.useMutation();
   const [isBulkCreating, setIsBulkCreating] = useState(false);
 
-  // Benchmark state
+  // Benchmark state — restore from sessionStorage if this is a post-reload
   type BenchmarkPhase = "idle" | "creating" | "viewing" | "cleaning" | "done";
-  const [benchmarkPhase, setBenchmarkPhase] = useState<BenchmarkPhase>("idle");
+  const restoredResult = typeof window !== "undefined" && sessionStorage.getItem("benchmarkTableId") === tableId
+    ? Number(sessionStorage.getItem("benchmarkResult"))
+    : null;
+  const restoredStartOrder = typeof window !== "undefined" && sessionStorage.getItem("benchmarkTableId") === tableId
+    ? Number(sessionStorage.getItem("benchmarkStartOrder"))
+    : null;
+  const [benchmarkPhase, setBenchmarkPhase] = useState<BenchmarkPhase>(restoredResult ? "viewing" : "idle");
   const [benchmarkElapsed, setBenchmarkElapsed] = useState(0);
-  const [benchmarkResult, setBenchmarkResult] = useState<number | null>(null);
+  const [benchmarkResult, setBenchmarkResult] = useState<number | null>(restoredResult);
   const benchmarkTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const benchmarkStartTimeRef = useRef(0);
-  const benchmarkStartOrderRef = useRef(0);
+  const benchmarkStartOrderRef = useRef(restoredStartOrder ?? 0);
   const deleteFromOrder = api.row.deleteFromOrder.useMutation();
+
+  // Clear sessionStorage once restored and schedule auto-delete
+  useEffect(() => {
+    if (restoredResult) {
+      sessionStorage.removeItem("benchmarkResult");
+      sessionStorage.removeItem("benchmarkStartOrder");
+      sessionStorage.removeItem("benchmarkTableId");
+      const t = setTimeout(() => { void handleBenchmarkDelete(); }, 10000);
+      return () => clearTimeout(t);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAddColumn = useCallback(
     (type: "text" | "number") => {
@@ -630,14 +647,11 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
         clearInterval(benchmarkTimerRef.current);
         benchmarkTimerRef.current = null;
       }
-      // Reset page cache so grid reloads fresh with the new rows
-      pageCacheRef.current = {};
-      loadingPagesRef.current = new Set();
-      await refetchCount();
-      router.refresh();
-      forceUpdate();
-      setBenchmarkPhase("viewing");
-      setTimeout(() => { void handleBenchmarkDelete(); }, 10000);
+      // Save result so we can restore it after the reload
+      sessionStorage.setItem("benchmarkResult", String(elapsed));
+      sessionStorage.setItem("benchmarkStartOrder", String(startOrder));
+      sessionStorage.setItem("benchmarkTableId", tableId);
+      window.location.reload();
     } catch {
       if (benchmarkTimerRef.current) {
         clearInterval(benchmarkTimerRef.current);
