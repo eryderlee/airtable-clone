@@ -471,20 +471,24 @@ export const rowRouter = createTRPCRouter({
       // Dynamic import for faker (production dep, avoid static bundle cost)
       const { faker } = await import("@faker-js/faker");
 
-      // Generate all cells with faker (fast, in-process)
+      // Pre-generate word/number pools — 500 faker calls instead of 100k × N_cols.
+      // Each row randomly samples from the pool: faker quality, near-zero generation time.
+      const POOL = 500;
+      const wordPool = Array.from({ length: POOL }, () => faker.lorem.words());
+      const numPool = Array.from({ length: POOL }, () => faker.number.int({ min: 0, max: 10000 }));
+
       const allCells = Array.from({ length: input.count }, () => {
         const cells: Record<string, string | number | null> = {};
         for (const col of cols) {
-          cells[col.id] = col.type === "number"
-            ? faker.number.int({ min: 0, max: 10000 })
-            : faker.lorem.words();
+          const idx = Math.floor(Math.random() * POOL);
+          cells[col.id] = col.type === "number" ? numPool[idx]! : wordPool[idx]!;
         }
         return cells;
       });
 
-      // 3 parallel inserts via jsonb_array_elements — each chunk is ONE parameter,
-      // no Postgres parameter limit, only 3 round-trips total.
-      const PARALLEL = 3;
+      // 5 parallel inserts via jsonb_array_elements — each chunk is ONE parameter,
+      // no Postgres parameter limit, only 5 round-trips total (concurrent).
+      const PARALLEL = 5;
       const chunkSize = Math.ceil(input.count / PARALLEL);
 
       await Promise.all(
