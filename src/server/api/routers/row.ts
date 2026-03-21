@@ -476,8 +476,8 @@ export const rowRouter = createTRPCRouter({
         if (col.type === "number") {
           return `${colIdLiteral}, floor(random() * 10001)::int`;
         }
-        // text: generate a space-separated "sentence" from 3 random hex words
-        return `${colIdLiteral}, concat_ws(' ', substr(md5(random()::text),1,8), substr(md5(random()::text),1,8), substr(md5(random()::text),1,8))`;
+        // text: hash of row number — fast (no random() overhead), unique per row
+        return `${colIdLiteral}, md5(gs::text)`;
       });
 
       const cellsExpr =
