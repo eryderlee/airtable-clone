@@ -12,8 +12,8 @@ interface GridToolbarProps {
   onBulkAddColumns: () => void;
   isBulkAddingColumns: boolean;
   onBenchmark: () => void;
-  benchmarkPhase: "idle" | "creating" | "cleaning" | "done";
-  benchmarkProgress: number;
+  onBenchmarkDelete: () => void;
+  benchmarkPhase: "idle" | "creating" | "viewing" | "cleaning" | "done";
   benchmarkElapsed: number;
   benchmarkResult: number | null;
   onToggleViewsPanel: () => void;
@@ -54,8 +54,8 @@ export function GridToolbar({
   onBulkAddColumns,
   isBulkAddingColumns,
   onBenchmark,
+  onBenchmarkDelete,
   benchmarkPhase,
-  benchmarkProgress,
   benchmarkElapsed,
   benchmarkResult,
   onToggleViewsPanel,
@@ -241,7 +241,7 @@ export function GridToolbar({
       >
         {isBulkCreating ? "…" : "+100k"}
       </button>
-      {/* Dev: benchmark — create 100k rows, time it, auto-delete */}
+      {/* Dev: benchmark — create 100k rows, time it, then wait for manual delete */}
       <button
         onClick={onBenchmark}
         disabled={benchmarkPhase !== "idle" || isBulkCreating}
@@ -252,18 +252,31 @@ export function GridToolbar({
             ? "bg-[#d97706]"
             : benchmarkPhase === "cleaning"
             ? "bg-[#6b7280]"
+            : benchmarkPhase === "viewing"
+            ? "bg-[#16a34a]"
             : "bg-[#0891b2] hover:bg-[#0e7490]"
         }`}
-        title="Benchmark: create 100k rows timed, then auto-delete"
+        title="Benchmark: create 100k rows timed, rows stay until you delete"
       >
         {benchmarkPhase === "creating"
-          ? `${Math.round(benchmarkProgress / 1000)}k/100k · ${(benchmarkElapsed / 1000).toFixed(1)}s`
+          ? `⏳ inserting… ${(benchmarkElapsed / 1000).toFixed(1)}s`
+          : benchmarkPhase === "viewing" && benchmarkResult !== null
+          ? `✓ ${(benchmarkResult / 1000).toFixed(2)}s — rows live`
           : benchmarkPhase === "cleaning"
           ? "↩ cleaning…"
           : benchmarkPhase === "done" && benchmarkResult !== null
           ? `✓ ${(benchmarkResult / 1000).toFixed(2)}s`
           : "⏱ bench"}
       </button>
+      {benchmarkPhase === "viewing" && (
+        <button
+          onClick={onBenchmarkDelete}
+          className="ml-1 flex-shrink-0 rounded bg-[#dc2626] px-2 py-1 text-[11px] font-medium text-white hover:bg-[#b91c1c]"
+          title="Delete benchmark rows"
+        >
+          ↩ delete rows
+        </button>
+      )}
       {/* Dev: bulk add columns for testing column virtualization */}
       <button
         onClick={onBulkAddColumns}

@@ -515,9 +515,8 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
   const [isBulkCreating, setIsBulkCreating] = useState(false);
 
   // Benchmark state
-  type BenchmarkPhase = "idle" | "creating" | "cleaning" | "done";
+  type BenchmarkPhase = "idle" | "creating" | "viewing" | "cleaning" | "done";
   const [benchmarkPhase, setBenchmarkPhase] = useState<BenchmarkPhase>("idle");
-  const [benchmarkProgress, setBenchmarkProgress] = useState(0);
   const [benchmarkElapsed, setBenchmarkElapsed] = useState(0);
   const [benchmarkResult, setBenchmarkResult] = useState<number | null>(null);
   const benchmarkTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -612,7 +611,6 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
     const startOrder = totalCount;
     benchmarkStartOrderRef.current = startOrder;
     benchmarkStartTimeRef.current = Date.now();
-    setBenchmarkProgress(0);
     setBenchmarkResult(null);
     setBenchmarkElapsed(0);
     setBenchmarkPhase("creating");
@@ -623,31 +621,40 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
 
     try {
       await bulkCreate.mutateAsync({ tableId, count: TOTAL });
-      setBenchmarkProgress(TOTAL);
       const elapsed = Date.now() - benchmarkStartTimeRef.current;
       console.log(`[benchmark] 100k rows created in ${(elapsed / 1000).toFixed(2)}s`);
       setBenchmarkResult(elapsed);
-    } finally {
       if (benchmarkTimerRef.current) {
         clearInterval(benchmarkTimerRef.current);
         benchmarkTimerRef.current = null;
       }
-      setBenchmarkPhase("cleaning");
-      try {
-        await deleteFromOrder.mutateAsync({ tableId, fromOrder: benchmarkStartOrderRef.current });
-      } catch { /* best-effort cleanup */ }
-      pageCacheRef.current = {};
-      loadingPagesRef.current = new Set();
-      await refetchCount();
+      void refetchCount();
       forceUpdate();
-      setBenchmarkPhase("done");
-      setTimeout(() => {
-        setBenchmarkPhase("idle");
-        setBenchmarkProgress(0);
-        setBenchmarkElapsed(0);
-      }, 5000);
+      setBenchmarkPhase("viewing");
+    } catch {
+      if (benchmarkTimerRef.current) {
+        clearInterval(benchmarkTimerRef.current);
+        benchmarkTimerRef.current = null;
+      }
+      setBenchmarkPhase("idle");
     }
-  }, [benchmarkPhase, totalCount, tableId, bulkCreate, deleteFromOrder, refetchCount]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [benchmarkPhase, totalCount, tableId, bulkCreate, refetchCount]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleBenchmarkDelete = useCallback(async () => {
+    setBenchmarkPhase("cleaning");
+    try {
+      await deleteFromOrder.mutateAsync({ tableId, fromOrder: benchmarkStartOrderRef.current });
+    } catch { /* best-effort */ }
+    pageCacheRef.current = {};
+    loadingPagesRef.current = new Set();
+    await refetchCount();
+    forceUpdate();
+    setBenchmarkPhase("done");
+    setTimeout(() => {
+      setBenchmarkPhase("idle");
+      setBenchmarkElapsed(0);
+    }, 3000);
+  }, [tableId, deleteFromOrder, refetchCount]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const createRow = api.row.create.useMutation({
     onMutate: ({ tableId: mutTableId, cells }) => {
@@ -937,8 +944,8 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
         onBulkAddColumns={handleBulkAddColumns}
         isBulkAddingColumns={isBulkAddingColumns}
         onBenchmark={handleBenchmark}
+        onBenchmarkDelete={handleBenchmarkDelete}
         benchmarkPhase={benchmarkPhase}
-        benchmarkProgress={benchmarkProgress}
         benchmarkElapsed={benchmarkElapsed}
         benchmarkResult={benchmarkResult}
         rowCount={totalCount}

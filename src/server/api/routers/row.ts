@@ -476,8 +476,8 @@ export const rowRouter = createTRPCRouter({
         if (col.type === "number") {
           return `${colIdLiteral}, floor(random() * 10001)::int`;
         }
-        // text: hash of row number — fast (no random() overhead), unique per row
-        return `${colIdLiteral}, md5(gs::text)`;
+        // text: row number as string — zero overhead, unique per row
+        return `${colIdLiteral}, gs::text`;
       });
 
       const cellsExpr =
