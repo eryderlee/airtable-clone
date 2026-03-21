@@ -427,7 +427,7 @@ export const rowRouter = createTRPCRouter({
     }),
 
   // -------------------------------------------------------------------------
-  // bulkCreate: insert up to 100k rows in 1000-row chunks with faker data
+  // bulkCreate: insert up to 100k rows in a single Postgres generate_series query
   // -------------------------------------------------------------------------
   bulkCreate: protectedProcedure
     .input(
@@ -462,45 +462,40 @@ export const rowRouter = createTRPCRouter({
 
       const startOrder = (maxResult?.maxOrder ?? -1) + 1;
 
-      // Fetch columns for faker data generation
+      // Fetch columns to build per-column JSONB expression
       const cols = await ctx.db
         .select({ id: columns.id, type: columns.type })
         .from(columns)
         .where(eq(columns.tableId, input.tableId));
 
-      // Dynamic import for faker (production dep, avoid static bundle cost)
-      const { faker } = await import("@faker-js/faker");
+      // Build dynamic json_build_object() expression for cells.
+      // Column IDs are UUIDs fetched from our own DB (hex + hyphens only) —
+      // safe to embed as SQL string literals via sql.raw().
+      const jsonParts = cols.map((col) => {
+        const colIdLiteral = `'${col.id}'`; // UUID — hex+hyphens only, no injection risk
+        if (col.type === "number") {
+          return `${colIdLiteral}, floor(random() * 10001)::int`;
+        }
+        // text: generate a space-separated "sentence" from 3 random hex words
+        return `${colIdLiteral}, concat_ws(' ', substr(md5(random()::text),1,8), substr(md5(random()::text),1,8), substr(md5(random()::text),1,8))`;
+      });
 
-      const CHUNK_SIZE = 5000;
-      const CONCURRENCY = 5;
+      const cellsExpr =
+        jsonParts.length > 0
+          ? `json_build_object(${jsonParts.join(", ")})::jsonb`
+          : "'{}'::jsonb";
 
-      // Phase 1: Pre-generate all chunks
-      const chunks: (typeof rows.$inferInsert)[][] = [];
-      for (let offset = 0; offset < input.count; offset += CHUNK_SIZE) {
-        const chunkSize = Math.min(CHUNK_SIZE, input.count - offset);
-        const chunk = Array.from({ length: chunkSize }, (_, i) => {
-          const cells: Record<string, string | number | null> = {};
-          for (const col of cols) {
-            if (col.type === "number") {
-              cells[col.id] = faker.number.int({ min: 0, max: 10000 });
-            } else {
-              cells[col.id] = faker.lorem.words();
-            }
-          }
-          return {
-            tableId: input.tableId,
-            rowOrder: startOrder + offset + i,
-            cells,
-          };
-        });
-        chunks.push(chunk);
-      }
-
-      // Phase 2: Execute in parallel batches of CONCURRENCY
-      for (let i = 0; i < chunks.length; i += CONCURRENCY) {
-        const batch = chunks.slice(i, i + CONCURRENCY);
-        await Promise.all(batch.map((chunk) => ctx.db.insert(rows).values(chunk)));
-      }
+      // Single INSERT...SELECT FROM generate_series — zero network round-trips for data.
+      // Postgres generates all rows server-side and inserts them in one query.
+      await ctx.db.execute(sql`
+        INSERT INTO "airtable_row" (id, table_id, row_order, cells)
+        SELECT
+          gen_random_uuid(),
+          ${input.tableId}::uuid,
+          ${startOrder} + (gs - 1),
+          ${sql.raw(cellsExpr)}
+        FROM generate_series(1, ${input.count}) AS gs
+      `);
 
       return { count: input.count };
     }),
