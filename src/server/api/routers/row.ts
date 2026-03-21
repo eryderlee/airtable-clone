@@ -471,46 +471,34 @@ export const rowRouter = createTRPCRouter({
       // Dynamic import for faker (production dep, avoid static bundle cost)
       const { faker } = await import("@faker-js/faker");
 
-      // Build a 200-word vocabulary from faker once, then compose unique 3-word
-      // phrases per row using Math.random() (native V8, ~100x faster than faker RNG).
-      // 200³ = 8M combinations — unique for every row in 100k.
+      // Generate a 200-word vocab from faker (~2KB), embed in SQL as a literal array.
+      // Postgres samples from it per row using random() — single round-trip, no large payload.
+      // Column IDs are UUIDs from our own DB (hex+hyphens only) — safe to embed as literals.
       const VOCAB = 200;
       const words = Array.from({ length: VOCAB }, () => faker.lorem.word());
+      const wordArrayLiteral = `ARRAY[${words.map(w => `'${w.replace(/'/g, "''")}'`).join(",")}]::text[]`;
 
-      const allCells = Array.from({ length: input.count }, () => {
-        const cells: Record<string, string | number | null> = {};
-        for (const col of cols) {
-          if (col.type === "number") {
-            cells[col.id] = Math.floor(Math.random() * 10001);
-          } else {
-            cells[col.id] = `${words[Math.floor(Math.random() * VOCAB)]!} ${words[Math.floor(Math.random() * VOCAB)]!} ${words[Math.floor(Math.random() * VOCAB)]!}`;
-          }
+      const colExprs = cols.map((col) => {
+        const key = `'${col.id}'`;
+        if (col.type === "number") {
+          return `${key}, floor(random() * 10001)::int`;
         }
-        return cells;
+        return `${key}, (w)[1+floor(random()*${VOCAB})::int]||' '||(w)[1+floor(random()*${VOCAB})::int]||' '||(w)[1+floor(random()*${VOCAB})::int]`;
       });
+      const cellsExpr = colExprs.length > 0
+        ? `json_build_object(${colExprs.join(",")})::jsonb`
+        : "'{}'::jsonb";
 
-      // 5 parallel inserts via jsonb_array_elements — each chunk is ONE parameter,
-      // no Postgres parameter limit, only 5 round-trips total (concurrent).
-      const PARALLEL = 5;
-      const chunkSize = Math.ceil(input.count / PARALLEL);
-
-      await Promise.all(
-        Array.from({ length: PARALLEL }, (_, i) => {
-          const offset = i * chunkSize;
-          const chunk = allCells.slice(offset, offset + chunkSize);
-          if (chunk.length === 0) return Promise.resolve();
-          const chunkStart = startOrder + offset;
-          return ctx.db.execute(sql`
-            INSERT INTO "airtable_row" (id, table_id, row_order, cells)
-            SELECT
-              gen_random_uuid(),
-              ${input.tableId}::uuid,
-              (${chunkStart} + (ordinality - 1))::int,
-              value::jsonb
-            FROM jsonb_array_elements(${JSON.stringify(chunk)}::jsonb) WITH ORDINALITY
-          `);
-        }),
-      );
+      await ctx.db.execute(sql`
+        INSERT INTO "airtable_row" (id, table_id, row_order, cells)
+        SELECT
+          gen_random_uuid(),
+          ${input.tableId}::uuid,
+          ${startOrder} + (gs - 1),
+          ${sql.raw(cellsExpr)}
+        FROM generate_series(1, ${input.count}) AS gs
+        CROSS JOIN (SELECT ${sql.raw(wordArrayLiteral)} AS w) AS vocab
+      `);
 
       return { count: input.count };
     }),
