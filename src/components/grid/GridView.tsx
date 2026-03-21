@@ -637,6 +637,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
       router.refresh();
       forceUpdate();
       setBenchmarkPhase("viewing");
+      setTimeout(() => { void handleBenchmarkDelete(); }, 10000);
     } catch {
       if (benchmarkTimerRef.current) {
         clearInterval(benchmarkTimerRef.current);
