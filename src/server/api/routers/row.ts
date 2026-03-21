@@ -471,36 +471,39 @@ export const rowRouter = createTRPCRouter({
       // Dynamic import for faker (production dep, avoid static bundle cost)
       const { faker } = await import("@faker-js/faker");
 
-      const CHUNK_SIZE = 5000;
-      const CONCURRENCY = 5;
+      // Generate all cells with faker (fast, in-process)
+      const allCells = Array.from({ length: input.count }, () => {
+        const cells: Record<string, string | number | null> = {};
+        for (const col of cols) {
+          cells[col.id] = col.type === "number"
+            ? faker.number.int({ min: 0, max: 10000 })
+            : faker.lorem.words();
+        }
+        return cells;
+      });
 
-      // Phase 1: Pre-generate all chunks with faker data
-      const chunks: (typeof rows.$inferInsert)[][] = [];
-      for (let offset = 0; offset < input.count; offset += CHUNK_SIZE) {
-        const chunkSize = Math.min(CHUNK_SIZE, input.count - offset);
-        const chunk = Array.from({ length: chunkSize }, (_, i) => {
-          const cells: Record<string, string | number | null> = {};
-          for (const col of cols) {
-            if (col.type === "number") {
-              cells[col.id] = faker.number.int({ min: 0, max: 10000 });
-            } else {
-              cells[col.id] = faker.lorem.words();
-            }
-          }
-          return {
-            tableId: input.tableId,
-            rowOrder: startOrder + offset + i,
-            cells,
-          };
-        });
-        chunks.push(chunk);
-      }
+      // 3 parallel inserts via jsonb_array_elements — each chunk is ONE parameter,
+      // no Postgres parameter limit, only 3 round-trips total.
+      const PARALLEL = 3;
+      const chunkSize = Math.ceil(input.count / PARALLEL);
 
-      // Phase 2: Execute in parallel batches of CONCURRENCY
-      for (let i = 0; i < chunks.length; i += CONCURRENCY) {
-        const batch = chunks.slice(i, i + CONCURRENCY);
-        await Promise.all(batch.map((chunk) => ctx.db.insert(rows).values(chunk)));
-      }
+      await Promise.all(
+        Array.from({ length: PARALLEL }, (_, i) => {
+          const offset = i * chunkSize;
+          const chunk = allCells.slice(offset, offset + chunkSize);
+          if (chunk.length === 0) return Promise.resolve();
+          const chunkStart = startOrder + offset;
+          return ctx.db.execute(sql`
+            INSERT INTO "airtable_row" (id, table_id, row_order, cells)
+            SELECT
+              gen_random_uuid(),
+              ${input.tableId}::uuid,
+              (${chunkStart} + (ordinality - 1))::int,
+              value::jsonb
+            FROM jsonb_array_elements(${JSON.stringify(chunk)}::jsonb) WITH ORDINALITY
+          `);
+        }),
+      );
 
       return { count: input.count };
     }),
