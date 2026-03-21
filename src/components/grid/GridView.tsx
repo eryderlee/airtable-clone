@@ -3,7 +3,6 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import type { Virtualizer } from "@tanstack/react-virtual";
 import { useMemo, useCallback, useRef, useReducer, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 
 import { toast } from "sonner";
 
@@ -39,7 +38,6 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
 
 function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
   const utils = api.useUtils();
-  const router = useRouter();
 
   // Column definitions
   const { data: columnsData, refetch: refetchColumns } = api.column.getByTableId.useQuery({ tableId });
@@ -438,6 +436,15 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
       utils.column.getByTableId.setData({ tableId: mutTableId }, (old) =>
         old?.map((col) => col.id === context?.optimisticId ? newColumn : col) ?? [],
       );
+      // Patch cursor/editingCell if they still reference the optimistic ID
+      if (context?.optimisticId) {
+        setCursor((prev) =>
+          prev?.columnId === context.optimisticId ? { ...prev, columnId: newColumn.id } : prev
+        );
+        setEditingCell((prev) =>
+          prev?.columnId === context.optimisticId ? { ...prev, columnId: newColumn.id } : prev
+        );
+      }
     },
     onError: (_err, { tableId: mutTableId }, context) => {
       if (context?.previous !== undefined) {
@@ -516,32 +523,15 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
   const bulkCreate = api.row.bulkCreate.useMutation();
   const [isBulkCreating, setIsBulkCreating] = useState(false);
 
-  // Benchmark state — restore from sessionStorage if this is a post-reload
+  // Benchmark state
   type BenchmarkPhase = "idle" | "creating" | "viewing" | "cleaning" | "done";
-  const restoredResult = typeof window !== "undefined" && sessionStorage.getItem("benchmarkTableId") === tableId
-    ? Number(sessionStorage.getItem("benchmarkResult"))
-    : null;
-  const restoredStartOrder = typeof window !== "undefined" && sessionStorage.getItem("benchmarkTableId") === tableId
-    ? Number(sessionStorage.getItem("benchmarkStartOrder"))
-    : null;
-  const [benchmarkPhase, setBenchmarkPhase] = useState<BenchmarkPhase>(restoredResult ? "viewing" : "idle");
+  const [benchmarkPhase, setBenchmarkPhase] = useState<BenchmarkPhase>("idle");
   const [benchmarkElapsed, setBenchmarkElapsed] = useState(0);
-  const [benchmarkResult, setBenchmarkResult] = useState<number | null>(restoredResult);
+  const [benchmarkResult, setBenchmarkResult] = useState<number | null>(null);
   const benchmarkTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const benchmarkStartTimeRef = useRef(0);
-  const benchmarkStartOrderRef = useRef(restoredStartOrder ?? 0);
+  const benchmarkStartOrderRef = useRef(0);
   const deleteFromOrder = api.row.deleteFromOrder.useMutation();
-
-  // Clear sessionStorage once restored and schedule auto-delete
-  useEffect(() => {
-    if (restoredResult) {
-      sessionStorage.removeItem("benchmarkResult");
-      sessionStorage.removeItem("benchmarkStartOrder");
-      sessionStorage.removeItem("benchmarkTableId");
-      const t = setTimeout(() => { void handleBenchmarkDelete(); }, 10000);
-      return () => clearTimeout(t);
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAddColumn = useCallback(
     (type: "text" | "number") => {
@@ -647,11 +637,16 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
         clearInterval(benchmarkTimerRef.current);
         benchmarkTimerRef.current = null;
       }
-      // Save result so we can restore it after the reload
-      sessionStorage.setItem("benchmarkResult", String(elapsed));
-      sessionStorage.setItem("benchmarkStartOrder", String(startOrder));
-      sessionStorage.setItem("benchmarkTableId", tableId);
-      window.location.reload();
+      // Clear ALL cached pages — every visible row becomes a skeleton immediately.
+      // refetchCount updates totalCount → virtualizer grows to new height.
+      // Page 0 re-fetches automatically via the totalCount useEffect.
+      pageCacheRef.current = {};
+      loadingPagesRef.current = new Set();
+      forceUpdate(); // skeletons appear now
+      await refetchCount(); // totalCount grows → scrollbar extends
+      forceUpdate(); // virtualizer re-sizes
+      setBenchmarkPhase("viewing");
+      setTimeout(() => { void handleBenchmarkDelete(); }, 10000);
     } catch {
       if (benchmarkTimerRef.current) {
         clearInterval(benchmarkTimerRef.current);
