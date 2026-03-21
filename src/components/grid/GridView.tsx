@@ -3,6 +3,7 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import type { Virtualizer } from "@tanstack/react-virtual";
 import { useMemo, useCallback, useRef, useReducer, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { toast } from "sonner";
 
@@ -38,6 +39,7 @@ export function GridView({ tableId, viewId, initialConfig }: GridViewProps) {
 
 function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
   const utils = api.useUtils();
+  const router = useRouter();
 
   // Column definitions
   const { data: columnsData, refetch: refetchColumns } = api.column.getByTableId.useQuery({ tableId });
@@ -628,7 +630,11 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
         clearInterval(benchmarkTimerRef.current);
         benchmarkTimerRef.current = null;
       }
-      void refetchCount();
+      // Reset page cache so grid reloads fresh with the new rows
+      pageCacheRef.current = {};
+      loadingPagesRef.current = new Set();
+      await refetchCount();
+      router.refresh();
       forceUpdate();
       setBenchmarkPhase("viewing");
     } catch {

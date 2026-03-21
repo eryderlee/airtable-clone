@@ -468,34 +468,39 @@ export const rowRouter = createTRPCRouter({
         .from(columns)
         .where(eq(columns.tableId, input.tableId));
 
-      // Build dynamic json_build_object() expression for cells.
-      // Column IDs are UUIDs fetched from our own DB (hex + hyphens only) —
-      // safe to embed as SQL string literals via sql.raw().
-      const jsonParts = cols.map((col) => {
-        const colIdLiteral = `'${col.id}'`; // UUID — hex+hyphens only, no injection risk
-        if (col.type === "number") {
-          return `${colIdLiteral}, floor(random() * 10001)::int`;
-        }
-        // text: row number as string — zero overhead, unique per row
-        return `${colIdLiteral}, gs::text`;
-      });
+      // Dynamic import for faker (production dep, avoid static bundle cost)
+      const { faker } = await import("@faker-js/faker");
 
-      const cellsExpr =
-        jsonParts.length > 0
-          ? `json_build_object(${jsonParts.join(", ")})::jsonb`
-          : "'{}'::jsonb";
+      const CHUNK_SIZE = 5000;
+      const CONCURRENCY = 5;
 
-      // Single INSERT...SELECT FROM generate_series — zero network round-trips for data.
-      // Postgres generates all rows server-side and inserts them in one query.
-      await ctx.db.execute(sql`
-        INSERT INTO "airtable_row" (id, table_id, row_order, cells)
-        SELECT
-          gen_random_uuid(),
-          ${input.tableId}::uuid,
-          ${startOrder} + (gs - 1),
-          ${sql.raw(cellsExpr)}
-        FROM generate_series(1, ${input.count}) AS gs
-      `);
+      // Phase 1: Pre-generate all chunks with faker data
+      const chunks: (typeof rows.$inferInsert)[][] = [];
+      for (let offset = 0; offset < input.count; offset += CHUNK_SIZE) {
+        const chunkSize = Math.min(CHUNK_SIZE, input.count - offset);
+        const chunk = Array.from({ length: chunkSize }, (_, i) => {
+          const cells: Record<string, string | number | null> = {};
+          for (const col of cols) {
+            if (col.type === "number") {
+              cells[col.id] = faker.number.int({ min: 0, max: 10000 });
+            } else {
+              cells[col.id] = faker.lorem.words();
+            }
+          }
+          return {
+            tableId: input.tableId,
+            rowOrder: startOrder + offset + i,
+            cells,
+          };
+        });
+        chunks.push(chunk);
+      }
+
+      // Phase 2: Execute in parallel batches of CONCURRENCY
+      for (let i = 0; i < chunks.length; i += CONCURRENCY) {
+        const batch = chunks.slice(i, i + CONCURRENCY);
+        await Promise.all(batch.map((chunk) => ctx.db.insert(rows).values(chunk)));
+      }
 
       return { count: input.count };
     }),
