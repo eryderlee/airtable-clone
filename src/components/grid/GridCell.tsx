@@ -59,7 +59,7 @@ export function GridCell({
   useEffect(() => {
     if (isEditing) {
       setDraft(initialDraft ?? String(value ?? ""));
-      requestAnimationFrame(() => {
+      const focusInput = () => {
         inputRef.current?.focus();
         if (!initialDraft) {
           inputRef.current?.select(); // Select all when Enter/click to edit
@@ -68,7 +68,10 @@ export function GridCell({
           const len = (initialDraft ?? "").length;
           inputRef.current?.setSelectionRange(len, len);
         }
-      });
+      };
+      // Try focusing immediately, then again on next frame as fallback
+      focusInput();
+      requestAnimationFrame(focusInput);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditing]); // Intentionally only depend on isEditing toggle
@@ -123,6 +126,7 @@ export function GridCell({
       {isEditing ? (
         <input
           ref={inputRef}
+          autoFocus
           type={columnType === "number" ? "number" : "text"}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}

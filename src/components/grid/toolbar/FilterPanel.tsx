@@ -152,7 +152,7 @@ export function FilterPanel({ filters, onFiltersChange, filterConjunction, onFil
     <div className="w-[520px] rounded-lg border border-[#e2e0ea] bg-white shadow-lg">
       {/* Title */}
       <div className="flex items-center justify-between px-3 pt-3">
-        <span className="text-[13px] font-semibold text-[#1f2328]">Filter</span>
+        <h3 className="text-[13px] font-semibold leading-3 text-[#666]">Filter</h3>
       </div>
 
       {/* AI prompt bar */}

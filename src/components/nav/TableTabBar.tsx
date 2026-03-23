@@ -320,7 +320,7 @@ function TableTab({
       } ${isActive && !isFirst ? "border-l" : ""}`}
       style={{
         marginBottom: isActive ? "-1px" : "0",
-        marginTop: isActive && isFirst ? "-2px" : undefined,
+        marginTop: isActive ? "0.001px" : undefined,
         zIndex: menuOpen ? 10 : isActive ? 2 : 0,
         backgroundColor: isActive ? undefined : bgColor,
       }}

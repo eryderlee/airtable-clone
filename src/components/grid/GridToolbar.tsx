@@ -46,6 +46,8 @@ interface GridToolbarProps {
   // Hidden columns
   hiddenColumns: string[];
   onHiddenColumnsChange: (hidden: string[]) => void;
+  // Loading state for filter/sort refresh
+  isDataRefreshing?: boolean;
 }
 
 export function GridToolbar({
@@ -81,6 +83,7 @@ export function GridToolbar({
   onPrevMatch,
   onNextMatch,
   hasActiveSearch,
+  isDataRefreshing,
 }: GridToolbarProps) {
   return (
     <div
@@ -154,6 +157,7 @@ export function GridToolbar({
             activeColor="green"
             isActive={openPanel === "filter"}
             onClick={() => onTogglePanel("filter")}
+            isLoading={isDataRefreshing && filters.length > 0}
           />
           {openPanel === "filter" && (
             <div className="absolute left-0 top-full z-50 mt-1" data-toolbar-panel>
@@ -173,9 +177,14 @@ export function GridToolbar({
           {sorts.length > 0 ? (
             <button
               onClick={() => onTogglePanel("sort")}
-              className={`flex flex-shrink-0 items-center rounded px-2 py-1 text-[13px] font-medium text-black transition ${openPanel === "sort" ? "bg-[#ffd0b0]" : "bg-[#FFE0CC]"} hover:bg-[#ffd0b0]`}
+              className={`flex flex-shrink-0 items-center rounded px-2 py-1 text-[13px] font-light text-black transition ${openPanel === "sort" ? "bg-[#ffd0b0]" : "bg-[#FFE0CC]"} hover:bg-[#ffd0b0]`}
             >
-              <SortIcon />
+              {isDataRefreshing ? (
+                <svg className="h-[13px] w-[13px] animate-spin" viewBox="0 0 16 16" fill="none">
+                  <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5" opacity="0.3" />
+                  <path d="M14 8a6 6 0 0 0-6-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              ) : <SortIcon />}
               <span className="ml-1 max-w-[120px] truncate">
                 Sorted by {sorts.length} {sorts.length === 1 ? "field" : "fields"}
               </span>
@@ -185,6 +194,7 @@ export function GridToolbar({
               icon={<SortIcon />}
               label="Sort"
               isActive={openPanel === "sort"}
+              isLoading={isDataRefreshing && sorts.length > 0}
               onClick={() => onTogglePanel("sort")}
             />
           )}
@@ -298,6 +308,7 @@ function ToolbarButton({
   badgeLabel,
   activeColor = "cyan",
   isActive = false,
+  isLoading = false,
   onClick,
 }: {
   icon: React.ReactNode;
@@ -306,6 +317,7 @@ function ToolbarButton({
   badgeLabel?: (n: number) => string;
   activeColor?: "cyan" | "green";
   isActive?: boolean;
+  isLoading?: boolean;
   onClick?: () => void;
 }) {
   const hasCount = badgeCount > 0;
@@ -322,7 +334,12 @@ function ToolbarButton({
       onClick={onClick}
       className={`flex flex-shrink-0 items-center rounded px-2 py-1 text-[13px] font-light transition-colors ${activeCls}`}
     >
-      {icon}
+      {isLoading ? (
+        <svg className="h-[13px] w-[13px] animate-spin" viewBox="0 0 16 16" fill="none">
+          <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5" opacity="0.3" />
+          <path d="M14 8a6 6 0 0 0-6-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+      ) : icon}
       <span className="ml-1 max-w-[160px] truncate">{displayLabel}</span>
     </button>
   );

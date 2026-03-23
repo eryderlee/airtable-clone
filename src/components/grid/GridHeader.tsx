@@ -1,7 +1,8 @@
 "use client";
 
 import { type Header } from "@tanstack/react-table";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 
 import type { RowData } from "./GridTable";
 import { PrimaryKeyIcon, TextIcon, NumberIcon } from "./ColumnIcons";
@@ -188,44 +189,182 @@ function EditFieldModal({
 // Add Column Menu
 // ---------------------------------------------------------------------------
 
+const FIELD_AGENTS = [
+  { label: "Analyze attachment", color: "#22863a", icon: "M3 3.5A1.5 1.5 0 0 1 4.5 2h7A1.5 1.5 0 0 1 13 3.5v9a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 3 12.5v-9Z" },
+  { label: "Research companies", color: "#166ee1", icon: "M3 4.5A1.5 1.5 0 0 1 4.5 3h2A1.5 1.5 0 0 1 8 4.5V8H4.5A1.5 1.5 0 0 1 3 6.5v-2Zm5 0A1.5 1.5 0 0 1 9.5 3h2A1.5 1.5 0 0 1 13 4.5v2A1.5 1.5 0 0 1 11.5 8H8V4.5ZM3 9.5A1.5 1.5 0 0 1 4.5 8H8v3.5A1.5 1.5 0 0 1 6.5 13h-2A1.5 1.5 0 0 1 3 11.5v-2Zm5 0V12h3.5a1.5 1.5 0 0 0 1.5-1.5v-2A1.5 1.5 0 0 0 11.5 8H8v1.5Z" },
+  { label: "Find image from web", color: "#7c37ef", icon: "M8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12Zm0-1.5a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9Z" },
+  { label: "Generate image", color: "#d54401", icon: "M2.5 3A1.5 1.5 0 0 0 1 4.5v7A1.5 1.5 0 0 0 2.5 13h11a1.5 1.5 0 0 0 1.5-1.5v-7A1.5 1.5 0 0 0 13.5 3h-11Z" },
+  { label: "Deep match", color: "#0d9488", icon: "M2 8h4l2-3v6l2-3h4" },
+  { label: "Build prototype", color: "#7c37ef", icon: "M5.5 2 2 8l3.5 6h5L14 8l-3.5-6h-5Z" },
+  { label: "Create custom agent", color: "#eab308", icon: "M8 2a6 6 0 1 0 0 12A6 6 0 0 0 8 2Z" },
+  { label: "Browse catalog", color: "#666", icon: "M2 3h4v4H2V3Zm0 6h4v4H2V9Zm6-6h4v4H8V3Zm0 6h4v4H8V9Z" },
+];
+
+const STANDARD_FIELDS: { label: string; type: "text" | "number"; icon: string; hasChevron?: boolean }[] = [
+  { label: "Link to another record", type: "text", icon: "M2 8h4l2-3v6l2-3h4", hasChevron: true },
+  { label: "Single line text", type: "text", icon: "M3 4h10M3 8h7M3 12h9" },
+  { label: "Long text", type: "text", icon: "M3 3h10M3 6h10M3 9h10M3 12h6" },
+  { label: "Attachment", type: "text", icon: "M3 3.5A1.5 1.5 0 0 1 4.5 2h7A1.5 1.5 0 0 1 13 3.5v9a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 3 12.5v-9Z" },
+  { label: "Checkbox", type: "text", icon: "M3 3h10v10H3V3Zm2 5 2 2 4-4" },
+  { label: "Multiple select", type: "text", icon: "M2 4h3M2 8h3M2 12h3M7 4h7M7 8h7M7 12h7" },
+  { label: "Single select", type: "text", icon: "M8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12Zm0-4a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" },
+  { label: "User", type: "text", icon: "M8 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Zm0 1c-2.76 0-5 1.34-5 3v1h10v-1c0-1.66-2.24-3-5-3Z" },
+  { label: "Date", type: "text", icon: "M3 4.5A1.5 1.5 0 0 1 4.5 3h7A1.5 1.5 0 0 1 13 4.5v7a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 3 11.5v-7ZM5 2v2M11 2v2M3 7h10" },
+  { label: "Phone number", type: "text", icon: "M4.5 2A1.5 1.5 0 0 0 3 3.5v9A1.5 1.5 0 0 0 4.5 14h7a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 11.5 2h-7ZM8 12a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1Z" },
+  { label: "Email", type: "text", icon: "M2 4.5A1.5 1.5 0 0 1 3.5 3h9A1.5 1.5 0 0 1 14 4.5v7a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 11.5v-7Zm1 0L8 8l5-3.5" },
+  { label: "URL", type: "text", icon: "M6.5 8.5 9.5 5.5a2 2 0 0 1 2.83 2.83L9.5 11.16M9.5 7.5 6.5 10.5a2 2 0 0 1-2.83-2.83L6.5 4.84" },
+  { label: "Number", type: "number", icon: "M5 3v10M11 3v10M3 6h10M3 10h10" },
+  { label: "Currency", type: "number", icon: "M8 2v12M5.5 5A2.5 2.5 0 0 1 8 4h1a2.5 2.5 0 0 1 0 5H7a2.5 2.5 0 0 0 0 5h1a2.5 2.5 0 0 0 2.5-2" },
+  { label: "Percent", type: "number", icon: "M4 12 12 4M5 5a1 1 0 1 0 0-2 1 1 0 0 0 0 2Zm6 8a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" },
+  { label: "Duration", type: "number", icon: "M8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12ZM8 5v3l2 2" },
+  { label: "Rating", type: "number", icon: "m8 2 1.8 3.6L14 6.3l-3 2.9.7 4.1L8 11.3 4.3 13.3l.7-4.1-3-2.9 4.2-.7L8 2Z" },
+  { label: "Formula", type: "text", icon: "M5 3 4 13M9 3l-1 10M3 6h10M3 10h10" },
+  { label: "Rollup", type: "text", icon: "M8 2a6 6 0 0 0-4 10.5M8 2a6 6 0 0 1 4 10.5M4 12.5A5.9 5.9 0 0 0 8 14a5.9 5.9 0 0 0 4-1.5" },
+  { label: "Count", type: "number", icon: "M3 3h10v10H3V3Zm3 3v4M8 6v4M10 6v4" },
+  { label: "Lookup", type: "text", icon: "M7 12A5 5 0 1 0 7 2a5 5 0 0 0 0 10Zm4-1 3 3" },
+  { label: "Created time", type: "text", icon: "M8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12ZM8 5v3l2 2M3 14l1-2M13 14l-1-2" },
+  { label: "Last modified time", type: "text", icon: "M8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12ZM8 5v3l2 2M3 14l1-2M13 14l-1-2" },
+  { label: "Created by", type: "text", icon: "M8 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Zm0 1c-2.76 0-5 1.34-5 3v1h10v-1c0-1.66-2.24-3-5-3ZM12 3l1 1" },
+  { label: "Last modified by", type: "text", icon: "M8 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Zm0 1c-2.76 0-5 1.34-5 3v1h10v-1c0-1.66-2.24-3-5-3ZM12 3l1 1" },
+  { label: "Autonumber", type: "number", icon: "M5 3v10M11 3v10M3 6h10M3 10h10" },
+  { label: "Barcode", type: "text", icon: "M3 3v10M5 3v10M8 3v10M10 3v10M13 3v10M6.5 3v10M11.5 3v10" },
+  { label: "Button", type: "text", icon: "M5.5 2 2 8l3.5 6h5L14 8l-3.5-6h-5Z" },
+];
+
 function AddColumnMenu({ onAdd }: { onAdd: (type: "text" | "number") => void }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [search, setSearch] = useState("");
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
 
   useEffect(() => {
+    if (!open) return;
     function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (
+        menuRef.current && !menuRef.current.contains(e.target as Node) &&
+        buttonRef.current && !buttonRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false);
+        setSearch("");
+      }
     }
-    if (open) document.addEventListener("mousedown", handleClick);
+    document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open]);
 
+  const handleOpen = useCallback(() => {
+    if (!open && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setPos({ top: rect.bottom + 2, left: rect.left });
+    }
+    setOpen((v) => !v);
+    if (open) setSearch("");
+  }, [open]);
+
+  const query = search.toLowerCase();
+  const filteredAgents = FIELD_AGENTS.filter((a) => a.label.toLowerCase().includes(query));
+  const filteredFields = STANDARD_FIELDS.filter((f) => f.label.toLowerCase().includes(query));
+
   return (
-    <div ref={ref} className="relative flex h-full w-full items-start justify-center pt-2">
+    <div className="flex h-full w-full items-start justify-center pt-2">
       <button
-        onClick={() => setOpen(!open)}
-        className="flex items-center justify-center text-[#888] hover:bg-[#f0f0f0] rounded p-1"
+        ref={buttonRef}
+        onClick={handleOpen}
+        className="flex items-center justify-center rounded p-1 text-[#888] hover:bg-[#f0f0f0]"
         title="Add field"
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <path d="M7 2v10M2 7h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
       </button>
-      {open && (
-        <div className="absolute left-0 top-full z-30 mt-0.5 min-w-[140px] rounded border border-[#e2e0ea] bg-white py-1 shadow-lg">
-          <button
-            onClick={() => { onAdd("text"); setOpen(false); }}
-            className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-[#333] hover:bg-[#f3f4f6]"
-          >
-            <TextIcon /> Text
-          </button>
-          <button
-            onClick={() => { onAdd("number"); setOpen(false); }}
-            className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-[#333] hover:bg-[#f3f4f6]"
-          >
-            <NumberIcon /> Number
-          </button>
-        </div>
+      {open && createPortal(
+        <div
+          ref={menuRef}
+          className="fixed w-[340px] overflow-y-auto rounded-lg border border-[#e2e0ea] bg-white shadow-xl"
+          style={{ top: pos.top, left: pos.left, zIndex: 10000, maxHeight: "calc(100vh - 60px)" }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="p-3">
+            {/* Search bar */}
+            <div className="sticky top-0 bg-white pb-2">
+              <div className="flex h-8 items-center rounded-lg border border-[#e2e0ea] bg-[#f8f8f8] px-2">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="mr-1.5 flex-shrink-0 text-[#888]">
+                  <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.3" />
+                  <path d="M10.5 10.5 13 13" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                </svg>
+                <input
+                  autoFocus
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Find a field type"
+                  className="h-full flex-1 bg-transparent text-[13px] outline-none placeholder:text-[#aaa]"
+                />
+                <a href="#" className="ml-1 flex-shrink-0 text-[#888] hover:text-[#555]" title="Help">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.3" />
+                    <path d="M6.5 6.5a1.5 1.5 0 0 1 3 0c0 1-1.5 1-1.5 2M8 11h.01" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                  </svg>
+                </a>
+              </div>
+              <hr className="mx-0 mb-0 mt-2 border-[#eee]" />
+            </div>
+
+            {/* Field agents */}
+            {filteredAgents.length > 0 && (
+              <>
+                <p className="mx-1 my-2 text-[13px] text-[#888]">Field agents</p>
+                <div className="flex flex-wrap">
+                  {filteredAgents.map((agent) => (
+                    <button
+                      key={agent.label}
+                      className="flex w-1/2 cursor-pointer items-center rounded-lg px-2.5 py-2.5 text-left hover:bg-[#f5f5f5]"
+                      onClick={() => { onAdd("text"); setOpen(false); setSearch(""); }}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" className="flex-shrink-0" style={{ shapeRendering: "geometricPrecision" }}>
+                        <path d={agent.icon} fill={agent.color} />
+                      </svg>
+                      <span className="ml-2 text-[13px] text-[#333]">{agent.label}</span>
+                    </button>
+                  ))}
+                </div>
+                <hr className="mx-0 my-1 border-[#eee]" />
+              </>
+            )}
+
+            {/* Standard fields */}
+            {filteredFields.length > 0 && (
+              <>
+                <p className="mx-1 my-2 text-[13px] text-[#888]">Standard fields</p>
+                <div className="px-1">
+                  {filteredFields.map((field) => (
+                    <button
+                      key={field.label}
+                      className="flex w-full cursor-pointer items-center rounded-lg px-2.5 py-2 text-left hover:bg-[#f5f5f5]"
+                      onClick={() => { onAdd(field.type); setOpen(false); setSearch(""); }}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" className="flex-shrink-0 text-[#666]" style={{ shapeRendering: "geometricPrecision" }}>
+                        <path d={field.icon} fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      <span className="ml-2 flex-1 text-[13px] text-[#333]">{field.label}</span>
+                      {field.hasChevron && (
+                        <svg width="16" height="16" viewBox="0 0 16 16" className="flex-shrink-0 text-[#ccc]">
+                          <path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {filteredAgents.length === 0 && filteredFields.length === 0 && (
+              <p className="py-4 text-center text-[13px] text-[#aaa]">No matching field types</p>
+            )}
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );
@@ -251,14 +390,31 @@ function ColumnMenu({
   onEditField: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
 
   useEffect(() => {
+    if (!open) return;
     function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (
+        menuRef.current && !menuRef.current.contains(e.target as Node) &&
+        buttonRef.current && !buttonRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false);
+      }
     }
-    if (open) document.addEventListener("mousedown", handleClick);
+    document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  const handleOpen = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!open && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setPos({ top: rect.bottom + 2, left: rect.left });
+    }
+    setOpen((v) => !v);
   }, [open]);
 
   function handleDelete() {
@@ -267,9 +423,10 @@ function ColumnMenu({
   }
 
   return (
-    <div ref={ref} className="relative flex-shrink-0">
+    <div className={`ml-1 flex-shrink-0 ${open ? "flex" : "hidden group-hover:flex"}`}>
       <button
-        onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
+        ref={buttonRef}
+        onClick={handleOpen}
         className="flex h-5 w-5 items-center justify-center rounded text-[#555] hover:bg-[#e0e0e0]"
         title="Field options"
       >
@@ -278,17 +435,19 @@ function ColumnMenu({
         </svg>
       </button>
 
-      {open && (
+      {open && createPortal(
         <div
-          className="absolute left-0 top-full z-30 mt-0.5 w-[220px] overflow-hidden rounded-lg border border-[#e2e0ea] bg-white py-1 shadow-xl"
+          ref={menuRef}
+          className="fixed w-[320px] overflow-y-auto rounded-lg border border-[#e2e0ea] bg-white p-1.5 shadow-xl"
+          style={{ top: pos.top, left: pos.left, zIndex: 10000, maxHeight: "calc(100vh - 40px)" }}
           onClick={(e) => e.stopPropagation()}
         >
           <Item icon={<EditIcon />} label="Edit field" onClick={() => { setOpen(false); onEditField(); }} />
           <Divider />
           <Item icon={<DuplicateIcon />} label="Duplicate field" onClick={() => setOpen(false)} />
           <Item icon={<InsertLeftIcon />} label="Insert left" disabled />
-          <Item icon={<InsertRightIcon />} label="Insert right" disabled />
-          <Item icon={<ChangePrimaryIcon />} label="Change primary field" disabled />
+          <Item icon={<InsertRightIcon />} label="Insert right" onClick={() => setOpen(false)} />
+          <Item icon={<ChangePrimaryIcon />} label="Change primary field" onClick={() => setOpen(false)} />
           <Divider />
           <Item icon={<LinkIcon />} label="Copy field URL" onClick={() => setOpen(false)} />
           <Item icon={<DescriptionIcon />} label="Edit field description" onClick={() => setOpen(false)} />
@@ -302,14 +461,15 @@ function ColumnMenu({
           <Divider />
           <Item icon={<HideIcon />} label="Hide field" disabled />
           {!isPrimary && <Item icon={<DeleteIcon />} label="Delete field" onClick={handleDelete} danger />}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
 }
 
 function Divider() {
-  return <div className="my-1 h-px bg-[#f0f0f0]" />;
+  return <div className="mx-1 h-px bg-[#e8e8e8]" />;
 }
 
 function Item({
@@ -331,13 +491,13 @@ function Item({
     <button
       onClick={disabled ? undefined : onClick}
       disabled={disabled}
-      className={`flex w-full items-center gap-2.5 px-3 py-[7px] text-left text-[13px] transition-colors
-        ${disabled ? "cursor-default text-[#bbb]" : danger ? "text-[#d32f2f] hover:bg-[#fff5f5]" : "text-[#333] hover:bg-[#f5f5f5]"}`}
+      className={`flex w-full items-center gap-2 rounded px-2 py-1 text-left text-[13px] font-normal transition-colors
+        ${disabled ? "cursor-default opacity-50" : danger ? "text-[#d32f2f] hover:bg-[#f5f5f5]" : "text-[#333] hover:bg-[#f5f5f5]"}`}
     >
-      <span className={`flex h-4 w-4 flex-shrink-0 items-center justify-center ${disabled ? "text-[#bbb]" : danger ? "text-[#d32f2f]" : "text-[#666]"}`}>
+      <span className={`flex h-4 w-4 flex-shrink-0 items-center justify-center ${disabled ? "opacity-50" : danger ? "text-[#d32f2f]" : "text-[#333]"}`}>
         {icon}
       </span>
-      <span className="flex-1">{label}</span>
+      <span className="ml-1 flex-1">{label}</span>
       {badge && (
         <span className="flex items-center gap-1 rounded-full bg-[#e8f4ff] px-2 py-0.5 text-[11px] text-[#1a73e8]">
           <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
@@ -438,16 +598,14 @@ export function GridHeader({
                 >
                   {headerName}
                 </span>
-                <span className="ml-1 hidden group-hover:flex">
-                  <ColumnMenu
-                    columnId={columnId}
-                    columnName={headerName}
-                    isPrimary={isPrimary}
-                    onRename={(name) => onRenameColumn(columnId, name)}
-                    onDelete={() => onDeleteColumn(columnId)}
-                    onEditField={() => setEditingColumnId(columnId)}
-                  />
-                </span>
+                <ColumnMenu
+                  columnId={columnId}
+                  columnName={headerName}
+                  isPrimary={isPrimary}
+                  onRename={(name) => onRenameColumn(columnId, name)}
+                  onDelete={() => onDeleteColumn(columnId)}
+                  onEditField={() => setEditingColumnId(columnId)}
+                />
               </div>
 
               {/* Edit field modal */}

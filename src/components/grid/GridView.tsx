@@ -75,6 +75,19 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
   const [filterConjunction, setFilterConjunction] = useState<"and" | "or">(
     (initialConfig?.filterConjunction as "and" | "or") ?? "and",
   );
+  // Only send filters to the server when they have a non-empty value
+  const activeFilters = useMemo(
+    () => filters.filter((f) => {
+      if (f.filter.type === "text") {
+        // Operators like is_empty/is_not_empty don't need a value
+        if (f.filter.operator === "is_empty" || f.filter.operator === "is_not_empty") return true;
+        return (f.filter.value ?? "").length > 0;
+      }
+      return true; // number filters always have a value
+    }),
+    [filters],
+  );
+
   const [openPanel, setOpenPanel] = useState<"search" | "filter" | "sort" | "hideFields" | null>(null);
   const [viewsPanelOpen, setViewsPanelOpen] = useState(true);
   const [viewsPanelHover, setViewsPanelHover] = useState(false);
@@ -98,7 +111,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
 
   // Total row count — drives virtualizer size; reflects filtered count when filters active
   const { data: countData, refetch: refetchCount } = api.row.count.useQuery(
-    { tableId, filters, filterConjunction, searchQuery },
+    { tableId, filters: activeFilters, filterConjunction, searchQuery },
     { staleTime: 30_000 },
   );
   const totalCount = countData?.count ?? 0;
@@ -293,7 +306,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
           tableId,
           offset: pageIndex * PAGE_SIZE,
           limit: PAGE_SIZE,
-          filters,
+          filters: activeFilters,
           filterConjunction,
           sorts,
           searchQuery,
@@ -304,7 +317,6 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
           id: r.id,
           cells: r.cells,
         }));
-        if (pageIndex === 0) setIsDataRefreshing(false);
       } finally {
         if (cacheGenerationRef.current === gen) {
           loadingPagesRef.current.delete(pageIndex);
@@ -312,7 +324,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
         }
       }
     },
-    [tableId, utils.row.getByOffset, filters, filterConjunction, sorts, searchQuery],
+    [tableId, utils.row.getByOffset, activeFilters, filterConjunction, sorts, searchQuery],
   );
 
   // Reset page cache — clears all cached pages and loading state
@@ -334,9 +346,9 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
     }
     resetCache();
     setIsDataRefreshing(true);
-    void refetchCount();
+    void refetchCount().then(() => setIsDataRefreshing(false));
     // fetchPage(0) will be triggered by the existing totalCount effect
-  }, [filters, filterConjunction, sorts, searchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeFilters, filterConjunction, sorts, searchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Separate ref to guard auto-save — prevents saving on initial mount (SSR-seeded values already correct in DB)
   const isFirstConfigRender = useRef(true);
@@ -578,7 +590,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
       const [, phase1Page0] = await Promise.all([
         refetchCount(),
         utils.row.getByOffset
-          .fetch({ tableId, offset: 0, limit: PAGE_SIZE, filters, filterConjunction, sorts, searchQuery }, { staleTime: 0 })
+          .fetch({ tableId, offset: 0, limit: PAGE_SIZE, filters: activeFilters, filterConjunction, sorts, searchQuery }, { staleTime: 0 })
           .catch(() => null),
       ]);
       if (phase1Page0) {
@@ -601,7 +613,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
       const [, page0] = await Promise.all([
         refetchCount(),
         utils.row.getByOffset
-          .fetch({ tableId, offset: 0, limit: PAGE_SIZE, filters, filterConjunction, sorts, searchQuery }, { staleTime: 0 })
+          .fetch({ tableId, offset: 0, limit: PAGE_SIZE, filters: activeFilters, filterConjunction, sorts, searchQuery }, { staleTime: 0 })
           .catch(() => null),
       ]);
       if (page0) {
@@ -610,7 +622,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
       forceUpdate();
       setIsBulkCreating(false);
     }
-  }, [tableId, bulkCreate, refetchCount, utils.row.getByOffset, filters, sorts, searchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tableId, bulkCreate, refetchCount, utils.row.getByOffset, activeFilters, sorts, searchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleBenchmark = useCallback(async () => {
     if (benchmarkPhase !== "idle") return;
@@ -675,7 +687,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
   const createRow = api.row.create.useMutation({
     onMutate: ({ tableId: mutTableId, cells }) => {
       const optimisticId = `optimistic-${Date.now()}`;
-      const currentCount = utils.row.count.getData({ tableId: mutTableId, filters, filterConjunction, searchQuery })?.count ?? totalCount;
+      const currentCount = utils.row.count.getData({ tableId: mutTableId, filters: activeFilters, filterConjunction, searchQuery })?.count ?? totalCount;
       const newIndex = currentCount;
       const pageIndex = Math.floor(newIndex / PAGE_SIZE);
       const pageEntry = pageCacheRef.current[pageIndex];
@@ -685,7 +697,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
       } else {
         pageCacheRef.current[pageIndex] = [newRow];
       }
-      utils.row.count.setData({ tableId: mutTableId, filters, filterConjunction, searchQuery }, (old) => ({
+      utils.row.count.setData({ tableId: mutTableId, filters: activeFilters, filterConjunction, searchQuery }, (old) => ({
         count: (old?.count ?? currentCount) + 1,
       }));
       forceUpdate();
@@ -718,7 +730,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
         const idx = page.findIndex((r) => r.id === ctx.optimisticId);
         if (idx !== -1) {
           page.splice(idx, 1);
-          utils.row.count.setData({ tableId: mutTableId, filters, filterConjunction, searchQuery }, (old) => ({
+          utils.row.count.setData({ tableId: mutTableId, filters: activeFilters, filterConjunction, searchQuery }, (old) => ({
             count: Math.max(0, (old?.count ?? 0) - 1),
           }));
           forceUpdate();
@@ -984,6 +996,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
         onPrevMatch={handlePrevMatch}
         onNextMatch={handleNextMatch}
         hasActiveSearch={searchInput.trim().length > 0}
+        isDataRefreshing={isDataRefreshing}
       />
       <div className="flex flex-1 overflow-hidden">
         <div
@@ -999,7 +1012,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
         >
           <ViewsPanel tableId={tableId} activeViewId={viewId} onViewSwitch={() => setViewSwitching(true)} />
         </div>
-      {isInitialLoading || viewSwitching || isDataRefreshing ? (
+      {isInitialLoading || viewSwitching ? (
         <div className="flex flex-1 items-center justify-center">
           <div className="flex flex-col items-center gap-2">
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#e2e0ea] border-t-[#2563eb]" />
@@ -1038,7 +1051,7 @@ function GridViewInner({ tableId, viewId, initialConfig }: GridViewProps) {
           searchQuery={searchQuery}
           currentSearchMatch={searchMatches[searchMatchIndex] ?? null}
           sortedColumnIds={sorts.map((s) => s.columnId)}
-          filteredColumnIds={filters.map((f) => f.columnId)}
+          filteredColumnIds={activeFilters.map((f) => f.columnId)}
         />
       )}
       </div>
