@@ -172,7 +172,7 @@ export function GridToolbar({
             </div>
           )}
         </div>
-        <ToolbarButton icon={<GroupIcon />} label="Group" />
+        <ToolbarButton icon={<GroupIcon />} label="Group" disabled />
         <div className="relative" data-toolbar-panel>
           {sorts.length > 0 ? (
             <button
@@ -209,11 +209,11 @@ export function GridToolbar({
             </div>
           )}
         </div>
-        <ToolbarButton icon={<ColorIcon />} label="Color" />
-        <button className="flex flex-shrink-0 items-center justify-center rounded px-2 py-1.5 text-[#4c5667] hover:bg-[#edf0f4]" title="Row height">
+        <ToolbarButton icon={<ColorIcon />} label="Color" disabled />
+        <button className="flex flex-shrink-0 items-center justify-center rounded px-2 py-1.5 text-[#4c5667] opacity-50 cursor-default" title="Row height" disabled>
           <RowHeightIcon />
         </button>
-        <ToolbarButton icon={<ShareSyncIcon />} label="Share and sync" />
+        <ToolbarButton icon={<ShareSyncIcon />} label="Share and sync" disabled />
         <div className="relative" data-toolbar-panel>
           <button
             className={`relative flex h-7 w-7 flex-shrink-0 items-center justify-center rounded text-[#4c5667] hover:bg-[#edf0f4] ${openPanel === "search" || hasActiveSearch ? "text-[#166ee1]" : ""} ${openPanel === "search" ? "bg-[#edf0f4]" : ""}`}
@@ -310,6 +310,7 @@ function ToolbarButton({
   isActive = false,
   isLoading = false,
   onClick,
+  disabled = false,
 }: {
   icon: React.ReactNode;
   label: string;
@@ -319,10 +320,13 @@ function ToolbarButton({
   isActive?: boolean;
   isLoading?: boolean;
   onClick?: () => void;
+  disabled?: boolean;
 }) {
   const hasCount = badgeCount > 0;
   const displayLabel = hasCount && badgeLabel ? badgeLabel(badgeCount) : label;
-  const activeCls = hasCount
+  const activeCls = disabled
+    ? "text-[#4c5667] opacity-50 cursor-default"
+    : hasCount
     ? activeColor === "green"
       ? "bg-[#d1f5d3] text-[#0a1929] hover:bg-[#b8eabc]"
       : "bg-[#d0f0f5] text-[#0a1929] hover:bg-[#b8e8f0]"
@@ -331,7 +335,8 @@ function ToolbarButton({
     : "text-[#4c5667] hover:bg-[#edf0f4]";
   return (
     <button
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
       className={`flex flex-shrink-0 items-center rounded px-2 py-1 text-[13px] font-light transition-colors ${activeCls}`}
     >
       {isLoading ? (

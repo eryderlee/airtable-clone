@@ -55,7 +55,7 @@ export function AppSidebar({
                   isActive && isExpanded
                     ? "bg-[#F2F4F8] font-semibold text-[#1f2328]"
                     : "font-medium text-[#1f2328]"
-                } ${isExpanded ? "hover:bg-[#f4f6fb]" : ""} ${item.disabled ? "cursor-default" : ""}`}
+                } ${isExpanded ? "hover:bg-[#f4f6fb]" : ""} ${item.disabled ? "cursor-default opacity-50" : ""}`}
               >
                 <span className="text-[#1f2328]">{item.icon}</span>
                 {isExpanded && (
@@ -129,9 +129,10 @@ function SidebarFooterButton({
 }) {
   return (
     <button
-      className={`flex w-full items-center rounded ${
-        isExpanded ? "h-[32px] px-[8px] text-left hover:bg-[#f4f6fb]" : "justify-center py-2"
+      className={`flex w-full items-center rounded opacity-50 cursor-default ${
+        isExpanded ? "h-[32px] px-[8px] text-left" : "justify-center py-2"
       }`}
+      disabled
     >
       <span>{icon}</span>
       {isExpanded && <span className="ml-[4px]">{label}</span>}

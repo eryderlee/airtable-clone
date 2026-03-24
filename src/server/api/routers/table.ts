@@ -89,36 +89,36 @@ export const tableRouter = createTRPCRouter({
         const notesColId = notesCol.id;
         const statusColId = statusCol.id;
 
-        // Create 10 rows with faker data
+        // Create rows + default view in parallel
         const { faker } = await import("@faker-js/faker");
 
-        await ctx.db.insert(rows).values(
-          Array.from({ length: 10 }, (_, i) => ({
+        await Promise.all([
+          ctx.db.insert(rows).values(
+            Array.from({ length: 10 }, (_, i) => ({
+              tableId: table.id,
+              rowOrder: i,
+              cells: {
+                [nameColId]: faker.person.fullName(),
+                [notesColId]: faker.lorem.sentence(),
+                [statusColId]: faker.helpers.arrayElement([
+                  "Todo",
+                  "In Progress",
+                  "Done",
+                ]),
+              } as Record<string, string | number | null>,
+            })),
+          ),
+          ctx.db.insert(views).values({
             tableId: table.id,
-            rowOrder: i,
-            cells: {
-              [nameColId]: faker.person.fullName(),
-              [notesColId]: faker.lorem.sentence(),
-              [statusColId]: faker.helpers.arrayElement([
-                "Todo",
-                "In Progress",
-                "Done",
-              ]),
-            } as Record<string, string | number | null>,
-          })),
-        );
-
-        // Create default Grid View
-        await ctx.db.insert(views).values({
-          tableId: table.id,
-          name: "Grid view",
-          config: {
-            filters: [],
-            sorts: [],
-            hiddenColumns: [],
-            searchQuery: "",
-          },
-        });
+            name: "Grid view",
+            config: {
+              filters: [],
+              sorts: [],
+              hiddenColumns: [],
+              searchQuery: "",
+            },
+          }),
+        ]);
       }
 
       return table;

@@ -63,11 +63,11 @@ export function AppTopBar({
         </div>
       </div>
       <div className="flex flex-1 items-center justify-end gap-3 px-4 text-sm text-[#4c5667]">
-        <button className="flex items-center gap-2 rounded-full px-3 py-1 text-[#4c5667] transition hover:bg-[#f4f6fb] hover:text-[#111322]">
+        <button className="flex items-center gap-2 rounded-full px-3 py-1 text-[#4c5667] opacity-50 cursor-default" disabled>
           <HelpIcon />
           Help
         </button>
-        <button className="flex h-8 w-8 items-center justify-center rounded-full border border-[#e0e3ea] text-[#4c5667] transition hover:border-[#c7ccd8]">
+        <button className="flex h-8 w-8 items-center justify-center rounded-full border border-[#e0e3ea] text-[#4c5667] opacity-50 cursor-default" disabled>
           <BellIcon />
         </button>
 
@@ -107,14 +107,14 @@ export function AppTopBar({
 
               {/* Menu items */}
               <div className="border-b border-[#e4e7ec] py-1">
-                <MenuItem label="Account" />
-                <MenuItem label="Notification preferences" />
-                <MenuItem label="Language preferences" />
-                <MenuItem label="Appearance" badge="Beta" />
+                <MenuItem label="Account" disabled />
+                <MenuItem label="Notification preferences" disabled />
+                <MenuItem label="Language preferences" disabled />
+                <MenuItem label="Appearance" badge="Beta" disabled />
               </div>
 
               <div className="border-b border-[#e4e7ec] py-1">
-                <MenuItem label="Upgrade" />
+                <MenuItem label="Upgrade" disabled />
               </div>
 
               <div className="py-1">
@@ -145,9 +145,12 @@ export function AppTopBar({
   );
 }
 
-function MenuItem({ label, badge }: { label: string; badge?: string }) {
+function MenuItem({ label, badge, disabled }: { label: string; badge?: string; disabled?: boolean }) {
   return (
-    <button className="flex w-full items-center justify-between px-4 py-2 text-sm text-[#1f2328] hover:bg-[#f4f6fb]">
+    <button
+      className={`flex w-full items-center justify-between px-4 py-2 text-sm text-[#1f2328] ${disabled ? "opacity-50 cursor-default" : "hover:bg-[#f4f6fb]"}`}
+      disabled={disabled}
+    >
       {label}
       {badge && (
         <span className="rounded-full bg-[#f0f4ff] px-2 py-0.5 text-[10px] font-medium text-[#3b5bdb]">

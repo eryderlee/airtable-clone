@@ -16,8 +16,11 @@ export default async function BaseIndexPage({
   }
 
   const firstTable = tables[0];
-  const views = await api.view.getByTableId({ tableId: firstTable?.id ?? "" });
+  if (!firstTable) redirect("/");
+
+  // Fetch views — table ID is already known so no waterfall here
+  const views = await api.view.getByTableId({ tableId: firstTable.id });
 
   const firstView = views[0];
-  redirect(`/base/${baseId}/${firstTable?.id}/view/${firstView?.id}`);
+  redirect(`/base/${baseId}/${firstTable.id}/view/${firstView?.id}`);
 }

@@ -158,12 +158,12 @@ export function BaseTopBar({ baseId, initialColor, initialName }: BaseTopBarProp
                   </span>
                 )}
                 <div className="flex items-center gap-2">
-                  <button className="text-[#9aa4b6] hover:text-[#1f2328]" title="Favourite">
+                  <button className="text-[#9aa4b6] opacity-50 cursor-default" title="Favourite" disabled>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4">
                       <path d="M8 2l1.8 3.6 4 .6-2.9 2.8.7 4L8 11l-3.6 2 .7-4L2.2 6.2l4-.6L8 2z" strokeLinejoin="round" />
                     </svg>
                   </button>
-                  <button className="text-[#9aa4b6] hover:text-[#1f2328]" title="More options">
+                  <button className="text-[#9aa4b6] opacity-50 cursor-default" title="More options" disabled>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                       <circle cx="3" cy="8" r="1.4" />
                       <circle cx="8" cy="8" r="1.4" />
@@ -254,17 +254,17 @@ export function BaseTopBar({ baseId, initialColor, initialName }: BaseTopBarProp
       <nav className="absolute inset-x-0 flex items-end justify-center self-stretch" style={{ bottom: 0, top: 0, pointerEvents: "none" }}>
         <div style={{ pointerEvents: "auto" }} className="flex h-full items-end">
         {[
-          { label: "Data", active: true },
-          { label: "Automations", active: false },
-          { label: "Interfaces", active: false },
-          { label: "Forms", active: false },
-        ].map(({ label, active }) => (
+          { label: "Data", active: true, disabled: false },
+          { label: "Automations", active: false, disabled: true },
+          { label: "Interfaces", active: false, disabled: true },
+          { label: "Forms", active: false, disabled: true },
+        ].map(({ label, active, disabled }) => (
           <a
             key={label}
-            className="relative flex h-full items-center"
+            className={`relative flex h-full items-center ${disabled ? "opacity-50 cursor-default" : ""}`}
           >
             <p className={`px-2 py-2 text-[13px] font-medium transition-colors ${
-              active ? "text-[#1f2328]" : "text-[#6b7280] hover:text-[#1f2328]"
+              active ? "text-[#1f2328]" : disabled ? "text-[#6b7280]" : "text-[#6b7280] hover:text-[#1f2328]"
             }`}>
               {label}
             </p>
@@ -281,7 +281,7 @@ export function BaseTopBar({ baseId, initialColor, initialName }: BaseTopBarProp
       <div className="ml-auto flex items-center gap-1.5">
       <div className="flex items-center gap-1.5">
         {/* History */}
-        <button className="flex h-7 w-7 items-center justify-center rounded text-[#6b7280] hover:bg-[#f3f4f6]" title="History">
+        <button className="flex h-7 w-7 items-center justify-center rounded text-[#6b7280] opacity-50 cursor-default" title="History" disabled>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <circle cx="8" cy="8" r="6.25" stroke="currentColor" strokeWidth="1.3" />
             <path d="M8 5v3.5l2 1.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
@@ -289,7 +289,7 @@ export function BaseTopBar({ baseId, initialColor, initialName }: BaseTopBarProp
         </button>
 
         {/* Upgrade */}
-        <button className="flex items-center gap-1.5 rounded border border-[#e4e7ec] px-2.5 py-1 text-[13px] font-medium text-[#374151] hover:bg-[#f3f4f6]">
+        <button className="flex items-center gap-1.5 rounded border border-[#e4e7ec] px-2.5 py-1 text-[13px] font-medium text-[#374151] opacity-50 cursor-default" disabled>
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
             <path d="M6 1L7.8 4.5L11.5 5L9 7.5L9.5 11L6 9.2L2.5 11L3 7.5L0.5 5L4.2 4.5L6 1Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
           </svg>
@@ -297,7 +297,7 @@ export function BaseTopBar({ baseId, initialColor, initialName }: BaseTopBarProp
         </button>
 
         {/* Launch */}
-        <button className="flex items-center gap-1.5 rounded border border-[#e4e7ec] px-2.5 py-1 text-[13px] font-medium text-[#374151] hover:bg-[#f3f4f6]">
+        <button className="flex items-center gap-1.5 rounded border border-[#e4e7ec] px-2.5 py-1 text-[13px] font-medium text-[#374151] opacity-50 cursor-default" disabled>
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
             <path d="M2 10L10 2M10 2H5.5M10 2V6.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
@@ -305,7 +305,7 @@ export function BaseTopBar({ baseId, initialColor, initialName }: BaseTopBarProp
         </button>
 
         {/* Link icon — in a bordered box */}
-        <button className="flex h-7 w-7 items-center justify-center rounded border border-[#e4e7ec] text-[#6b7280] hover:bg-[#f3f4f6]" title="Copy link">
+        <button className="flex h-7 w-7 items-center justify-center rounded border border-[#e4e7ec] text-[#6b7280] opacity-50 cursor-default" title="Copy link" disabled>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
             <path d="M5.5 8.5L8.5 5.5M6.5 3.5L7.5 2.5a3 3 0 1 1 4.243 4.243L10.5 7.5M7.5 10.5l-1 1a3 3 0 1 1-4.243-4.243L3.5 6.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
           </svg>
@@ -313,8 +313,9 @@ export function BaseTopBar({ baseId, initialColor, initialName }: BaseTopBarProp
 
         {/* Share */}
         <button
-          className="rounded-lg px-3 text-[13px] font-semibold text-white shadow-[0_1px_2px_rgba(0,0,0,0.12)] hover:shadow-[0_2px_4px_rgba(0,0,0,0.15)]"
+          className="rounded-lg px-3 text-[13px] font-semibold text-white opacity-50 cursor-default"
           style={{ backgroundColor: baseColor, height: 28, border: 0 }}
+          disabled
         >
           Share
         </button>

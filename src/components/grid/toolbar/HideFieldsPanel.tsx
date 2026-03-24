@@ -41,7 +41,7 @@ export function HideFieldsPanel({
           placeholder="Find a field"
           className="flex-1 bg-transparent text-[11px] text-[#1f2328] outline-none placeholder:text-[#9ca3af]"
         />
-        <button className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[#9ca3af] hover:bg-[#f3f4f6]" title="Help">
+        <button className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[#9ca3af] opacity-50 cursor-default" title="Help" disabled>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
             <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.2" />
             <path d="M5.5 5.5a1.5 1.5 0 1 1 2 1.415V8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />

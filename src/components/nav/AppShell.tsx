@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
 import { api } from "~/trpc/react";
@@ -25,9 +25,17 @@ export function AppShell({ user, children }: AppShellProps) {
   const [hoverExpand, setHoverExpand] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [workspaceDropdown, setWorkspaceDropdown] = useState(false);
+  const [navigatingToBase, setNavigatingToBase] = useState(false);
 
   // Inside a base route — show only children (base layout handles its own chrome)
   const isBaseRoute = pathname.startsWith("/base/");
+
+  // Clear loading overlay once we've arrived at the base route
+  useEffect(() => {
+    if (isBaseRoute && navigatingToBase) {
+      setNavigatingToBase(false);
+    }
+  }, [isBaseRoute, navigatingToBase]);
 
   const utils = api.useUtils();
 
@@ -36,40 +44,22 @@ export function AppShell({ user, children }: AppShellProps) {
     void utils.base.getAll.prefetch();
   }, [utils]);
 
-  const pendingBaseIdRef = useRef<string | null>(null);
-
-  const createTable = api.table.create.useMutation({
-    onSuccess: async (newTable) => {
-      const baseId = newTable.baseId ?? pendingBaseIdRef.current;
-      const fetchedViews = await utils.view.getByTableId.fetch({ tableId: newTable.id });
-      if (fetchedViews[0]) {
-        router.push(`/base/${baseId}/${newTable.id}/view/${fetchedViews[0].id}`);
-      } else {
-        router.push(`/base/${baseId}/${newTable.id}`);
-      }
-    },
-    onError: () => {
-      toast.error("Failed to create table.");
-    },
-    onSettled: () => {
-      void utils.base.getAll.invalidate();
-    },
-  });
-
   const createBase = api.base.create.useMutation({
     onMutate: () => {
-      setShowCreateModal(false); // Close modal immediately
+      setShowCreateModal(false);
+      setNavigatingToBase(true);
     },
     onSuccess: (base) => {
-      pendingBaseIdRef.current = base.id;
-      createTable.mutate({ baseId: base.id, seed: true });
+      void utils.base.getAll.invalidate();
+      router.push(`/base/${base.id}`);
     },
     onError: () => {
+      setNavigatingToBase(false);
       toast.error("Failed to create base.");
     },
   });
 
-  const isCreatingBase = createBase.isPending || createTable.isPending;
+  const isCreatingBase = createBase.isPending || navigatingToBase;
 
   function handleCreateBase() {
     if (isCreatingBase) return;
@@ -113,6 +103,18 @@ export function AppShell({ user, children }: AppShellProps) {
           {children}
         </div>
       </div>
+
+      {isCreatingBase && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80">
+          <div className="flex flex-col items-center gap-3">
+            <svg className="h-8 w-8 animate-spin text-[#166ee1]" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" opacity="0.2" />
+              <path d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+            </svg>
+            <p className="text-sm font-medium text-[#4c5667]">Creating base...</p>
+          </div>
+        </div>
+      )}
 
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">

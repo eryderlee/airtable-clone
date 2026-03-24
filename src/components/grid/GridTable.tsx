@@ -215,7 +215,7 @@ export const GridTable = React.memo(function GridTable({
     : columnIds;
 
   const primaryColWidth = columnWidths[columnIds[0] ?? ""] ?? 180;
-  const primaryBorderLeft = 100 + primaryColWidth;
+  const primaryBorderLeft = 66 + primaryColWidth;
 
   return (
     <div className="relative flex flex-1 flex-col overflow-hidden">
@@ -282,7 +282,7 @@ export const GridTable = React.memo(function GridTable({
                     className="border-b border-[#e2e0ea] bg-white"
                   >
                     <td
-                      style={{ display: "flex", width: 100, minWidth: 100, position: "sticky", left: 0, zIndex: 1 }}
+                      style={{ display: "flex", width: 66, minWidth: 66, position: "sticky", left: 0, zIndex: 1 }}
                       className="h-full items-center bg-white px-2 py-0"
                     >
                       <div className="h-3 w-8 animate-pulse rounded bg-[#ece9f5]" />
@@ -338,15 +338,15 @@ export const GridTable = React.memo(function GridTable({
                 >
                   {/* Checkbox + row number — sticky */}
                   <td
-                    style={{ display: "flex", width: 100, minWidth: 100, position: "sticky", left: 0, zIndex: 1 }}
-                    className="relative h-full items-center justify-center bg-white py-0 group-hover:bg-[#f8f8f8]"
+                    style={{ display: "flex", width: 66, minWidth: 66, position: "sticky", left: 0, zIndex: 1 }}
+                    className="relative h-full items-center bg-white py-0 group-hover:bg-[#f8f8f8]"
                   >
-                    {/* Row number — visible by default, hides on hover */}
-                    <span className={`pointer-events-none absolute inset-0 flex items-center justify-center select-none text-xs text-[#aaa] group-hover:hidden ${selectedRowIds.has(rowData.id) ? "hidden" : ""}`}>
+                    {/* Row number — left-aligned, expands right for large numbers */}
+                    <span className={`pointer-events-none absolute inset-y-0 left-2 flex items-center select-none text-xs text-[#aaa] whitespace-nowrap group-hover:hidden ${selectedRowIds.has(rowData.id) ? "hidden" : ""}`}>
                       {virtualRow.index + 1}
                     </span>
-                    {/* Checkbox — overlays row number, shown on hover/selected */}
-                    <label className={`absolute inset-0 flex cursor-pointer items-center justify-center ${selectedRowIds.has(rowData.id) ? "" : "hidden group-hover:flex"}`}>
+                    {/* Checkbox — overlays row number at same left position, shown on hover/selected */}
+                    <label className={`absolute inset-y-0 left-1.5 flex cursor-pointer items-center ${selectedRowIds.has(rowData.id) ? "" : "hidden group-hover:flex"}`}>
                       <input
                         type="checkbox"
                         checked={selectedRowIds.has(rowData.id)}
@@ -388,7 +388,7 @@ export const GridTable = React.memo(function GridTable({
                         key={colId}
                         style={{
                           display: "flex", width: w, minWidth: w, overflow: "visible",
-                          ...(isPrimary ? { position: "sticky", left: 100, zIndex: isFocused ? 10 : 1 } : isFocused ? { position: "relative", zIndex: 10 } : {}),
+                          ...(isPrimary ? { position: "sticky", left: 66, zIndex: isFocused ? 10 : 1 } : isFocused ? { position: "relative", zIndex: 10 } : {}),
                           ...(filteredColumnIds.includes(colId) ? { backgroundColor: "#d1f5d3" } : sortedColumnIds.includes(colId) ? { backgroundColor: "#FFF5EE" } : {}),
                           ...(isFocused ? {
                             boxShadow: [
@@ -455,7 +455,7 @@ export const GridTable = React.memo(function GridTable({
           className="group flex h-8 items-center border-b border-[#e2e0ea] bg-white hover:bg-[#f8f8f8]"
           style={{ width: "fit-content" }}
         >
-          <div style={{ width: 100, minWidth: 100, position: "sticky", left: 0, zIndex: 1 }} className="flex items-center bg-white px-2 group-hover:bg-[#f8f8f8]">
+          <div style={{ width: 66, minWidth: 66, position: "sticky", left: 0, zIndex: 1 }} className="flex items-center bg-white px-2 group-hover:bg-[#f8f8f8]">
             <button
               onClick={onAddRow}
               className="flex h-3.5 w-3.5 flex-shrink-0 items-center justify-center rounded text-[#888] hover:bg-[#e2e0ea]"
@@ -557,7 +557,7 @@ export const GridTable = React.memo(function GridTable({
         <div
           style={{
             height: 1,
-            width: 100 + columnIds.reduce((sum, id) => sum + (columnWidths[id] ?? 180), 0) + 90,
+            width: 66 + columnIds.reduce((sum, id) => sum + (columnWidths[id] ?? 180), 0) + 90,
           }}
         />
       </div>

@@ -301,7 +301,7 @@ function AddColumnMenu({ onAdd }: { onAdd: (type: "text" | "number") => void }) 
                   placeholder="Find a field type"
                   className="h-full flex-1 bg-transparent text-[13px] outline-none placeholder:text-[#aaa]"
                 />
-                <a href="#" className="ml-1 flex-shrink-0 text-[#888] hover:text-[#555]" title="Help">
+                <a href="#" className="ml-1 flex-shrink-0 text-[#888] opacity-50 cursor-default pointer-events-none" title="Help">
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.3" />
                     <path d="M6.5 6.5a1.5 1.5 0 0 1 3 0c0 1-1.5 1-1.5 2M8 11h.01" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
@@ -319,8 +319,8 @@ function AddColumnMenu({ onAdd }: { onAdd: (type: "text" | "number") => void }) 
                   {filteredAgents.map((agent) => (
                     <button
                       key={agent.label}
-                      className="flex w-1/2 cursor-pointer items-center rounded-lg px-2.5 py-2.5 text-left hover:bg-[#f5f5f5]"
-                      onClick={() => { onAdd("text"); setOpen(false); setSearch(""); }}
+                      className="flex w-1/2 items-center rounded-lg px-2.5 py-2.5 text-left opacity-50 cursor-default"
+                      disabled
                     >
                       <svg width="16" height="16" viewBox="0 0 16 16" className="flex-shrink-0" style={{ shapeRendering: "geometricPrecision" }}>
                         <path d={agent.icon} fill={agent.color} />
@@ -338,23 +338,27 @@ function AddColumnMenu({ onAdd }: { onAdd: (type: "text" | "number") => void }) 
               <>
                 <p className="mx-1 my-2 text-[13px] text-[#888]">Standard fields</p>
                 <div className="px-1">
-                  {filteredFields.map((field) => (
-                    <button
-                      key={field.label}
-                      className="flex w-full cursor-pointer items-center rounded-lg px-2.5 py-2 text-left hover:bg-[#f5f5f5]"
-                      onClick={() => { onAdd(field.type); setOpen(false); setSearch(""); }}
-                    >
-                      <svg width="16" height="16" viewBox="0 0 16 16" className="flex-shrink-0 text-[#666]" style={{ shapeRendering: "geometricPrecision" }}>
-                        <path d={field.icon} fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                      <span className="ml-2 flex-1 text-[13px] text-[#333]">{field.label}</span>
-                      {field.hasChevron && (
-                        <svg width="16" height="16" viewBox="0 0 16 16" className="flex-shrink-0 text-[#ccc]">
-                          <path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                  {filteredFields.map((field) => {
+                    const isSupported = field.label === "Single line text" || field.label === "Number";
+                    return (
+                      <button
+                        key={field.label}
+                        className={`flex w-full items-center rounded-lg px-2.5 py-2 text-left ${isSupported ? "cursor-pointer hover:bg-[#f5f5f5]" : "opacity-50 cursor-default"}`}
+                        onClick={isSupported ? () => { onAdd(field.type); setOpen(false); setSearch(""); } : undefined}
+                        disabled={!isSupported}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 16 16" className="flex-shrink-0 text-[#666]" style={{ shapeRendering: "geometricPrecision" }}>
+                          <path d={field.icon} fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
-                      )}
-                    </button>
-                  ))}
+                        <span className="ml-2 flex-1 text-[13px] text-[#333]">{field.label}</span>
+                        {field.hasChevron && (
+                          <svg width="16" height="16" viewBox="0 0 16 16" className="flex-shrink-0 text-[#ccc]">
+                            <path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </>
             )}
@@ -444,20 +448,20 @@ function ColumnMenu({
         >
           <Item icon={<EditIcon />} label="Edit field" onClick={() => { setOpen(false); onEditField(); }} />
           <Divider />
-          <Item icon={<DuplicateIcon />} label="Duplicate field" onClick={() => setOpen(false)} />
+          <Item icon={<DuplicateIcon />} label="Duplicate field" disabled />
           <Item icon={<InsertLeftIcon />} label="Insert left" disabled />
-          <Item icon={<InsertRightIcon />} label="Insert right" onClick={() => setOpen(false)} />
-          <Item icon={<ChangePrimaryIcon />} label="Change primary field" onClick={() => setOpen(false)} />
+          <Item icon={<InsertRightIcon />} label="Insert right" disabled />
+          <Item icon={<ChangePrimaryIcon />} label="Change primary field" disabled />
           <Divider />
-          <Item icon={<LinkIcon />} label="Copy field URL" onClick={() => setOpen(false)} />
-          <Item icon={<DescriptionIcon />} label="Edit field description" onClick={() => setOpen(false)} />
-          <Item icon={<PermissionsIcon />} label="Edit field permissions" badge="Team" onClick={() => setOpen(false)} />
+          <Item icon={<LinkIcon />} label="Copy field URL" disabled />
+          <Item icon={<DescriptionIcon />} label="Edit field description" disabled />
+          <Item icon={<PermissionsIcon />} label="Edit field permissions" badge="Team" disabled />
           <Divider />
-          <Item icon={<SortAZIcon />} label={<><span>Sort</span><span className="ml-1 text-[#6b7280]">A → Z</span></>} onClick={() => setOpen(false)} />
-          <Item icon={<SortZAIcon />} label={<><span>Sort</span><span className="ml-1 text-[#6b7280]">Z → A</span></>} onClick={() => setOpen(false)} />
+          <Item icon={<SortAZIcon />} label={<><span>Sort</span><span className="ml-1 text-[#6b7280]">A → Z</span></>} disabled />
+          <Item icon={<SortZAIcon />} label={<><span>Sort</span><span className="ml-1 text-[#6b7280]">Z → A</span></>} disabled />
           <Divider />
-          <Item icon={<FilterIcon />} label="Filter by this field" onClick={() => setOpen(false)} />
-          <Item icon={<GroupIcon />} label="Group by this field" onClick={() => setOpen(false)} />
+          <Item icon={<FilterIcon />} label="Filter by this field" disabled />
+          <Item icon={<GroupIcon />} label="Group by this field" disabled />
           <Divider />
           <Item icon={<HideIcon />} label="Hide field" disabled />
           {!isPrimary && <Item icon={<DeleteIcon />} label="Delete field" onClick={handleDelete} danger />}
@@ -542,8 +546,8 @@ export function GridHeader({
       <tr style={{ display: "flex" }}>
         {/* Checkbox column — sticky */}
         <th
-          style={{ display: "flex", width: 100, minWidth: 100, height: 36, position: "sticky", left: 0, zIndex: 4 }}
-          className="items-start justify-center border-b border-[#e2e0ea] bg-white pt-2"
+          style={{ display: "flex", width: 66, minWidth: 66, height: 36, position: "sticky", left: 0, zIndex: 4 }}
+          className="items-center border-b border-[#e2e0ea] bg-white pl-1.5"
         >
           <input
             type="checkbox"
@@ -582,7 +586,7 @@ export function GridHeader({
               key={header.id}
               style={{
                 display: "flex", width: colWidth, minWidth: colWidth, height: 36,
-                ...(isPrimary ? { position: "sticky", left: 100, zIndex: 4 } : {}),
+                ...(isPrimary ? { position: "sticky", left: 66, zIndex: 4 } : {}),
                 backgroundColor: isFiltered ? "#eafaeb" : isSorted ? "#FFF8F3" : undefined,
               }}
               className="group relative items-start border-b border-r border-[#e2e0ea] bg-white px-2 pt-2 text-left hover:!bg-[#f8f8f8]"

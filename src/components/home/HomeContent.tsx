@@ -59,6 +59,11 @@ export function HomeContent({ bases: initialBases }: Props) {
       }
       toast.error("Failed to create base. Changes reverted.");
     },
+    onSuccess: (newBase) => {
+      // Navigate directly to the new base — it already has a default table + view
+      void utils.base.getAll.invalidate();
+      router.push(`/base/${newBase.id}`);
+    },
     onSettled: () => {
       void utils.base.getAll.invalidate();
     },

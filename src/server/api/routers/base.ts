@@ -3,7 +3,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { bases } from "~/server/db/schema";
+import { bases, tables, columns, rows, views } from "~/server/db/schema";
 
 export const baseRouter = createTRPCRouter({
   getById: protectedProcedure
@@ -35,6 +35,47 @@ export const baseRouter = createTRPCRouter({
       if (!created) {
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       }
+
+      // Create default table with seed data in one go
+      const [table] = await ctx.db
+        .insert(tables)
+        .values({ name: "Table 1", baseId: created.id })
+        .returning();
+
+      if (table) {
+        const [nameCol, notesCol, statusCol] = await ctx.db
+          .insert(columns)
+          .values([
+            { tableId: table.id, name: "Name", type: "text" as const, order: 0, isPrimary: true },
+            { tableId: table.id, name: "Notes", type: "text" as const, order: 1 },
+            { tableId: table.id, name: "Status", type: "text" as const, order: 2 },
+          ])
+          .returning();
+
+        if (nameCol && notesCol && statusCol) {
+          const { faker } = await import("@faker-js/faker");
+          // Insert rows and view in parallel
+          await Promise.all([
+            ctx.db.insert(rows).values(
+              Array.from({ length: 10 }, (_, i) => ({
+                tableId: table.id,
+                rowOrder: i,
+                cells: {
+                  [nameCol.id]: faker.person.fullName(),
+                  [notesCol.id]: faker.lorem.sentence(),
+                  [statusCol.id]: faker.helpers.arrayElement(["Todo", "In Progress", "Done"]),
+                } as Record<string, string | number | null>,
+              })),
+            ),
+            ctx.db.insert(views).values({
+              tableId: table.id,
+              name: "Grid view",
+              config: { filters: [], sorts: [], hiddenColumns: [], searchQuery: "" },
+            }),
+          ]);
+        }
+      }
+
       return created;
     }),
 
